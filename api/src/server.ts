@@ -47,7 +47,7 @@ app.all('*', (req, res, next) => {
 
 app.use(errorHandler);
 
-const server = app.listen(CONFIG.PORT, '0.0.0.0', () => {
+const server = app.listen(Number(CONFIG.PORT), '0.0.0.0', () => {
   logger.info(`Server is running on http://localhost:${CONFIG.PORT}`);
 });
 

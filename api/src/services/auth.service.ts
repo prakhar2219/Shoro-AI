@@ -18,7 +18,7 @@ export const generateRefreshToken = (): string => {
 
 export const signup = async (userData: Partial<IUser>) => {
   const user = await User.create(userData);
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken();
 
   await Session.create({
@@ -38,7 +38,7 @@ export const login = async (email: string, password: string) => {
     throw new AppError('Email o contraseña incorrectos', 401);
   }
 
-  const accessToken = generateAccessToken(user._id);
+  const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken();
 
   await Session.create({
