@@ -3,7 +3,6 @@ import React from "react";
 
 const Breadcrumb = ({ title, text }) => {
   return (
-    <>
       <div className="breadcrumb-area breadcarumb-style-1 pt--180 pb--100">
         <div className="container">
           <div className="row">
@@ -21,7 +20,6 @@ const Breadcrumb = ({ title, text }) => {
           </div>
         </div>
       </div>
-    </>
   );
 };
 
