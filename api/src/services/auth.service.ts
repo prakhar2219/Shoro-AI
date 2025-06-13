@@ -1,15 +1,21 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Secret, SignOptions } from 'jsonwebtoken';
 import crypto from 'crypto';
 import { CONFIG } from '../config/config';
 import User from '../models/user.model';
 import Session from '../models/session.model';
 import AppError from '../utils/appError';
 import { IUser } from '../interfaces/user.interface';
+import { StringValue } from 'ms';
+
 
 export const generateAccessToken = (id: string): string => {
-  return jwt.sign({ id }, CONFIG.JWT_SECRET, {
-    expiresIn: CONFIG.JWT_EXPIRES_IN,
-  });
+  const payload = { id };
+  const secret: Secret = CONFIG.JWT_SECRET;
+  const options: SignOptions = {
+    expiresIn: CONFIG.JWT_EXPIRES_IN as StringValue,
+  };
+
+  return jwt.sign(payload, secret, options);
 };
 
 export const generateRefreshToken = (): string => {
