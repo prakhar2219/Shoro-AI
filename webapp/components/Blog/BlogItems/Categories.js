@@ -7,10 +7,10 @@ const Categories = ({ category }) => {
         <ul className="category-list ">
           {category.map((data, index) => (
             <li key={index}>
-              <a href="#">
-                <span className="left-content">{data.name}</span>
-                <span className="count-text">{data.num}</span>
-              </a>
+              {/* <a href="#"> */}
+                <span className="left-content">{data}</span>
+                {/* <span className="count-text">{data}</span> */}
+
             </li>
           ))}
         </ul>

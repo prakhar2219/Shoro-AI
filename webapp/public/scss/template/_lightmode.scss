@@ -27,7 +27,7 @@ body {
         .social-default li a,
         .rbt-single-widget .title,
         .rbt-single-widget.widget_recent_entries .inner a,
-        .tagcloud a, 
+        .tagcloud a, .tagcloud span, 
         .wp-block-tag-cloud a ,
         .rainbow-portfolio-details .content-left .single-list-wrapper .single-list label,
         .blog-details-content .category-meta span.text,
@@ -180,7 +180,7 @@ body {
         .rbt-single-widget.widget_meta ul li+li,
         .rbt-single-widget.widget_pages ul li+li,
         .rbt-single-widget.widget_nav_menu ul li+li ,
-        .tagcloud a, 
+        .tagcloud a, .tagcloud span, 
         .wp-block-tag-cloud a,
         .section-title-2 .title,
         .popup-mobile-menu .mainmenu li + li ,
@@ -219,13 +219,13 @@ body {
         }
 
         .social-default li a:hover,
-        .tagcloud a:hover, 
+        .tagcloud a:hover , .tagcloud span:hover, 
         .wp-block-tag-cloud a:hover,
         .header-top-news .btn-read-more span {
             color: var(--color-white);
         }
 
-        .tagcloud a:hover, 
+        .tagcloud a:hover, .tagcloud span:hover, 
         .wp-block-tag-cloud a:hover {
             border-color: var(--color-primary);
         }

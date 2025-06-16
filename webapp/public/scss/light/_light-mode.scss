@@ -1355,7 +1355,8 @@
         color: var(--color-gray);
     }
 
-    .rainbow-meta-list li.catagory-meta a {
+    .rainbow-meta-list li.catagory-meta a,
+    .rainbow-meta-list li.catagory-meta span {
         background: var(--color-strock);
         color: var(--color-gray);
     }
@@ -1426,7 +1427,7 @@
     .tagcloud,
     .wp-block-tag-cloud {
 
-        a {
+        a, span {
             border: 2px solid rgba(from var(--color-light) r g b / 0.5);
             background: var(--color-lightest);
             color: var(--color-gray);

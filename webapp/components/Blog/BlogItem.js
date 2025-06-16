@@ -3,22 +3,30 @@ import Link from "next/link";
 import React from "react";
 
 const BlogItem = ({ blog }) => {
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   return (
-    <>
-      <div className="row mt_dec--30">
-        <div className="col-lg-12">
+    <div className="row mt_dec--30">
+      <div className="col-lg-12">
+        {blog && blog.length > 0 ? (
           <div className="row row--15">
             {blog.slice(0, 8).map((data) => (
-              <div className="col-lg-6 col-md-6 col-12 mt--30" key={data.id}>
+              <div className="col-lg-6 col-md-6 col-12 mt--30" key={data.slug}>
                 <div className="rainbow-card undefined">
                   <div className="inner">
                     <div className="thumbnail">
-                      <Link className="image" href={`/blog-detail/${data.id}`}>
+                      <Link className="image" href={`/blogs/${data.slug}`}>
                         <Image
-                          src={data.img}
+                          src={data.mainImage}
                           width={413}
                           height={281}
-                          alt="Blog Image"
+                          alt={data.title}
                         />
                       </Link>
                     </div>
@@ -26,32 +34,38 @@ const BlogItem = ({ blog }) => {
                       <ul className="rainbow-meta-list">
                         <li>
                           <i className="fa-sharp fa-regular fa-calendar-days icon-left"></i>{" "}
-                          {data.date}
+                          <span className="me-5">{formatDate(data.publishedAt)}</span>
                         </li>
                         <li className="separator"></li>
                         <li className="catagory-meta">
-                          <a href="#">{data.cate}</a>
+                          <span>{data?.categories[0] || "Uncategorized"}</span>
                         </li>
                       </ul>
                       <h4 className="title">
-                        <Link href={`/blog-detail/${data.id}`}>
+                        <Link href={`/blogs/${data.slug}`}>
                           {data.title}
                         </Link>
                       </h4>
-                      <p className="description">{data.desc}</p>
-                      <a className="btn-read-more border-transparent" href="#">
+                      <p className="description">{data.excerpt}</p>
+                      <Link className="btn-read-more border-transparent" href={`/blogs/${data.slug}`}>
                         <span>
                           Read More{" "}
                           <i className="fa-sharp fa-regular fa-arrow-right"></i>
                         </span>
-                      </a>
+                      </Link>
                     </div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        ) : (
+          <div className="text-center">
+            <p>No blogs available at the moment. Please check back later!</p>
+          </div>
+        )}
+      </div>
+      {blog && blog.length > 0 && (
         <div className="col-lg-12 text-center">
           <div className="rainbow-load-more text-center mt--60">
             <button className="btn btn-default btn-icon">
@@ -64,8 +78,8 @@ const BlogItem = ({ blog }) => {
             </button>
           </div>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 };
 
