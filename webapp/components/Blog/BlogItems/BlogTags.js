@@ -6,9 +6,9 @@ const BlogTags = ({ tags }) => {
       <div className="inner">
         <div className="tagcloud">
           {tags.map((data, index) => (
-            <a href="#" key={index}>
-              {data.name}
-            </a>
+            <span key={index}>
+              {data}
+            </span>
           ))}
         </div>
       </div>

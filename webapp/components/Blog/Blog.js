@@ -11,14 +11,14 @@ import Archives from "./BlogItems/Archives";
 import BlogTags from "./BlogItems/BlogTags";
 import BrandTwo from "../Brands/Brand-Two";
 
-const Blog = () => {
+const Blog = ({ blogs }) => {
   return (
     <>
       <div className="rainbow-blog-area rainbow-section-gap bg-color-1">
         <div className="container">
           <div className="row row--30">
             <div className="col-lg-8">
-              <BlogItem blog={BlogData && BlogData.blog} />
+              <BlogItem blog={blogs && blogs} />
             </div>
             <div className="col-lg-4 mt_md--40 mt_sm--40">
               <aside className="rainbow-sidebar">
@@ -34,19 +34,19 @@ const Blog = () => {
                 </div>
                 <div className="rbt-single-widget widget_categories mt--40">
                   <h3 className="title">Categories</h3>
-                  <Categories category={BlogData && BlogData.categories} />
+                  <Categories category={[]} />
                 </div>
                 <div className="rbt-single-widget widget_recent_entries mt--40">
                   <h3 className="title">Post</h3>
-                  <BlogPost blogpost={BlogData && BlogData.blog} />
+                  <BlogPost blogpost={[]} />
                 </div>
                 <div className="rbt-single-widget widget_archive mt--40">
                   <h3 className="title">Archives</h3>
-                  <Archives blogarc={BlogData && BlogData.blog} />
+                  <Archives blogarc={[]} />
                 </div>
                 <div className="rbt-single-widget widget_tag_cloud mt--40">
                   <h3 className="title">Tags</h3>
-                  <BlogTags tags={BlogData && BlogData.tags} />
+                  <BlogTags tags={[]} />
                 </div>
               </aside>
             </div>
