@@ -1,40 +1,23 @@
 "use client"
 
-import {
-  Box,
-  Container,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Icon,
-  Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  Progress,
-  Button,
-  Card,
-  CardBody,
-  SimpleGrid,
-  Divider,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-} from "@chakra-ui/react"
-import { Calculator, Clock, BookOpen, PlayCircle, CheckCircle, ArrowLeft, ArrowRight, ChevronRight } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
+import {
+  Calculator,
+  Clock,
+  BookOpen,
+  PlayCircle,
+  CheckCircle,
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+} from "lucide-react"
 
 const SAMPLE_CONTENT = `
 <h2>Numbers 1 to 9 - Counting Objects</h2>
-
 <p>Welcome to your first mathematics lesson! Today we'll learn about numbers 1 to 9 by counting different objects around us.</p>
-
 <h3>What are Numbers?</h3>
 <p>Numbers help us count things. Let's start with the numbers 1 to 9:</p>
-
 <ul>
 <li><strong>1 (One)</strong> - Like one sun in the sky</li>
 <li><strong>2 (Two)</strong> - Like two eyes on your face</li>
@@ -42,7 +25,6 @@ const SAMPLE_CONTENT = `
 <li><strong>4 (Four)</strong> - Like four legs on a chair</li>
 <li><strong>5 (Five)</strong> - Like five fingers on one hand</li>
 </ul>
-
 <h3>Let's Practice Counting!</h3>
 <p>Look around your room and try to find:</p>
 <ul>
@@ -52,11 +34,9 @@ const SAMPLE_CONTENT = `
 <li>4 corners of a table</li>
 <li>5 toys</li>
 </ul>
-
 <blockquote>
 <p><strong>Remember:</strong> Counting helps us know "how many" of something we have!</p>
 </blockquote>
-
 <h3>Fun Activity</h3>
 <p>Draw the correct number of objects:</p>
 <ul>
@@ -67,223 +47,140 @@ const SAMPLE_CONTENT = `
 `
 
 export default function Chapter1Page() {
-  const [content, setContent] = useState(SAMPLE_CONTENT)
+  const [content] = useState(SAMPLE_CONTENT)
 
   return (
-    <Box>
-      <Container maxW="6xl" py={8}>
-        <Breadcrumb spacing="8px" separator={<ChevronRight className="w-4 h-4" />} mb={8}>
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} href="/">
-              Home
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} href="/cbse">
-              CBSE
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} href="/cbse/class-1">
-              Class 1
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} href="/cbse/class-1/mathematics">
-              Mathematics
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem isCurrentPage>
-            <BreadcrumbLink>Chapter 1</BreadcrumbLink>
-          </BreadcrumbItem>
-        </Breadcrumb>
+    <div className="py-8 max-w-6xl mx-auto px-4">
+      <div className="flex flex-wrap items-center text-sm text-gray-500 dark:text-gray-400 space-x-1 mb-6">
+        <Link href="/" className="hover:underline">Home</Link>
+        <ChevronRight className="w-4 h-4" />
+        <Link href="/cbse" className="hover:underline">CBSE</Link>
+        <ChevronRight className="w-4 h-4" />
+        <Link href="/cbse/class-1" className="hover:underline">Class 1</Link>
+        <ChevronRight className="w-4 h-4" />
+        <Link href="/cbse/class-1/mathematics" className="hover:underline">Mathematics</Link>
+        <ChevronRight className="w-4 h-4" />
+        <span className="font-semibold">Chapter 1</span>
+      </div>
 
-        <VStack spacing={6} align="start" mb={8}>
-          <HStack spacing={4}>
-            <Icon as={Calculator} w={10} h={10} color="green.500" />
-            <VStack align="start" spacing={1}>
-              <Heading size="xl">Numbers 1 to 9</Heading>
-              <Text fontSize="md" color="gray.600">
-                Chapter 1 - Counting Objects
-              </Text>
-            </VStack>
-          </HStack>
+      <div className="space-y-6 mb-8">
+        <div className="flex items-start gap-4">
+          <Calculator className="w-10 h-10 text-green-500" />
+          <div>
+            <h1 className="text-2xl font-bold">Numbers 1 to 9</h1>
+            <p className="text-gray-600">Chapter 1 - Counting Objects</p>
+          </div>
+        </div>
 
-          <HStack spacing={6}>
-            <HStack spacing={2}>
-              <Icon as={BookOpen} w={4} h={4} color="green.500" />
-              <Text fontSize="sm" fontWeight="semibold">
-                Lesson
-              </Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Icon as={Clock} w={4} h={4} color="gray.500" />
-              <Text fontSize="sm">15 minutes</Text>
-            </HStack>
-            <Badge colorScheme="green">Beginner</Badge>
-          </HStack>
+        <div className="flex flex-wrap gap-6 text-sm">
+          <div className="flex items-center gap-2">
+            <BookOpen className="w-4 h-4 text-green-500" /> <span className="font-semibold">Lesson</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-gray-500" /> <span>15 minutes</span>
+          </div>
+          <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-xs font-semibold">Beginner</span>
+        </div>
 
-          <Box w="full">
-            <HStack justify="space-between" mb={2}>
-              <Text fontSize="sm" fontWeight="semibold">
-                Lesson Progress
-              </Text>
-              <Text fontSize="sm" color="gray.500">
-                0% Complete
-              </Text>
-            </HStack>
-            <Progress value={0} colorScheme="green" size="md" />
-          </Box>
-        </VStack>
+        <div className="w-full">
+          <div className="flex justify-between text-sm mb-1">
+            <span className="font-semibold">Lesson Progress</span>
+            <span className="text-gray-500">0% Complete</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-3">
+            <div className="bg-green-500 h-3 rounded-full w-0" />
+          </div>
+        </div>
+      </div>
 
-        <SimpleGrid columns={{ base: 1, lg: 4 }} spacing={8}>
-          {/* Main Content */}
-          <Box gridColumn={{ base: "1", lg: "1 / 4" }}>
-            <Card>
-              <CardBody p={8}>
-                <Alert status="info" mb={6}>
-                  <AlertIcon />
-                  <Box>
-                    <AlertTitle>Interactive Lesson!</AlertTitle>
-                    <AlertDescription>
-                      This lesson includes interactive elements and activities to help you learn better.
-                    </AlertDescription>
-                  </Box>
-                </Alert>
+      <div className="grid lg:grid-cols-4 gap-8">
+        <div className="lg:col-span-3 space-y-8">
+          <div className="p-6 border rounded-lg">
+            <div className="bg-blue-50 text-blue-800 p-4 rounded mb-6">
+              <strong className="block font-semibold mb-1">Interactive Lesson!</strong>
+              <span>This lesson includes interactive elements and activities to help you learn better.</span>
+            </div>
 
-                <Box className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
+            <div className="prose prose-lg max-w-none" dangerouslySetInnerHTML={{ __html: content }} />
 
-                <Divider my={8} />
+            <hr className="my-8" />
 
-                <VStack spacing={4} align="stretch">
-                  <Heading size="md">Quick Check</Heading>
-                  <Text color="gray.600">Test your understanding with these quick questions:</Text>
+            <div className="space-y-4">
+              <h2 className="text-lg font-semibold">Quick Check</h2>
+              <p className="text-gray-600">Test your understanding with these quick questions:</p>
 
-                  <Card variant="outline">
-                    <CardBody>
-                      <VStack align="start" spacing={3}>
-                        <Text fontWeight="semibold">Question 1:</Text>
-                        <Text>How many fingers do you have on both hands?</Text>
-                        <HStack spacing={2}>
-                          <Button size="sm" variant="outline">
-                            8
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            9
-                          </Button>
-                          <Button size="sm" variant="outline" colorScheme="green">
-                            10
-                          </Button>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                  </Card>
+              <div className="border rounded p-4">
+                <p className="font-semibold">Question 1:</p>
+                <p>How many fingers do you have on both hands?</p>
+                <div className="flex gap-2 mt-2">
+                  <button className="border rounded px-3 py-1 text-sm">8</button>
+                  <button className="border rounded px-3 py-1 text-sm">9</button>
+                  <button className="border rounded px-3 py-1 text-sm bg-green-100 text-green-800 font-semibold">10</button>
+                </div>
+              </div>
 
-                  <Card variant="outline">
-                    <CardBody>
-                      <VStack align="start" spacing={3}>
-                        <Text fontWeight="semibold">Question 2:</Text>
-                        <Text>Count the objects: 🍎🍎🍎</Text>
-                        <HStack spacing={2}>
-                          <Button size="sm" variant="outline">
-                            2
-                          </Button>
-                          <Button size="sm" variant="outline" colorScheme="green">
-                            3
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            4
-                          </Button>
-                        </HStack>
-                      </VStack>
-                    </CardBody>
-                  </Card>
-                </VStack>
-              </CardBody>
-            </Card>
-          </Box>
+              <div className="border rounded p-4">
+                <p className="font-semibold">Question 2:</p>
+                <p>Count the objects: 🍎🍎🍎</p>
+                <div className="flex gap-2 mt-2">
+                  <button className="border rounded px-3 py-1 text-sm">2</button>
+                  <button className="border rounded px-3 py-1 text-sm bg-green-100 text-green-800 font-semibold">3</button>
+                  <button className="border rounded px-3 py-1 text-sm">4</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          {/* Sidebar */}
-          <Box gridColumn={{ base: "1", lg: "4" }}>
-            <VStack spacing={6} align="stretch">
-              <Card>
-                <CardBody>
-                  <VStack spacing={4} align="start">
-                    <Heading size="sm">Chapter Progress</Heading>
-                    <VStack spacing={3} align="stretch" w="full">
-                      <HStack justify="space-between">
-                        <HStack spacing={2}>
-                          <Icon as={CheckCircle} w={4} h={4} color="green.500" />
-                          <Text fontSize="sm">Counting Objects</Text>
-                        </HStack>
-                        <Badge colorScheme="green" size="sm">
-                          Current
-                        </Badge>
-                      </HStack>
-                      <HStack justify="space-between">
-                        <HStack spacing={2}>
-                          <Icon as={PlayCircle} w={4} h={4} color="gray.400" />
-                          <Text fontSize="sm" color="gray.500">
-                            Number Recognition
-                          </Text>
-                        </HStack>
-                        <Badge variant="outline" size="sm">
-                          Next
-                        </Badge>
-                      </HStack>
-                      <HStack justify="space-between">
-                        <HStack spacing={2}>
-                          <Icon as={PlayCircle} w={4} h={4} color="gray.400" />
-                          <Text fontSize="sm" color="gray.500">
-                            Writing Numbers
-                          </Text>
-                        </HStack>
-                      </HStack>
-                      <HStack justify="space-between">
-                        <HStack spacing={2}>
-                          <Icon as={PlayCircle} w={4} h={4} color="gray.400" />
-                          <Text fontSize="sm" color="gray.500">
-                            Number Games
-                          </Text>
-                        </HStack>
-                      </HStack>
-                    </VStack>
-                  </VStack>
-                </CardBody>
-              </Card>
+        <div className="space-y-6">
+          <div className="border rounded p-4 space-y-4">
+            <h3 className="text-sm font-semibold">Chapter Progress</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4 text-green-500" />
+                  <span className="text-sm">Counting Objects</span>
+                </div>
+                <span className="text-xs text-green-800 bg-green-100 px-2 py-0.5 rounded">Current</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2">
+                  <PlayCircle className="w-4 h-4 text-gray-400" />
+                  <span className="text-sm text-gray-500">Number Recognition</span>
+                </div>
+                <span className="text-xs border rounded px-2 py-0.5">Next</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <PlayCircle className="w-4 h-4" />
+                <span className="text-sm">Writing Numbers</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-500">
+                <PlayCircle className="w-4 h-4" />
+                <span className="text-sm">Number Games</span>
+              </div>
+            </div>
+          </div>
 
-              <Card>
-                <CardBody>
-                  <VStack spacing={4} align="start">
-                    <Heading size="sm">Learning Objectives</Heading>
-                    <VStack spacing={2} align="start">
-                      <Text fontSize="sm">• Recognize numbers 1-9</Text>
-                      <Text fontSize="sm">• Count objects accurately</Text>
-                      <Text fontSize="sm">• Understand quantity concepts</Text>
-                      <Text fontSize="sm">• Practice number writing</Text>
-                    </VStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-            </VStack>
-          </Box>
-        </SimpleGrid>
+          <div className="border rounded p-4 space-y-2">
+            <h3 className="text-sm font-semibold">Learning Objectives</h3>
+            <ul className="list-disc pl-4 text-sm text-gray-600 space-y-1">
+              <li>Recognize numbers 1-9</li>
+              <li>Count objects accurately</li>
+              <li>Understand quantity concepts</li>
+              <li>Practice number writing</li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
-        {/* Navigation */}
-        <HStack justify="space-between" mt={8}>
-          <Button
-            as={Link}
-            href="/cbse/class-1/mathematics"
-            leftIcon={<ArrowLeft className="w-4 h-4" />}
-            variant="outline"
-          >
-            Back to Mathematics
-          </Button>
-          <Button rightIcon={<ArrowRight className="w-4 h-4" />} colorScheme="green">
-            Next: Number Recognition
-          </Button>
-        </HStack>
-      </Container>
-    </Box>
+      <div className="flex justify-between mt-8">
+        <Link href="/cbse/class-1/mathematics" className="inline-flex items-center gap-2 px-4 py-2 border rounded hover:bg-gray-100">
+          <ArrowLeft className="w-4 h-4" /> Back to Mathematics
+        </Link>
+        <button className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-500">
+          Next: Number Recognition <ArrowRight className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
   )
 }

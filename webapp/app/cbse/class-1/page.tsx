@@ -1,25 +1,16 @@
 "use client"
 
-import {
-  Box,
-  Container,
-  Heading,
-  Text,
-  SimpleGrid,
-  Card,
-  CardBody,
-  VStack,
-  HStack,
-  Icon,
-  Badge,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  useColorModeValue,
-  Progress,
-} from "@chakra-ui/react"
-import { BookOpen, FileText, Users, Clock, ChevronRight, Calculator, Globe, Palette } from "lucide-react"
 import Link from "next/link"
+import {
+  BookOpen,
+  FileText,
+  Users,
+  Clock,
+  ChevronRight,
+  Calculator,
+  Globe,
+  Palette,
+} from "lucide-react"
 
 const SUBJECTS = [
   {
@@ -27,7 +18,8 @@ const SUBJECTS = [
     name: "English",
     description: "Language and Literature",
     icon: BookOpen,
-    color: "blue",
+    color: "text-blue-500",
+    badge: "bg-blue-100 text-blue-700",
     chapters: 12,
     progress: 0,
     topics: 45,
@@ -37,7 +29,8 @@ const SUBJECTS = [
     name: "Mathematics",
     description: "Numbers and Basic Operations",
     icon: Calculator,
-    color: "green",
+    color: "text-green-500",
+    badge: "bg-green-100 text-green-700",
     chapters: 10,
     progress: 0,
     topics: 38,
@@ -47,7 +40,8 @@ const SUBJECTS = [
     name: "Environmental Studies",
     description: "Our Environment and Surroundings",
     icon: Globe,
-    color: "teal",
+    color: "text-teal-500",
+    badge: "bg-teal-100 text-teal-700",
     chapters: 8,
     progress: 0,
     topics: 32,
@@ -57,7 +51,8 @@ const SUBJECTS = [
     name: "Hindi",
     description: "Hindi Language and Literature",
     icon: FileText,
-    color: "orange",
+    color: "text-orange-500",
+    badge: "bg-orange-100 text-orange-700",
     chapters: 10,
     progress: 0,
     topics: 40,
@@ -67,7 +62,8 @@ const SUBJECTS = [
     name: "Art & Craft",
     description: "Creative Arts and Drawing",
     icon: Palette,
-    color: "pink",
+    color: "text-pink-500",
+    badge: "bg-pink-100 text-pink-700",
     chapters: 6,
     progress: 0,
     topics: 24,
@@ -75,111 +71,93 @@ const SUBJECTS = [
 ]
 
 export default function Class1Page() {
-  const bg = useColorModeValue("white", "gray.700")
-
   return (
-    <Box>
-      <Container maxW="6xl" py={8}>
-        <Breadcrumb spacing="8px" separator={<ChevronRight className="w-4 h-4" />} mb={8}>
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} href="/">
-              Home
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem>
-            <BreadcrumbLink as={Link} href="/cbse">
-              CBSE
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbItem isCurrentPage>
-            <BreadcrumbLink>Class 1</BreadcrumbLink>
-          </BreadcrumbItem>
-        </Breadcrumb>
+    <div className="py-8 px-4 max-w-6xl mx-auto">
+      {/* Breadcrumb */}
+      <div className="flex items-center space-x-2 text-sm text-gray-500 mb-8">
+        <Link href="/">Home</Link>
+        <ChevronRight className="w-4 h-4" />
+        <Link href="/cbse">CBSE</Link>
+        <ChevronRight className="w-4 h-4" />
+        <span>Class 1</span>
+      </div>
 
-        <VStack spacing={6} align="start" mb={12}>
-          <HStack spacing={4}>
-            <Icon as={BookOpen} w={12} h={12} color="blue.500" />
-            <VStack align="start" spacing={2}>
-              <Heading size="2xl">CBSE Class 1</Heading>
-              <Text fontSize="lg" color="gray.600">
-                Foundation Level - Primary Education
-              </Text>
-            </VStack>
-          </HStack>
+      {/* Header */}
+      <div className="flex flex-col gap-6 mb-12">
+        <div className="flex items-start gap-4">
+          <BookOpen className="w-12 h-12 text-blue-600" />
+          <div>
+            <h1 className="text-3xl font-bold">CBSE Class 1</h1>
+            <p className="text-gray-600">Foundation Level - Primary Education</p>
+          </div>
+        </div>
 
-          <Text fontSize="md" color="gray.700" maxW="4xl">
-            Class 1 is the foundation of formal education. Our curriculum focuses on building basic literacy, numeracy,
-            and environmental awareness through interactive and engaging content designed specifically for young
-            learners.
-          </Text>
+        <p className="text-gray-700 max-w-4xl">
+          Class 1 is the foundation of formal education. Our curriculum focuses on building basic literacy,
+          numeracy, and environmental awareness through interactive and engaging content designed specifically
+          for young learners.
+        </p>
 
-          <HStack spacing={8}>
-            <HStack spacing={2}>
-              <Icon as={Users} w={5} h={5} color="blue.500" />
-              <Text fontWeight="semibold">2.5M+ Students</Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Icon as={FileText} w={5} h={5} color="blue.500" />
-              <Text fontWeight="semibold">5 Subjects</Text>
-            </HStack>
-            <HStack spacing={2}>
-              <Icon as={Clock} w={5} h={5} color="blue.500" />
-              <Text fontWeight="semibold">Age 5-6 Years</Text>
-            </HStack>
-          </HStack>
-        </VStack>
+        <div className="flex flex-wrap gap-6 text-sm text-gray-700">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-500" />
+            <span className="font-medium">2.5M+ Students</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <FileText className="w-4 h-4 text-blue-500" />
+            <span className="font-medium">5 Subjects</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4 text-blue-500" />
+            <span className="font-medium">Age 5-6 Years</span>
+          </div>
+        </div>
+      </div>
 
-        <VStack spacing={8} align="start">
-          <Heading size="lg">Subjects</Heading>
+      {/* Subjects */}
+      <div className="space-y-6">
+        <h2 className="text-2xl font-semibold">Subjects</h2>
 
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6} w="full">
-            {SUBJECTS.map((subject) => (
-              <Card
-                key={subject.id}
-                as={Link}
-                href={`/cbse/class-1/${subject.id}`}
-                cursor="pointer"
-                transition="all 0.2s"
-                _hover={{ transform: "translateY(-4px)", shadow: "lg" }}
-                bg={bg}
-              >
-                <CardBody>
-                  <VStack spacing={4} align="start">
-                    <HStack justify="space-between" w="full">
-                      <Icon as={subject.icon} w={8} h={8} color={`${subject.color}.500`} />
-                      <Badge colorScheme={subject.color}>{subject.chapters} Chapters</Badge>
-                    </HStack>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SUBJECTS.map((subject) => (
+            <Link
+              key={subject.id}
+              href={`/cbse/class-1/${subject.id}`}
+              className="p-6 bg-white dark:bg-gray-800 rounded-lg shadow hover:-translate-y-1 transition-transform"
+            >
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <subject.icon className={`w-8 h-8 ${subject.color}`} />
+                  <span className={`text-xs font-semibold px-2 py-1 rounded ${subject.badge}`}>{subject.chapters} Chapters</span>
+                </div>
 
-                    <VStack align="start" spacing={2}>
-                      <Heading size="md">{subject.name}</Heading>
-                      <Text fontSize="sm" color="gray.600">
-                        {subject.description}
-                      </Text>
-                    </VStack>
+                <div>
+                  <h3 className="text-lg font-semibold">{subject.name}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{subject.description}</p>
+                </div>
 
-                    <Box w="full">
-                      <HStack justify="space-between" mb={2}>
-                        <Text fontSize="xs" color="gray.500">
-                          Progress
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {subject.progress}%
-                        </Text>
-                      </HStack>
-                      <Progress value={subject.progress} colorScheme={subject.color} size="sm" />
-                    </Box>
+                <div className="w-full">
+                  <div className="flex justify-between text-xs text-gray-500 mb-1">
+                    <span>Progress</span>
+                    <span>{subject.progress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-200 rounded">
+                    <div
+                      className={`h-2 rounded ${subject.color}`}
+                      style={{ width: `${subject.progress}%` }}
+                    />
+                  </div>
+                </div>
 
-                    <HStack justify="space-between" w="full" fontSize="xs" color="gray.500">
-                      <Text>{subject.topics} Topics</Text>
-                      <Text>Start Learning →</Text>
-                    </HStack>
-                  </VStack>
-                </CardBody>
-              </Card>
-            ))}
-          </SimpleGrid>
-        </VStack>
-      </Container>
-    </Box>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>{subject.topics} Topics</span>
+                  <span>Start Learning →</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
