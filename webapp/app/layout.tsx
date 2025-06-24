@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import ChakraUIProvider from "@/providers/chakra-provider"
 import { MainLayout } from "@/components/layout/main-layout"
+import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -24,6 +25,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ChakraUIProvider>
           <MainLayout>{children}</MainLayout>
+          <Toaster />
         </ChakraUIProvider>
       </body>
     </html>

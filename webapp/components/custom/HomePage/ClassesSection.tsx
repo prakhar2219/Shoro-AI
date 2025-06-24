@@ -1,6 +1,5 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import ClassCard from "@/components/custom/cards/ClassCard"
 
 const CLASSES = [
@@ -17,8 +16,6 @@ const CLASSES = [
 ]
 
 export default function ClassesSection() {
-    const { resolvedTheme } = useTheme()
-    const isDark = resolvedTheme === "dark"
 
     return (
         <section className="bg-gray-100 dark:bg-gray-900 py-20">
@@ -37,7 +34,6 @@ export default function ClassesSection() {
                             name={cls.name}
                             level={cls.level}
                             subjects={cls.subjects}
-                            isDark={isDark}
                         />
                     ))}
                 </div>
