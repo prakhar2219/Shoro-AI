@@ -1,0 +1,171 @@
+// models/Language.ts
+import mongoose, { Schema, Document } from 'mongoose';
+
+export interface ILanguage extends Document {
+  code: string; // e.g., 'en'
+  name: string; // English
+  native_name: string; // English or हिंदी
+  direction: 'ltr' | 'rtl';
+  locale?: string;
+  script?: string;
+  ai_supported: boolean;
+}
+
+const LanguageSchema = new Schema<ILanguage>(
+  {
+    code: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
+    native_name: { type: String, required: true },
+    direction: { type: String, enum: ['ltr', 'rtl'], default: 'ltr' },
+    locale: { type: String },
+    script: { type: String },
+    ai_supported: { type: Boolean, default: true },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<ILanguage>('Language', LanguageSchema);
+
+
+// models/Country.ts
+import { ILanguage } from './Language';
+
+export interface ICountry extends Document {
+  name: string;
+  code: string; // e.g., 'IN'
+  default_language_id: mongoose.Types.ObjectId;
+  supported_language_ids: mongoose.Types.ObjectId[];
+}
+
+const CountrySchema = new Schema<ICountry>(
+  {
+    name: { type: String, required: true },
+    code: { type: String, required: true, unique: true },
+    default_language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<ICountry>('Country', CountrySchema);
+
+
+// models/Board.ts
+export interface IBoard extends Document {
+  name: string;
+  short_code: string;
+  country_id: mongoose.Types.ObjectId;
+  default_language_id: mongoose.Types.ObjectId;
+  supported_language_ids: mongoose.Types.ObjectId[];
+  description?: string;
+  logo_url?: string;
+}
+
+const BoardSchema = new Schema<IBoard>(
+  {
+    name: { type: String, required: true },
+    short_code: { type: String, required: true, unique: true },
+    country_id: { type: Schema.Types.ObjectId, ref: 'Country', required: true },
+    default_language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
+    description: { type: String },
+    logo_url: { type: String },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<IBoard>('Board', BoardSchema);
+
+
+// models/Class.ts
+export interface IClass extends Document {
+  board_id: mongoose.Types.ObjectId;
+  number: number;
+  display_name: string;
+}
+
+const ClassSchema = new Schema<IClass>(
+  {
+    board_id: { type: Schema.Types.ObjectId, ref: 'Board', required: true },
+    number: { type: Number, required: true },
+    display_name: { type: String, required: true },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<IClass>('Class', ClassSchema);
+
+
+// models/Subject.ts
+export interface ISubject extends Document {
+  class_id: mongoose.Types.ObjectId;
+  code: string;
+  icon?: string;
+}
+
+const SubjectSchema = new Schema<ISubject>(
+  {
+    class_id: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
+    code: { type: String, required: true },
+    icon: { type: String },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<ISubject>('Subject', SubjectSchema);
+
+
+// models/Chapter.ts
+export interface IChapter extends Document {
+  subject_id: mongoose.Types.ObjectId;
+  order: number;
+  is_published: boolean;
+  created_by: mongoose.Types.ObjectId;
+}
+
+const ChapterSchema = new Schema<IChapter>(
+  {
+    subject_id: { type: Schema.Types.ObjectId, ref: 'Subject', required: true },
+    order: { type: Number, required: true },
+    is_published: { type: Boolean, default: false },
+    created_by: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<IChapter>('Chapter', ChapterSchema);
+
+
+// models/ChapterTranslation.ts
+export interface IChapterTranslation extends Document {
+  chapter_id: mongoose.Types.ObjectId;
+  language_id: mongoose.Types.ObjectId;
+  title: string;
+  slug: string;
+  seo_title: string;
+  seo_description: string;
+  content: any[];
+  version: number;
+  translated_by_ai: boolean;
+  needs_review: boolean;
+  updated_by: mongoose.Types.ObjectId;
+}
+
+const ChapterTranslationSchema = new Schema<IChapterTranslation>(
+  {
+    chapter_id: { type: Schema.Types.ObjectId, ref: 'Chapter', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    title: { type: String, required: true },
+    slug: { type: String, required: true },
+    seo_title: { type: String },
+    seo_description: { type: String },
+    content: { type: Array, required: true },
+    version: { type: Number, default: 1 },
+    translated_by_ai: { type: Boolean, default: false },
+    needs_review: { type: Boolean, default: false },
+    updated_by: { type: Schema.Types.ObjectId, ref: 'User' },
+  },
+  { timestamps: true }
+);
+
+export default mongoose.model<IChapterTranslation>('ChapterTranslation', ChapterTranslationSchema);
