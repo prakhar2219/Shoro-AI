@@ -12,11 +12,13 @@ import {
     LayoutList,
     ChevronLeft,
     ChevronRight,
+    Languages
 } from "lucide-react"
 import clsx from "clsx"
 
 const navItems = [
     { name: "Dashboard", href: "/admin", icon: Home },
+    { name: "Languages", href: "/admin/languages", icon: Languages },
     { name: "Countries", href: "/admin/countries", icon: Globe },
     { name: "Boards", href: "/admin/boards", icon: Layers },
     { name: "Classes", href: "/admin/classes", icon: Book },
