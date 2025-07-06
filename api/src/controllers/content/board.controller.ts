@@ -38,9 +38,10 @@ export const createBoard = async (req: Request, res: Response): Promise<void> =>
     }
 };
 
-export const getBoards = async (_req: Request, res: Response): Promise<void> => {
+export const getBoards = async (req: Request, res: Response): Promise<void> => {
     try {
-        const boards = await boardService.getAllBoards();
+        const language_id = req.query.language_id as string | undefined;
+        const boards = await boardService.getAllBoards(language_id);
         res.status(200).json(boards);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
@@ -49,7 +50,8 @@ export const getBoards = async (_req: Request, res: Response): Promise<void> => 
 
 export const getBoard = async (req: Request, res: Response): Promise<void> => {
     try {
-        const board = await boardService.getBoardByCode(req.params.short_code);
+        const language_id = req.query.language_id as string | undefined;
+        const board = await boardService.getBoardByCode(req.params.short_code, language_id);
         if (!board) {
             res.status(404).json({ error: 'Board not found' });
             return;

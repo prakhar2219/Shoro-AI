@@ -4,9 +4,9 @@ import { ISubject } from '@/types/content/subject.types';
 
 export const createSubject = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { class_id, code, icon } = req.body;
+        const { class_id, code, icon, name } = req.body;
 
-        if (!class_id || !code) {
+        if (!class_id || !code || !name) {
             res.status(400).json({ error: 'Missing required fields' });
             return;
         }
@@ -15,6 +15,7 @@ export const createSubject = async (req: Request, res: Response): Promise<void> 
             class_id,
             code,
             icon,
+            name,
         } as ISubject;
 
         const created = await subjectService.createSubject(subject);
@@ -24,9 +25,10 @@ export const createSubject = async (req: Request, res: Response): Promise<void> 
     }
 };
 
-export const getSubjects = async (_req: Request, res: Response): Promise<void> => {
+export const getSubjects = async (req: Request, res: Response): Promise<void> => {
     try {
-        const subjects = await subjectService.getAllSubjects();
+        const language_id = req.query.language_id as string | undefined;
+        const subjects = await subjectService.getAllSubjects(language_id);
         res.status(200).json(subjects);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
@@ -35,7 +37,8 @@ export const getSubjects = async (_req: Request, res: Response): Promise<void> =
 
 export const getSubject = async (req: Request, res: Response): Promise<void> => {
     try {
-        const subject = await subjectService.getSubjectById(req.params.id);
+        const language_id = req.query.language_id as string | undefined;
+        const subject = await subjectService.getSubjectById(req.params.id, language_id);
         if (!subject) {
             res.status(404).json({ error: 'Subject not found' });
             return;

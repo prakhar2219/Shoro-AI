@@ -1,46 +1,73 @@
 // components/entity/CountryCard.tsx
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-type Country = any;
+"use client";
 
-interface Props {
-    country: Country;
-    onEdit: () => void;
-    onDelete: () => void;
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Edit, Trash2, Globe } from "lucide-react";
+
+interface Country {
+  id: string;
+  name: string;
+  code: string;
+  default_language_id: string;
+  translations?: Array<{
+    id: string;
+    language: string;
+    name: string;
+  }>;
 }
 
-export const CountryCard = ({ country, onEdit, onDelete }: Props) => {
-    return (
-        <Card className="p-4 flex items-start justify-between dark:bg-muted/30 bg-white shadow-sm border rounded-2xl">
-            <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                    {country.name}
-                </h3>
-                {country.code && (
-                    <p className="text-sm text-muted-foreground">Code: {country.code}</p>
-                )}
+interface Props {
+  country: Country;
+  onEdit?: () => void;
+  onDelete?: () => void;
+}
+
+export function CountryCard({ country, onEdit, onDelete }: Props) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" />
+              {country.name}
+            </CardTitle>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="secondary">{country.code}</Badge>
+              <Badge variant="outline">Default: {country.default_language_id}</Badge>
             </div>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={onEdit}>Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={onDelete} className="text-red-600">
-                        Delete
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </Card>
-    );
-};
+          </div>
+          <div className="flex gap-2">
+            {onEdit && (
+              <Button size="sm" variant="outline" onClick={onEdit}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button size="sm" variant="destructive" onClick={onDelete}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {country.translations && country.translations.length > 0 && (
+          <div>
+            <h4 className="font-medium mb-2">Translations:</h4>
+            <div className="flex flex-wrap gap-2">
+              {country.translations.map((translation) => (
+                <Badge key={translation.id} variant="secondary">
+                  {translation.language}: {translation.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}

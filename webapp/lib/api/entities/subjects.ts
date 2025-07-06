@@ -1,8 +1,12 @@
 import { api } from '../axios';
 import { API_ENDPOINTS } from '../endpoints';
+import { getCookie } from '../../utils/cookie';
 
 export const getSubjects = async () => {
-    const res = await api.get(API_ENDPOINTS.subjects);
+    const language_id = getCookie('language_id');
+    const res = await api.get(API_ENDPOINTS.subjects, {
+        params: language_id ? { language_id } : undefined,
+    });
     return res.data;
 };
 

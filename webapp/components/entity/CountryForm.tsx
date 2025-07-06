@@ -2,70 +2,100 @@
 
 "use client";
 
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "../ui/label";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-type Country = any; // Replace with actual Country type if available
+interface CountryFormProps {
+  onSubmit: (data: any) => void;
+  loading?: boolean;
+  initialData?: {
+    name: string;
+    code: string;
+    default_language_id: string;
+  };
+}
 
-const countrySchema = z.object({
-    name: z.string().min(1, "Name is required"),
-    code: z.string().min(1, "Code is required"),
-});
+const languages = [
+  { code: "en", name: "English" },
+  { code: "hi", name: "Hindi" },
+  { code: "es", name: "Spanish" },
+  { code: "fr", name: "French" },
+  { code: "de", name: "German" },
+  { code: "zh", name: "Chinese" },
+  { code: "ja", name: "Japanese" },
+  { code: "ko", name: "Korean" },
+];
 
-type CountryFormValues = z.infer<typeof countrySchema>;
+export function CountryForm({ onSubmit, loading = false, initialData }: CountryFormProps) {
+  const [formData, setFormData] = useState({
+    name: initialData?.name || "",
+    code: initialData?.code || "",
+    default_language_id: initialData?.default_language_id || "en",
+  });
 
-type CountryFormProps = {
-    defaultValues?: Country;
-    onSubmit: (data: CountryFormValues) => void;
-};
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
 
-export const CountryForm = ({ defaultValues, onSubmit }: CountryFormProps) => {
-    const {
-        register,
-        handleSubmit,
-        formState: { errors },
-    } = useForm<CountryFormValues>({
-        resolver: zodResolver(countrySchema),
-        defaultValues: defaultValues || {
-            name: "",
-            code: "",
-        },
-    });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{initialData ? "Edit Country" : "Create Country"}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Country Name</Label>
+            <Input
+              id="name"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              placeholder="Enter country name"
+              required
+            />
+          </div>
 
-    return (
-        <form
-            onSubmit={handleSubmit(onSubmit)}
-            className="space-y-4 px-1 py-2"
-        >
-            <div>
-                <Label className="block text-sm font-medium mb-1">Country Name</Label>
-                <Input
-                    placeholder="India"
-                    {...register("name")}
-                />
-                {errors.name && (
-                    <p className="text-sm text-red-500">{errors.name.message}</p>
-                )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="code">Country Code</Label>
+            <Input
+              id="code"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              placeholder="e.g., IN, US, UK"
+              maxLength={2}
+              required
+            />
+          </div>
 
-            <div>
-                <Label className="block text-sm font-medium mb-1">Country Code</Label>
-                <Input
-                    placeholder="IN"
-                    {...register("code")}
-                />
-                {errors.code && (
-                    <p className="text-sm text-red-500">{errors.code.message}</p>
-                )}
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="default_language">Default Language</Label>
+            <Select
+              value={formData.default_language_id}
+              onValueChange={(value) => setFormData({ ...formData, default_language_id: value })}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select default language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="pt-1 text-right">
-                <Button type="submit">Save</Button>
-            </div>
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? "Saving..." : initialData ? "Update Country" : "Create Country"}
+          </Button>
         </form>
-    );
-};
+      </CardContent>
+    </Card>
+  );
+}

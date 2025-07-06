@@ -24,9 +24,10 @@ export const createClass = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const getClasses = async (_req: Request, res: Response): Promise<void> => {
+export const getClasses = async (req: Request, res: Response): Promise<void> => {
   try {
-    const classes = await classService.getAllClasses();
+    const language_id = req.query.language_id as string | undefined;
+    const classes = await classService.getAllClasses(language_id);
     res.status(200).json(classes);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
@@ -35,7 +36,8 @@ export const getClasses = async (_req: Request, res: Response): Promise<void> =>
 
 export const getClass = async (req: Request, res: Response): Promise<void> => {
   try {
-    const foundClass = await classService.getClassById(req.params.id);
+    const language_id = req.query.language_id as string | undefined;
+    const foundClass = await classService.getClassById(req.params.id, language_id);
     if (!foundClass) {
       res.status(404).json({ error: 'Class not found' });
       return;

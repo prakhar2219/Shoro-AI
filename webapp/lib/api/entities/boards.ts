@@ -1,8 +1,12 @@
 import { api } from '../axios';
 import { API_ENDPOINTS } from '../endpoints';
+import { getCookie } from '../../utils/cookie';
 
 export const getBoards = async () => {
-    const res = await api.get(API_ENDPOINTS.boards);
+    const language_id = getCookie('language_id');
+    const res = await api.get(API_ENDPOINTS.boards, {
+        params: language_id ? { language_id } : undefined,
+    });
     return res.data;
 };
 
@@ -22,6 +26,7 @@ export const deleteBoard = async (id: string) => {
 };
 
 export const getBoardsByCountry = async (country: string) => {
-    const res = await api.get(`${API_ENDPOINTS.boards}?country=${encodeURIComponent(country)}`);
+    const language_id = getCookie('language_id');
+    const res = await api.get(`${API_ENDPOINTS.boards}?country=${encodeURIComponent(country)}` + (language_id ? `&language_id=${encodeURIComponent(language_id)}` : ''));
     return res.data;
 };

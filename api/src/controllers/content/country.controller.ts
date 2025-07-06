@@ -25,9 +25,10 @@ export const createCountry = async (req: Request, res: Response): Promise<void> 
     }
 };
 
-export const getCountries = async (_req: Request, res: Response): Promise<void> => {
+export const getCountries = async (req: Request, res: Response): Promise<void> => {
     try {
-        const countries = await countryService.getAllCountries();
+        const language_id = req.query.language_id as string | undefined;
+        const countries = await countryService.getAllCountries(language_id);
         res.status(200).json(countries);
     } catch (error) {
         res.status(500).json({ error: (error as Error).message });
@@ -36,7 +37,8 @@ export const getCountries = async (_req: Request, res: Response): Promise<void> 
 
 export const getCountry = async (req: Request, res: Response): Promise<void> => {
     try {
-        const country = await countryService.getCountryByCode(req.params.code);
+        const language_id = req.query.language_id as string | undefined;
+        const country = await countryService.getCountryByCode(req.params.code, language_id);
         if (!country) {
             res.status(404).json({ error: 'Country not found' });
             return;
