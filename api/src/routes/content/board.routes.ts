@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    createBoard,
-    getBoards,
-    getBoard,
-    updateBoard,
-    deleteBoard,
+  createBoard,
+  getBoards,
+  getBoard,
+  updateBoard,
+  deleteBoard,
 } from '../../controllers/content/board.controller';
 
 const router = Router();

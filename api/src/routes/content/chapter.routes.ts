@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    createChapter,
-    getChapters,
-    getChapter,
-    updateChapter,
-    deleteChapter,
+  createChapter,
+  getChapters,
+  getChapter,
+  updateChapter,
+  deleteChapter,
 } from '../../controllers/content/chapter.controller';
 
 const router = Router();

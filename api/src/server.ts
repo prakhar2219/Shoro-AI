@@ -17,8 +17,8 @@ import contentRoutes from './routes/content/index.routes';
 const corsConfig = {
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
 const app = express();
 

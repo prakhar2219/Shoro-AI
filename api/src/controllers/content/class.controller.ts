@@ -2,19 +2,22 @@ import { Request, Response } from 'express';
 import * as classService from '../../services/content/class.service';
 import { IClass } from '@/types/content/class.types';
 
-export const createClass = async (req: Request, res: Response): Promise<void> => {
+export const createClass = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const { board_id, number, name } = req.body;
+    const { board_id, number, name, grade } = req.body;
 
-    if (!board_id || typeof number !== 'number' || !name) {
+    if (!board_id || typeof grade !== 'number' || !name) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
 
     const classData: IClass = {
       board_id,
-      number,
       name,
+      grade,
     } as IClass;
 
     const created = await classService.createClass(classData);
@@ -24,7 +27,10 @@ export const createClass = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const getClasses = async (req: Request, res: Response): Promise<void> => {
+export const getClasses = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
     const classes = await classService.getAllClasses(language_id);
@@ -37,7 +43,10 @@ export const getClasses = async (req: Request, res: Response): Promise<void> => 
 export const getClass = async (req: Request, res: Response): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const foundClass = await classService.getClassById(req.params.id, language_id);
+    const foundClass = await classService.getClassById(
+      req.params.id,
+      language_id
+    );
     if (!foundClass) {
       res.status(404).json({ error: 'Class not found' });
       return;
@@ -48,7 +57,10 @@ export const getClass = async (req: Request, res: Response): Promise<void> => {
   }
 };
 
-export const updateClass = async (req: Request, res: Response): Promise<void> => {
+export const updateClass = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const updated = await classService.updateClass(req.params.id, req.body);
     if (!updated) {
@@ -61,7 +73,10 @@ export const updateClass = async (req: Request, res: Response): Promise<void> =>
   }
 };
 
-export const deleteClass = async (req: Request, res: Response): Promise<void> => {
+export const deleteClass = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const deleted = await classService.deleteClass(req.params.id);
     if (!deleted) {

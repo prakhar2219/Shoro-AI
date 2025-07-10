@@ -14,7 +14,9 @@ export const getAllChapters = async () => {
 };
 
 export const getChapterById = async (id: string) => {
-  return await Chapter.findById(id).populate('subject_id').populate('created_by');
+  return await Chapter.findById(id)
+    .populate('subject_id')
+    .populate('created_by');
 };
 
 export const updateChapter = async (id: string, data: Partial<IChapter>) => {

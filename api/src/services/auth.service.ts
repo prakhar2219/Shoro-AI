@@ -7,7 +7,6 @@ import AppError from '../utils/appError';
 import { IUser } from '../interfaces/user.interface';
 import { StringValue } from 'ms';
 
-
 export const generateAccessToken = (id: string): string => {
   const payload = { id };
   const secret: Secret = CONFIG.JWT_SECRET;
@@ -31,7 +30,7 @@ export const signup = async (userData: Partial<IUser>) => {
     user: user._id,
     refreshToken,
     userAgent: '', // Optionally capture from req.headers
-    ip: '',        // Same
+    ip: '', // Same
   });
 
   return { user, accessToken, refreshToken, expiresIn: 3600 };
@@ -51,7 +50,7 @@ export const login = async (email: string, password: string) => {
     user: user._id,
     refreshToken,
     userAgent: '', // You can pass from controller
-    ip: '',        // Likewise
+    ip: '', // Likewise
   });
 
   return { user, accessToken, refreshToken, expiresIn: 3600 };

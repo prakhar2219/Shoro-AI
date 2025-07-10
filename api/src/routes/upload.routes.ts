@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { uploadHandler, uploadImageForm } from '../controllers/upload.controller';
+import {
+  uploadHandler,
+  uploadImageForm,
+} from '../controllers/upload.controller';
 
 const router = Router();
 

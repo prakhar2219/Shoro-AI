@@ -18,20 +18,20 @@ export const errorHandler = (
       status: err.status,
       error: err,
       message: err.message,
-      stack: err.stack
+      stack: err.stack,
     });
   } else {
     logger.error('Error', err);
     if (err.isOperational) {
       res.status(err.statusCode).json({
         status: err.status,
-        message: err.message
+        message: err.message,
       });
     } else {
       res.status(500).json({
         status: 'error',
-        message: 'Something went wrong!'
+        message: 'Something went wrong!',
       });
     }
   }
-}; 
+};

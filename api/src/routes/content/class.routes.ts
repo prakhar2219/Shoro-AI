@@ -1,11 +1,11 @@
 // routes/class.routes.ts
 import { Router } from 'express';
 import {
-    createClass,
-    getClasses,
-    getClass,
-    updateClass,
-    deleteClass,
+  createClass,
+  getClasses,
+  getClass,
+  updateClass,
+  deleteClass,
 } from '../../controllers/content/class.controller';
 
 const router = Router();

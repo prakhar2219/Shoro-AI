@@ -1,10 +1,12 @@
+import { Schema } from "mongoose";
+
 export interface ISubjectTranslation {
-    subject_id: string;
-    language_id: string;
-    name: string;
-    translated_by_ai?: boolean;
-    needs_review?: boolean;
-    updated_by?: string;
-    createdAt?: Date;
-    updatedAt?: Date;
-} 
+  subject_id: Schema.Types.ObjectId;
+  language_id: Schema.Types.ObjectId;
+  name: string;
+  translated_by_ai?: boolean;
+  needs_review?: boolean;
+  updated_by?: Schema.Types.ObjectId;
+  createdAt?: Date;
+  updatedAt?: Date;
+}

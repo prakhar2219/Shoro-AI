@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    createLanguage,
-    getLanguages,
-    getLanguage,
-    updateLanguage,
-    deleteLanguage,
+  createLanguage,
+  getLanguages,
+  getLanguage,
+  updateLanguage,
+  deleteLanguage,
 } from '../../controllers/content/language.controller';
 
 const router = Router();

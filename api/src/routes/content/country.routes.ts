@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import {
-    createCountry,
-    getCountries,
-    getCountry,
-    updateCountry,
-    deleteCountry,
+  createCountry,
+  getCountries,
+  getCountry,
+  updateCountry,
+  deleteCountry,
 } from '../../controllers/content/country.controller';
 
 const router = Router();

@@ -4,7 +4,9 @@ import * as authService from '../services/auth.service';
 import AppError from '../utils/appError';
 
 export const signup = catchAsync(async (req: Request, res: Response) => {
-  const { user, accessToken, refreshToken } = await authService.signup(req.body);
+  const { user, accessToken, refreshToken } = await authService.signup(
+    req.body
+  );
 
   res
     .cookie('refreshToken', refreshToken, {
@@ -21,7 +23,6 @@ export const signup = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-
 export const login = catchAsync(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
@@ -29,7 +30,10 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     throw new AppError('Por favor proporciona email y contraseña', 400);
   }
 
-  const { user, accessToken, refreshToken } = await authService.login(email, password);
+  const { user, accessToken, refreshToken } = await authService.login(
+    email,
+    password
+  );
 
   res
     .cookie('refreshToken', refreshToken, {
@@ -46,7 +50,6 @@ export const login = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-
 export const refreshToken = catchAsync(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
 
@@ -54,7 +57,8 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
     throw new AppError('No se encontró refresh token', 400);
   }
 
-  const { accessToken, refreshToken: newRefreshToken } = await authService.refreshAccessToken(refreshToken);
+  const { accessToken, refreshToken: newRefreshToken } =
+    await authService.refreshAccessToken(refreshToken);
 
   res
     .cookie('refreshToken', newRefreshToken, {
@@ -70,7 +74,6 @@ export const refreshToken = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
-
 export const logout = catchAsync(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
 
@@ -85,4 +88,3 @@ export const logout = catchAsync(async (req: Request, res: Response) => {
     .status(200)
     .json({ status: 'success', message: 'Sesión cerrada correctamente' });
 });
-

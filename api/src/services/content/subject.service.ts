@@ -12,10 +12,15 @@ export const getAllSubjects = async (language_id?: string) => {
     subjects.map(async (subject: any) => {
       let translation = null;
       if (language_id) {
-        translation = await SubjectTranslation.findOne({ subject_id: subject._id, language_id });
+        translation = await SubjectTranslation.findOne({
+          subject_id: subject._id,
+          language_id,
+        });
       }
       if (!translation) {
-        translation = await SubjectTranslation.findOne({ subject_id: subject._id });
+        translation = await SubjectTranslation.findOne({
+          subject_id: subject._id,
+        });
       }
       return {
         ...subject.toObject(),
@@ -32,7 +37,10 @@ export const getSubjectById = async (id: string, language_id?: string) => {
   if (!subject) return null;
   let translation = null;
   if (language_id) {
-    translation = await SubjectTranslation.findOne({ subject_id: subject._id, language_id });
+    translation = await SubjectTranslation.findOne({
+      subject_id: subject._id,
+      language_id,
+    });
   }
   if (!translation) {
     translation = await SubjectTranslation.findOne({ subject_id: subject._id });

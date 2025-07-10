@@ -1,11 +1,11 @@
 // routes/subject.routes.ts
 import { Router } from 'express';
 import {
-    createSubject,
-    getSubjects,
-    getSubject,
-    updateSubject,
-    deleteSubject,
+  createSubject,
+  getSubjects,
+  getSubject,
+  updateSubject,
+  deleteSubject,
 } from '../../controllers/content/subject.controller';
 
 const router = Router();

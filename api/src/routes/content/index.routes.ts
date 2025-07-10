@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import languageRoutes from './language.routes';
-import countryRoutes from './country.routes'
+import countryRoutes from './country.routes';
 import boardRoutes from './board.routes';
 import classRoutes from './class.routes';
 import subjectRoutes from './subject.routes';

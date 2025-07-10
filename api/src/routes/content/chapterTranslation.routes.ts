@@ -1,15 +1,14 @@
 import { Router } from 'express';
 
 import {
-    createChapterTranslation,
-    getChapterTranslations,
-    getChapterTranslation,
-    updateChapterTranslation,
-    deleteChapterTranslation,
+  createChapterTranslation,
+  getChapterTranslations,
+  getChapterTranslation,
+  updateChapterTranslation,
+  deleteChapterTranslation,
 } from '../../controllers/content/chapterTranslation.controller';
 
 const router = Router();
-
 
 // Chapter translation routes
 router.post('/translations', createChapterTranslation);
