@@ -4,5 +4,6 @@ export const API_ENDPOINTS = {
     classes: '/classes',
     subjects: '/subjects',
     chapters: '/chapters',
+    languages: '/content/languages',
     upload: '/upload',
 };
