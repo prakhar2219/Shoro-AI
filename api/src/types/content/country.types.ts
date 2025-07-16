@@ -1,8 +1,6 @@
-import mongoose from 'mongoose';
-
-export interface ICountry extends Document {
+export interface ICountry {
   name: string;
   code: string; // e.g., 'IN'
-  default_language_id: mongoose.Types.ObjectId;
-  supported_language_ids: mongoose.Types.ObjectId[];
+  default_language_code: string;
+  supported_language_codes: string[];
 }

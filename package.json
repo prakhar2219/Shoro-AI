@@ -22,5 +22,8 @@
     "concurrently": "^8.2.2"
   },
   "author": "Pankaj Tulshyan",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3"
+  }
 }

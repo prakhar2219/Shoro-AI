@@ -5,12 +5,8 @@ const CountrySchema = new Schema<ICountry>(
   {
     name: { type: String, required: true },
     code: { type: String, required: true, unique: true },
-    default_language_id: {
-      type: Schema.Types.ObjectId,
-      ref: 'Language',
-      required: true,
-    },
-    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
+    default_language_code: { type: String, required: true },
+    supported_language_codes: [{ type: String }],
   },
   { timestamps: true }
 );

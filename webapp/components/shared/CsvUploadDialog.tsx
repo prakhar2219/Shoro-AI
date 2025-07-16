@@ -209,7 +209,7 @@ export function CsvUploadDialog({
 
                 const validatedRows = rows.map((row, index) => validateRow(row, index))
                 setParsedRows(validatedRows)
-                setError(null)
+                        setError(null)
                 setCurrentStep('preview')
             },
             error: () => {
@@ -514,23 +514,23 @@ export function CsvUploadDialog({
                     {currentStep === 'edit' && renderEditStep()}
 
                     {currentStep === 'preview' && (
-                        <div className="mt-6 flex justify-end gap-2">
-                            <Dialog.Close asChild>
+                    <div className="mt-6 flex justify-end gap-2">
+                        <Dialog.Close asChild>
                                 <Button variant="outline">
-                                    Cancel
+                                Cancel
                                 </Button>
-                            </Dialog.Close>
+                        </Dialog.Close>
                             <Button
-                                onClick={handleUpload}
+                            onClick={handleUpload}
                                 disabled={getValidRowsCount() === 0}
-                                className={cn(
+                            className={cn(
                                     getValidRowsCount() === 0 && "opacity-50 cursor-not-allowed"
-                                )}
-                            >
+                            )}
+                        >
                                 <Upload className="h-4 w-4 mr-2" />
                                 Upload {getValidRowsCount()} Rows
                             </Button>
-                        </div>
+                    </div>
                     )}
                 </Dialog.Content>
             </Dialog.Portal>

@@ -8,24 +8,26 @@ import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Globe } from "lucide-react";
 
 interface Country {
-  id: string;
-  name: string;
   code: string;
-  default_language_id: string;
+  name: string;
+  default_language_code: string;
+  supported_language_codes?: string[];
   translations?: Array<{
-    id: string;
-    language: string;
+    _id?: string;
+    id?: string;
+    language_code: string;
     name: string;
   }>;
 }
 
 interface Props {
   country: Country;
+  languageMap?: Record<string, string>;
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
-export function CountryCard({ country, onEdit, onDelete }: Props) {
+export function CountryCard({ country, languageMap = {}, onEdit, onDelete }: Props) {
   return (
     <Card>
       <CardHeader>
@@ -37,8 +39,16 @@ export function CountryCard({ country, onEdit, onDelete }: Props) {
             </CardTitle>
             <div className="flex items-center gap-2 mt-2">
               <Badge variant="secondary">{country.code}</Badge>
-              <Badge variant="outline">Default: {country.default_language_id}</Badge>
+              <Badge variant="outline">Default: {languageMap[country.default_language_code] || country.default_language_code}</Badge>
             </div>
+            {country.supported_language_codes && country.supported_language_codes.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1">
+                <span className="text-xs text-zinc-500">Supported:</span>
+                {country.supported_language_codes.map((code) => (
+                  <Badge key={code} variant="secondary">{languageMap[code] || code}</Badge>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex gap-2">
             {onEdit && (
@@ -60,8 +70,8 @@ export function CountryCard({ country, onEdit, onDelete }: Props) {
             <h4 className="font-medium mb-2">Translations:</h4>
             <div className="flex flex-wrap gap-2">
               {country.translations.map((translation) => (
-                <Badge key={translation.id} variant="secondary">
-                  {translation.language}: {translation.name}
+                <Badge key={translation._id || translation.id} variant="secondary">
+                  {languageMap[translation.language_code] || translation.language_code}: {translation.name}
                 </Badge>
               ))}
             </div>

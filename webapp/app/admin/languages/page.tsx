@@ -14,6 +14,11 @@ import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { SearchBar } from "@/components/shared/SearchBar";
+import { DataTable } from "@/components/ui/DataTable";
+import { languageColumns } from "@/components/table/columns/languageColumns";
+import { ColumnDef } from "@tanstack/react-table";
+import { ILanguage } from "@/lib/api/entities/language";
+import { getLanguagesWithPagination } from "@/lib/api/entities/language";
 
 // Import language API functions
 import { 
@@ -24,7 +29,6 @@ import {
     searchLanguages,
     bulkCreateLanguages,
     getLanguageStats,
-    ILanguage,
     ICreateLanguageRequest,
     IUpdateLanguageRequest
 } from "@/lib/api/entities/language";
@@ -96,7 +100,11 @@ const languageCsvSchema: CsvSchema = {
 };
 
 export default function LanguagesPage() {
+    const [page, setPage] = useState(0); // 0-based for frontend
+    const [pageSize, setPageSize] = useState(15);
+    const [totalPages, setTotalPages] = useState(1);
     const [languages, setLanguages] = useState<ILanguage[]>([]);
+    const [totalRows, setTotalRows] = useState(0);
     const [openForm, setOpenForm] = useState(false);
     const [editing, setEditing] = useState<ILanguage | null>(null);
     const [deleteTarget, setDeleteTarget] = useState<ILanguage | null>(null);
@@ -120,14 +128,18 @@ export default function LanguagesPage() {
         []
     );
 
-    // Fetch languages from API
-    const fetchLanguages = async () => {
+    // Fetch paginated languages from API
+    const fetchPaginatedLanguages = async (pageNum = 0, size = pageSize, search = searchTerm) => {
         try {
             startLoading();
-            const res = await getLanguages();
-            setLanguages(res || []);
+            const res = await getLanguagesWithPagination(pageNum + 1, size, search);
+            setLanguages(res.data || []);
+            setTotalPages(res.totalPages || 1);
+            setTotalRows(res.total || 0);
         } catch (error: any) {
-            console.error('Error fetching languages:', error);
+            setLanguages([]);
+            setTotalPages(1);
+            setTotalRows(0);
             toast({
                 title: "Error",
                 description: error.response?.data?.error || "Failed to fetch languages. Please try again.",
@@ -151,7 +163,7 @@ export default function LanguagesPage() {
     // Search languages
     const handleSearch = async (query: string) => {
         if (!query.trim()) {
-            fetchLanguages();
+            fetchPaginatedLanguages(page, pageSize, ""); // Clear search term for full fetch
             return;
         }
         
@@ -159,6 +171,8 @@ export default function LanguagesPage() {
             startLoading();
             const res = await searchLanguages(query);
             setLanguages(res || []);
+            setTotalPages(1); // Search results are typically not paginated, so set to 1
+            setTotalRows(res?.length || 0);
         } catch (error: any) {
             console.error('Error searching languages:', error);
             toast({
@@ -171,10 +185,12 @@ export default function LanguagesPage() {
         }
     };
 
+    // Fetch stats and paginated data on mount and when page/pageSize/searchTerm changes
     useEffect(() => {
-        fetchLanguages();
+        fetchPaginatedLanguages(page, pageSize, searchTerm);
         fetchStats();
-    }, []);
+        // eslint-disable-next-line
+    }, [page, pageSize, searchTerm]);
 
     const handleCreateOrUpdate = async (data: ICreateLanguageRequest | IUpdateLanguageRequest) => {
         try {
@@ -194,7 +210,7 @@ export default function LanguagesPage() {
             }
             setOpenForm(false);
             setEditing(null);
-            fetchLanguages();
+            fetchPaginatedLanguages(page, pageSize, searchTerm); // Refresh paginated data
             fetchStats(); // Refresh stats after changes
         } catch (error: any) {
             console.error('Error creating/updating language:', error);
@@ -219,7 +235,7 @@ export default function LanguagesPage() {
                     description: "Language deleted successfully.",
                 });
                 setDeleteTarget(null);
-                fetchLanguages();
+                fetchPaginatedLanguages(page, pageSize, searchTerm); // Refresh paginated data
                 fetchStats(); // Refresh stats after deletion
             } catch (error: any) {
                 console.error('Error deleting language:', error);
@@ -255,7 +271,7 @@ export default function LanguagesPage() {
                 title: "Success",
                 description: `${languagesData.length} languages uploaded successfully.`,
             });
-            fetchLanguages();
+            fetchPaginatedLanguages(page, pageSize, searchTerm); // Refresh paginated data
             fetchStats(); // Refresh stats after bulk upload
         } catch (error: any) {
             console.error('Error bulk uploading languages:', error);
@@ -275,6 +291,36 @@ export default function LanguagesPage() {
         setSearchTerm(value);
         debouncedSearch(value);
     };
+
+    // Extend columns with actions column
+    const columns: ColumnDef<ILanguage>[] = [
+        ...languageColumns,
+        {
+            id: "actions",
+            header: "Actions",
+            cell: ({ row }) => (
+                <div className="flex gap-2">
+                    <button
+                        className="text-blue-600 hover:underline text-xs"
+                        onClick={() => {
+                            setEditing(row.original);
+                            setOpenForm(true);
+                        }}
+                    >
+                        Edit
+                    </button>
+                    <button
+                        className="text-red-600 hover:underline text-xs"
+                        onClick={() => setDeleteTarget(row.original)}
+                    >
+                        Delete
+                    </button>
+                </div>
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
+    ];
 
     return (
         <div className="p-4 sm:p-6 md:p-8">
@@ -307,32 +353,44 @@ export default function LanguagesPage() {
             )}
 
             <hr className="my-4" />
-            <SearchBar
-                value={searchTerm}
-                onChange={handleSearchInputChange}
-                placeholder="Search languages by name, code, or native name..."
-                className="w-full"
-            />
+            <div className="flex items-center justify-between mb-2">
+                <SearchBar
+                    value={searchTerm}
+                    onChange={handleSearchInputChange}
+                    placeholder="Search languages by name, code, or native name..."
+                    className="w-full max-w-xs"
+                />
+                <div className="flex items-center gap-2">
+                    <label htmlFor="pageSize" className="text-xs text-zinc-500 dark:text-zinc-400">Rows per page:</label>
+                    <select
+                        id="pageSize"
+                        className="border rounded px-2 py-1 text-xs bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
+                        value={pageSize}
+                        onChange={e => {
+                            setPageSize(Number(e.target.value));
+                            setPage(0);
+                        }}
+                    >
+                        <option value={10}>10</option>
+                        <option value={15}>15</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                    </select>
+                </div>
+            </div>
             <hr className="my-4" />
 
             {isLoading ? (
                 <LoadingOverlay />
-            ) : languages.length === 0 ? (
-                <EmptyState title="No languages found" />
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                    {languages.map((language) => (
-                        <LanguageCard
-                            key={language._id || language.code}
-                            language={language}
-                            onEdit={() => {
-                                setEditing(language);
-                                setOpenForm(true);
-                            }}
-                            onDelete={() => setDeleteTarget(language)}
-                        />
-                    ))}
-                </div>
+                <DataTable
+                    columns={columns}
+                    data={languages}
+                    pageSize={pageSize}
+                    page={page}
+                    setPage={setPage}
+                    totalPages={totalPages}
+                />
             )}
 
             {/* Modals and dialogs */}

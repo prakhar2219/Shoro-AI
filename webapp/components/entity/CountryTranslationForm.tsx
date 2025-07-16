@@ -11,25 +11,15 @@ interface CountryTranslationFormProps {
   onSubmit: (data: any) => void;
   loading?: boolean;
   initialData?: {
-    language: string;
+    language_code: string;
     name: string;
   };
+  languages: { code: string; name: string }[];
 }
 
-const languages = [
-  { code: "en", name: "English" },
-  { code: "hi", name: "Hindi" },
-  { code: "es", name: "Spanish" },
-  { code: "fr", name: "French" },
-  { code: "de", name: "German" },
-  { code: "zh", name: "Chinese" },
-  { code: "ja", name: "Japanese" },
-  { code: "ko", name: "Korean" },
-];
-
-export function CountryTranslationForm({ onSubmit, loading = false, initialData }: CountryTranslationFormProps) {
+export function CountryTranslationForm({ onSubmit, loading = false, initialData, languages }: CountryTranslationFormProps) {
   const [formData, setFormData] = useState({
-    language: initialData?.language || "",
+    language_code: initialData?.language_code || (languages[0]?.code || ""),
     name: initialData?.name || "",
   });
 
@@ -46,10 +36,10 @@ export function CountryTranslationForm({ onSubmit, loading = false, initialData 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="language">Language</Label>
+            <Label htmlFor="language_code">Language</Label>
             <Select
-              value={formData.language}
-              onValueChange={(value) => setFormData({ ...formData, language: value })}
+              value={formData.language_code}
+              onValueChange={(value) => setFormData({ ...formData, language_code: value })}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select language" />
