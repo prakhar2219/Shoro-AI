@@ -102,3 +102,104 @@ export const deleteBoard = async (
     res.status(500).json({ error: (error as Error).message });
   }
 };
+
+// Paginated boards
+export const getBoardsWithPagination = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { page = '1', limit = '10', search, language_id } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const result = await boardService.getBoardsWithPagination(
+      pageNum,
+      limitNum,
+      search as string,
+      language_id as string
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// Board Translation CRUD
+export const getBoardTranslations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { short_code } = req.params;
+    const translations = await boardService.getBoardTranslations(short_code);
+    res.status(200).json(translations);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const createBoardTranslation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { short_code } = req.params;
+    const { language_id, name, description, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+    const translation = {
+      language_id,
+      name,
+      description,
+      translated_by_ai,
+      needs_review,
+      updated_by,
+    };
+    const created = await boardService.createBoardTranslation(short_code, translation);
+    res.status(201).json(created);
+  } catch (error: any) {
+    if (error.message && error.message.includes('Translation already exists')) {
+      res.status(409).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+export const updateBoardTranslation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { translationId } = req.params;
+    const update = req.body;
+    const updated = await boardService.updateBoardTranslation(translationId, update);
+    if (!updated) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const deleteBoardTranslation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { translationId } = req.params;
+    const deleted = await boardService.deleteBoardTranslation(translationId);
+    if (!deleted) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export default {
+  createBoard,
+  getBoards,
+  getBoard,
+  updateBoard,
+  deleteBoard,
+  getBoardsWithPagination,
+  getBoardTranslations,
+  createBoardTranslation,
+  updateBoardTranslation,
+  deleteBoardTranslation,
+};

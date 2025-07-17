@@ -6,28 +6,8 @@ export const createCountry = async (data: ICountry) => {
   return await Country.create(data);
 };
 
-export const getAllCountries = async (language_code?: string) => {
-  const countries = await Country.find().sort({ createdAt: -1 });
-  const countriesWithTranslations = await Promise.all(
-    countries.map(async (country: any) => {
-      let translation = null;
-      if (language_code) {
-        translation = await CountryTranslation.findOne({
-          country_id: country.code,
-          language_code,
-        });
-      }
-      if (!translation) {
-        translation = await CountryTranslation.findOne({ country_id: country.code });
-      }
-      return {
-        ...country.toObject(),
-        name: translation?.name || country.name,
-        translation,
-      };
-    })
-  );
-  return countriesWithTranslations;
+export const getAllCountries = async () => {
+  return await Country.find().sort({ createdAt: -1 });
 };
 
 export const getCountryByCode = async (code: string, language_code?: string) => {

@@ -18,4 +18,8 @@ const BoardSchema = new Schema<IBoard>(
   { timestamps: true }
 );
 
+// Virtuals for translation and translations (for FE/BE consistency)
+BoardSchema.virtual('translation');
+BoardSchema.virtual('translations');
+
 export default mongoose.model<IBoard>('Board', BoardSchema);
