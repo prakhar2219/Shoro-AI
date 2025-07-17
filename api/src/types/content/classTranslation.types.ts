@@ -9,4 +9,5 @@ export interface IClassTranslation {
   updated_by?: Schema.Types.ObjectId;
   createdAt?: Date;
   updatedAt?: Date;
+  _id?: string;
 }

@@ -10,4 +10,8 @@ const ClassSchema = new Schema<IClass>(
   { timestamps: true }
 );
 
+// Virtuals for translation and translations (for FE/BE consistency)
+ClassSchema.virtual('translation');
+ClassSchema.virtual('translations');
+
 export default mongoose.model<IClass>('Class', ClassSchema);

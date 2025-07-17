@@ -6,29 +6,35 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const classSchema = z.object({
     name: z.string().min(1, "Class name is required"),
-    code: z.string().optional(),
+    grade: z.coerce.number().min(1, "Grade is required"),
+    board_id: z.string().min(1, "Board is required"),
 })
 
 type ClassFormValues = z.infer<typeof classSchema>
 
 type ClassFormProps = {
-    defaultValues?: ClassFormValues
+    defaultValues?: Partial<ClassFormValues>
     onSubmit: (data: ClassFormValues) => void
+    boards: { id: string; name: string }[]
+    loading?: boolean
 }
 
-export const ClassForm = ({ defaultValues, onSubmit }: ClassFormProps) => {
+export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: ClassFormProps) => {
     const {
         register,
         handleSubmit,
+        setValue,
         formState: { errors },
     } = useForm<ClassFormValues>({
         resolver: zodResolver(classSchema),
         defaultValues: defaultValues || {
             name: "",
-            code: "",
+            grade: 1,
+            board_id: boards[0]?.id || "",
         },
     })
 
@@ -49,18 +55,42 @@ export const ClassForm = ({ defaultValues, onSubmit }: ClassFormProps) => {
             </div>
 
             <div>
-                <Label className="block text-sm font-medium mb-1">Class Code</Label>
+                <Label className="block text-sm font-medium mb-1">Grade</Label>
                 <Input
-                    placeholder="Optional code"
-                    {...register("code")}
+                    type="number"
+                    min={1}
+                    {...register("grade", { valueAsNumber: true })}
+                    placeholder="Eg. 10"
                 />
-                {errors.code && (
-                    <p className="text-sm text-red-500">{errors.code.message}</p>
+                {errors.grade && (
+                    <p className="text-sm text-red-500">{errors.grade.message}</p>
+                )}
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium mb-1">Board</Label>
+                <Select
+                    value={defaultValues?.board_id || boards[0]?.id || ""}
+                    onValueChange={value => setValue("board_id", value)}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select Board" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {boards.map((b) => (
+                            <SelectItem key={b.id} value={b.id}>
+                                {b.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                {errors.board_id && (
+                    <p className="text-sm text-red-500">{errors.board_id.message}</p>
                 )}
             </div>
 
             <div className="pt-1 text-right">
-                <Button type="submit">Save</Button>
+                <Button type="submit" disabled={loading}>{loading ? "Saving..." : "Save"}</Button>
             </div>
         </form>
     )

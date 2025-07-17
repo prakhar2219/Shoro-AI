@@ -88,3 +88,90 @@ export const deleteClass = async (
     res.status(500).json({ error: (error as Error).message });
   }
 };
+
+// Paginated classes
+export const getClassesWithPagination = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { page = '1', limit = '10', search, language_id } = req.query;
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const result = await classService.getClassesWithPagination(
+      pageNum,
+      limitNum,
+      search as string,
+      language_id as string
+    );
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// Class Translation CRUD
+export const getClassTranslations = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const translations = await classService.getClassTranslations(id);
+    res.status(200).json(translations);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const createClassTranslation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { language_id, name, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name) {
+      res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+    const translation = {
+      language_id,
+      name,
+      translated_by_ai,
+      needs_review,
+      updated_by,
+    };
+    const created = await classService.createClassTranslation(id, translation);
+    res.status(201).json(created);
+  } catch (error: any) {
+    if (error.message && error.message.includes('Translation already exists')) {
+      res.status(409).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
+  }
+};
+
+export const updateClassTranslation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { translationId } = req.params;
+    const update = req.body;
+    const updated = await classService.updateClassTranslation(translationId, update);
+    if (!updated) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const deleteClassTranslation = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { translationId } = req.params;
+    const deleted = await classService.deleteClassTranslation(translationId);
+    if (!deleted) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};

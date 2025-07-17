@@ -136,10 +136,10 @@ export default function BoardsPage() {
     }
   };
 
-  useEffect(() => {
-    fetchCountries();
+    useEffect(() => {
+        fetchCountries();
     fetchLanguages();
-  }, []);
+    }, []);
 
   useEffect(() => {
     fetchPaginatedBoards(page, pageSize, searchTerm);
@@ -152,8 +152,8 @@ export default function BoardsPage() {
       if (editing?.short_code) {
         await updateBoard(editing.short_code, data);
         toast({ title: "Success", description: "Board updated successfully." });
-      } else {
-        await createBoard(data);
+        } else {
+            await createBoard(data);
         toast({ title: "Success", description: "Board created successfully." });
       }
       setOpenForm(false);
@@ -168,9 +168,9 @@ export default function BoardsPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+    };
 
-  const handleDelete = async () => {
+    const handleDelete = async () => {
     if (deleteTarget?.short_code) {
       try {
         setIsLoading(true);
@@ -411,8 +411,8 @@ export default function BoardsPage() {
 
   return (
     <div className="p-4 sm:p-6 md:p-8">
-      <PageTitleWithActions
-        title="Boards"
+            <PageTitleWithActions
+                title="Boards"
         onAddClick={() => setOpenForm(true)}
         onImportClick={() => setOpenCsvUpload(true)}
       />
@@ -471,7 +471,7 @@ export default function BoardsPage() {
         />
       )}
       {/* Modals and dialogs */}
-      <EntityFormModal
+            <EntityFormModal
         title={editing ? "Edit Board" : "Add Board"}
         open={openForm}
         onClose={() => {
@@ -479,25 +479,25 @@ export default function BoardsPage() {
           setEditing(null);
         }}
         onOpenChange={setOpenForm}
-      >
-        <BoardForm
+            >
+                <BoardForm
           initialData={editing ? getBoardFormInitialData(editing) : undefined}
           onSubmit={handleCreateOrUpdate}
           countries={countries.map(c => ({ id: c._id || c.code, name: c.name }))}
           languages={languages.filter(l => l._id).map(l => ({ id: l._id as string, name: l.name }))}
           loading={isLoading}
-        />
-      </EntityFormModal>
-      <ConfirmationDialog
-        open={!!deleteTarget}
-        title="Delete Board"
+                />
+            </EntityFormModal>
+            <ConfirmationDialog
+                open={!!deleteTarget}
+                title="Delete Board"
         description={`Are you sure you want to delete "${deleteTarget?.name}" (${deleteTarget?.short_code})?`}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={handleDelete}
-      />
-      <CsvUploadDialog
+                onCancel={() => setDeleteTarget(null)}
+                onConfirm={handleDelete}
+            />
+            <CsvUploadDialog
         schema={boardCsvSchema}
-        onUpload={() => {
+                onUpload={() => {
           toast({ title: "Success", description: "CSV imported (stub)." });
           // fetchPaginatedBoards(page, pageSize, searchTerm);
         }}
@@ -525,7 +525,7 @@ export default function BoardsPage() {
         description={`Are you sure you want to delete the translation "${deleteTranslationTarget?.translation.name}"?`}
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
-      />
-    </div>
-  );
+            />
+        </div>
+    );
 }
