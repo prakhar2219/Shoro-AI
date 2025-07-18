@@ -11,4 +11,8 @@ const SubjectSchema = new Schema<ISubject>(
   { timestamps: true }
 );
 
+// Virtuals for translation and translations (for FE/BE consistency)
+SubjectSchema.virtual('translation');
+SubjectSchema.virtual('translations');
+
 export default mongoose.model<ISubject>('Subject', SubjectSchema);

@@ -140,3 +140,7 @@ export const updateClassTranslation = async (translationId: string, data: any) =
 export const deleteClassTranslation = async (translationId: string) => {
   return await ClassTranslation.findByIdAndDelete(translationId);
 };
+
+export const getClassesByBoard = async (board_id: string) => {
+  return await ClassModel.find({ board_id }).sort({ grade: 1 });
+};

@@ -11,12 +11,14 @@ import {
   createClassTranslation,
   updateClassTranslation,
   deleteClassTranslation,
+  getClassesByBoard,
 } from '../../controllers/content/class.controller';
 
 const router = Router();
 
 // Paginated and search endpoints (should come before /:id routes)
 router.get('/paginated', getClassesWithPagination);
+router.get('/by-board/:board_id', getClassesByBoard);
 
 // Class translation endpoints
 router.get('/:id/translations', getClassTranslations);

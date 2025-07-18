@@ -5,4 +5,6 @@ export interface ISubject extends Document {
   code: string;
   icon?: string;
   name: string;
+  translation?: any; // single translation (for FE/BE consistency)
+  translations?: any[]; // all translations (for FE/BE consistency)
 }

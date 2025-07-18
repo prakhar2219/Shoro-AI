@@ -82,3 +82,8 @@ export const deleteClassTranslation = async (id: string, translationId: string) 
   const res = await api.delete(`${API_ENDPOINTS.classes}/${id}/translations/${translationId}`);
   return res.data;
 };
+
+export const getClassesByBoard = async (board_id: string): Promise<IClass[]> => {
+  const res = await api.get(`${API_ENDPOINTS.classes}/by-board/${board_id}`);
+  return res.data;
+};
