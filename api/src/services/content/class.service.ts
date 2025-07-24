@@ -24,7 +24,8 @@ export const getAllClasses = async (language_id?: string) => {
       }
       return {
         ...cls.toObject(),
-        name: translation?.name || cls.name,
+        // name: translation?.name || cls.name,
+        name: cls.name,
         translation,
       };
     })
@@ -103,7 +104,8 @@ export const getClassesWithPagination = async (
     const translations = allTranslations.filter((t: any) => t.class_id.toString() === cls._id.toString());
     return {
       ...cls.toObject(),
-      name: translation?.name || cls.name,
+      name: cls.name,
+      // name: translation?.name || cls.name,
       translation,
       translations,
     };

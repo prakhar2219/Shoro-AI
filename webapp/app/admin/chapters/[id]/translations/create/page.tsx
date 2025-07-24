@@ -1,22 +1,27 @@
 "use client";
 
 import { useRouter, useParams } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ChapterTranslationForm } from '@/components/entity/ChapterTranslationForm';
+import { createChapterTranslation } from '@/lib/api/entities/chapterTranslations';
+import { getLanguages } from '@/lib/api/entities/language';
 
 export default function CreateChapterTranslationPage() {
   const router = useRouter();
   const params = useParams();
   const [loading, setLoading] = useState(false);
-  const [translation, setTranslation] = useState({ language: '', title: '' });
+  const [languages, setLanguages] = useState<any[]>([]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTranslation({ ...translation, [e.target.name]: e.target.value });
-  };
+  useEffect(() => {
+    getLanguages().then(setLanguages);
+  }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (data: any) => {
     setLoading(true);
-    // await createChapterTranslation(params.id, translation);
+    await createChapterTranslation({
+      ...data,
+      chapter_id: params.id,
+    });
     setLoading(false);
     router.push(`/admin/chapters/${params.id}`);
   };
@@ -24,31 +29,7 @@ export default function CreateChapterTranslationPage() {
   return (
     <div className="p-6 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Add Chapter Translation</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className="block mb-1">Language</label>
-          <input
-            name="language"
-            value={translation.language}
-            onChange={handleChange}
-            className="input"
-            required
-          />
-        </div>
-        <div>
-          <label className="block mb-1">Title</label>
-          <input
-            name="title"
-            value={translation.title}
-            onChange={handleChange}
-            className="input"
-            required
-          />
-        </div>
-        <button type="submit" className="btn btn-primary" disabled={loading}>
-          {loading ? 'Saving...' : 'Save'}
-        </button>
-      </form>
+      <ChapterTranslationForm onSubmit={handleSubmit} loading={loading} languages={languages} />
     </div>
   );
 } 

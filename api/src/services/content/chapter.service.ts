@@ -1,5 +1,7 @@
 // services/chapter.service.ts
+
 import Chapter from '../../models/content/chapter.model';
+import ChapterTranslation from '../../models/content/chapterTranslation.model';
 import { IChapter } from '../../types/content/chapter.types';
 
 export const createChapter = async (data: IChapter) => {
@@ -8,15 +10,45 @@ export const createChapter = async (data: IChapter) => {
 
 export const getAllChapters = async () => {
   return await Chapter.find()
-    .populate('subject_id')
+    .populate({
+      path: 'subject_id',
+      populate: { path: 'class_id', populate: { path: 'board_id' } }
+    })
+    .populate('class_id')
+    .populate('board_id')
     .populate('created_by')
     .sort({ order: 1 });
 };
 
-export const getChapterById = async (id: string) => {
-  return await Chapter.findById(id)
-    .populate('subject_id')
+export const getChapterById = async (id: string, language_id?: string) => {
+  const chapter = await Chapter.findById(id)
+    .populate({
+      path: 'subject_id',
+      populate: { path: 'class_id', populate: { path: 'board_id' } }
+    })
+    .populate('class_id')
+    .populate('board_id')
     .populate('created_by');
+  if (!chapter) return null;
+
+  // Fetch all translations for this chapter
+  const allTranslations = await ChapterTranslation.find({ chapter_id: chapter._id });
+
+  let translation = null;
+  if (language_id) {
+    translation = allTranslations.find(
+      (t: any) => t.language_id.toString() === language_id
+    );
+  }
+  if (!translation) {
+    translation = allTranslations[0] || null;
+  }
+
+  return {
+    ...chapter.toObject(),
+    translation,
+    translations: allTranslations,
+  };
 };
 
 export const updateChapter = async (id: string, data: Partial<IChapter>) => {
@@ -25,4 +57,66 @@ export const updateChapter = async (id: string, data: Partial<IChapter>) => {
 
 export const deleteChapter = async (id: string) => {
   return await Chapter.findByIdAndDelete(id);
+};
+
+// Paginated chapters with filtering by parent
+export const getChaptersWithPagination = async (
+  page: number = 1,
+  limit: number = 10,
+  board_id?: string,
+  class_id?: string,
+  subject_id?: string,
+  language_id?: string
+) => {
+  const skip = (page - 1) * limit;
+  const filter: any = {};
+  if (board_id) filter.board_id = board_id;
+  if (class_id) filter.class_id = class_id;
+  if (subject_id) filter.subject_id = subject_id;
+
+  const [chapters, total] = await Promise.all([
+    Chapter.find(filter)
+      .populate({
+        path: 'subject_id',
+        populate: { path: 'class_id', populate: { path: 'board_id' } }
+      })
+      .populate('class_id')
+      .populate('board_id')
+      .populate('created_by')
+      .sort({ order: 1 })
+      .skip(skip)
+      .limit(limit),
+    Chapter.countDocuments(filter)
+  ]);
+
+  // Fetch all translations for all chapters in one query
+  const chapterIds = chapters.map((c: any) => c._id);
+  const allTranslations = await ChapterTranslation.find({ chapter_id: { $in: chapterIds } });
+
+  const chaptersWithTranslations = chapters.map((chapter: any) => {
+    let translation = null;
+    if (language_id) {
+      translation = allTranslations.find(
+        (t: any) => t.chapter_id.toString() === chapter._id.toString() && t.language_id.toString() === language_id
+      );
+    }
+    if (!translation) {
+      translation = allTranslations.find((t: any) => t.chapter_id.toString() === chapter._id.toString());
+    }
+    // All translations for this chapter
+    const translations = allTranslations.filter((t: any) => t.chapter_id.toString() === chapter._id.toString());
+    return {
+      ...chapter.toObject(),
+      translation,
+      translations,
+    };
+  });
+
+  return {
+    data: chaptersWithTranslations,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit)
+  };
 };

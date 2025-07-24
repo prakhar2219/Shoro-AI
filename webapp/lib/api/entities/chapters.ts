@@ -1,8 +1,8 @@
 import { api } from '../axios';
 import { API_ENDPOINTS } from '../endpoints';
 
-export const getChapters = async () => {
-    const res = await api.get(API_ENDPOINTS.chapters);
+export const getChapters = async ({ page = 1, limit = 10 } = {}) => {
+    const res = await api.get(API_ENDPOINTS.chapters, { params: { page, limit } });
     return res.data;
 };
 

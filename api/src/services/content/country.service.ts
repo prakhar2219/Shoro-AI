@@ -78,7 +78,8 @@ export const getCountriesWithPagination = async (
       const translations = allTranslations.filter((t: any) => t.country_id === country.code);
       return {
         ...country.toObject(),
-        name: translation?.name || country.name,
+        // name: translation?.name || country.name,
+        name: country.name,
         translation,
         translations, // <-- new field
       };

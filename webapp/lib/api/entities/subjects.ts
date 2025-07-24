@@ -37,6 +37,7 @@ export const getSubjectsWithPagination = async (page = 1, limit = 15, search = '
 };
 
 export const getSubjects = async (language_id?: string): Promise<ISubject[]> => {
+  // Only pass language_id if explicitly provided
   const params = language_id ? { language_id } : undefined;
   const res = await api.get(API_ENDPOINTS.subjects, { params });
   return res.data;

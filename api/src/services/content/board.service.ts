@@ -120,8 +120,10 @@ export const getBoardsWithPagination = async (
     const translations = allTranslations.filter((t: any) => t.board_id.toString() === board._id.toString());
     return {
       ...board.toObject(),
-      name: translation?.name || board.name,
-      description: translation?.description || board.description,
+      // name: translation?.name || board.name,
+      name: board.name,
+      // description: translation?.description || board.description,
+      description: board.description,
       translation,
       translations,
     };

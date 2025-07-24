@@ -8,6 +8,13 @@ export const createSubject = async (data: ISubject) => {
 
 export const getAllSubjects = async (language_id?: string) => {
   const subjects = await SubjectModel.find().populate('class_id');
+  if (!language_id) {
+    // Return main subject data only, with translation as a separate property
+    return subjects.map((subject: any) => ({
+      ...subject.toObject(),
+      translation: undefined,
+    }));
+  }
   const subjectsWithTranslations = await Promise.all(
     subjects.map(async (subject: any) => {
       let translation = null;
@@ -24,7 +31,6 @@ export const getAllSubjects = async (language_id?: string) => {
       }
       return {
         ...subject.toObject(),
-        name: translation?.name || subject.name,
         translation,
       };
     })
