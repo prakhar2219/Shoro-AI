@@ -35,7 +35,7 @@ export const getCountries = async (
 ): Promise<void> => {
   try {
     const language_code = req.query.language_code as string | undefined;
-    const countries = await countryService.getAllCountries(language_code);
+    const countries = await countryService.getAllCountries();
     res.status(200).json(countries);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
