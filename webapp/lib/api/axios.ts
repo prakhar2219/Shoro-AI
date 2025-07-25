@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 export const api = axios.create({
-  baseURL: 'http://localhost:8000/api/v1', // or your actual backend endpoint
+  baseURL: 'https://education-ai-5pxt.onrender.com/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
