@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useTheme } from "next-themes"
 import { Award, BookOpen, GraduationCap, Target } from "lucide-react"
 import BoardCard from "@/components/custom/cards/BoardCard"
 
@@ -41,8 +40,6 @@ const BOARDS = [
 ]
 
 export default function BoardsSection() {
-    const { resolvedTheme } = useTheme()
-    const isDark = resolvedTheme === "dark"
 
     return (
         <section className="bg-background py-20">
@@ -61,7 +58,6 @@ export default function BoardsSection() {
                                 description={board.description}
                                 students={board.students}
                                 icon={<board.icon className={`w-10 h-10 ${board.color}`} />}
-                                isDark={isDark}
                             />
                         </Link>
                     ))}

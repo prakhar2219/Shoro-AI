@@ -12,18 +12,21 @@ import AppError from './utils/appError';
 import authRoutes from './routes/auth.routes';
 import blogRoutes from './routes/blog.routes';
 import uploadRoutes from './routes/upload.routes';
+import contentRoutes from './routes/content/index.routes';
+
+const corsConfig = {
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
 const app = express();
 
 // Security Middlewares
 app.use(helmet());
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.use(cors(corsConfig));
 
-app.options('*', cors());
+app.options('*', cors(corsConfig));
 app.use(limiter);
 app.use(securityHeaders);
 app.use(express.json({ limit: '10kb' }));
@@ -39,6 +42,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/blogs', blogRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/content', contentRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'API is running' });
@@ -46,7 +50,7 @@ app.get('/', (req, res) => {
 
 // Error Handling
 app.all('*', (req, res, next) => {
-  next(new AppError(`No se encontró ${req.originalUrl} en este servidor!`, 404));
+  next(new AppError(`Could not find ${req.originalUrl} on this server!`, 404));
 });
 
 app.use(errorHandler);

@@ -18,7 +18,13 @@ export interface IBlog extends Document {
 const blogSchema = new Schema<IBlog>(
   {
     title: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
     mainImage: { type: String, required: true },
     content: { type: String, required: true },
     keywords: [{ type: String, trim: true }],

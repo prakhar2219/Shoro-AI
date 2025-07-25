@@ -17,7 +17,7 @@ export default function Hero({ isDark }: HeroProps) {
                         : "bg-gradient-to-br from-sky-100 via-indigo-200 to-purple-100"
                     }`}
             />
-            {/* Optional: Decorative Blob SVG or Gradient Overlay */}
+
             <div
                 className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] rounded-full blur-3xl opacity-30"
                 style={{

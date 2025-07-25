@@ -1,6 +1,6 @@
 "use client"
 
-import { useEditor, EditorContent } from "@tiptap/react"
+import { useEditor, EditorContent, JSONContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import Table from "@tiptap/extension-table"
 import TableRow from "@tiptap/extension-table-row"
@@ -14,12 +14,13 @@ import { cn } from "@/lib/utils"
 import { TableInsertionModal } from "./table-insertion-modal"
 
 interface RichTextEditorProps {
-  content: string
-  onChange: (html: string) => void
+  value: JSONContent | string // Accept JSON or HTML for backward compatibility
+  onChange: (json: JSONContent) => void // Always emit JSON for chapters
   className?: string
+  editable?: boolean
 }
 
-export function RichTextEditor({ content, onChange, className }: RichTextEditorProps) {
+export function RichTextEditor({ value, onChange, className, editable = true }: RichTextEditorProps) {
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false)
   const [isTableModalOpen, setIsTableModalOpen] = useState(false)
 
@@ -39,9 +40,10 @@ export function RichTextEditor({ content, onChange, className }: RichTextEditorP
         },
       }),
     ],
-    content,
+    content: value,
+    editable,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      onChange(editor.getJSON()) // Always emit JSON
     },
     editorProps: {
       attributes: {

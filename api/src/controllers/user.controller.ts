@@ -7,8 +7,8 @@ export const getMe = catchAsync(async (req: Request, res: Response) => {
   res.status(200).json({
     status: 'success',
     data: {
-      user: req.user
-    }
+      user: req.user,
+    },
   });
 });
 
@@ -17,14 +17,14 @@ export const updateMe = catchAsync(async (req: Request, res: Response) => {
 
   const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, {
     new: true,
-    runValidators: true
+    runValidators: true,
   });
 
   res.status(200).json({
     status: 'success',
     data: {
-      user: updatedUser
-    }
+      user: updatedUser,
+    },
   });
 });
 
@@ -33,6 +33,6 @@ export const deleteMe = catchAsync(async (req: Request, res: Response) => {
 
   res.status(204).json({
     status: 'success',
-    data: null
+    data: null,
   });
 });
