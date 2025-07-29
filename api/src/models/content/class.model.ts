@@ -6,6 +6,7 @@ const ClassSchema = new Schema<IClass>(
     board_id: { type: Schema.Types.ObjectId, ref: 'Board', required: true },
     name: { type: String, required: true },
     grade: { type: Number, required: true },
+    content: { type: [Schema.Types.Mixed], required: true } as any,
   },
   { timestamps: true }
 );

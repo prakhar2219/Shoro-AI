@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 interface SubjectFormProps {
   initialData?: any;
@@ -22,6 +23,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     icon: initialData?.icon || '',
     board_id: initialData?.board_id || '',
     class_id: initialData?.class_id || '',
+    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
   });
 
   useEffect(() => {
@@ -69,6 +71,10 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
 
   const handleClassChange = (value: string) => {
     setForm(f => ({ ...f, class_id: value }));
+  };
+
+  const handleContentChange = (json: any) => {
+    setForm({ ...form, content: json });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -139,6 +145,10 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
               onChange={handleChange}
               placeholder="Paste emoji or icon URL"
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={form.content} onChange={handleContentChange} />
           </div>
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? 'Saving...' : initialData ? 'Update Subject' : 'Create Subject'}

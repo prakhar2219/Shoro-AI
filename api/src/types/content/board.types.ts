@@ -8,6 +8,7 @@ export interface IBoard extends Document {
   supported_language_ids: mongoose.Types.ObjectId[];
   description?: string;
   logo_url?: string;
+  content: any[];
   translation?: any; // single translation (for FE/BE consistency)
   translations?: any[]; // all translations (for FE/BE consistency)
 }

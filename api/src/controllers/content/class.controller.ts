@@ -7,9 +7,9 @@ export const createClass = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { board_id, number, name, grade } = req.body;
+    const { board_id, number, name, grade, content } = req.body;
 
-    if (!board_id || typeof grade !== 'number' || !name) {
+    if (!board_id || typeof grade !== 'number' || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -18,6 +18,7 @@ export const createClass = async (
       board_id,
       name,
       grade,
+      content,
     } as IClass;
 
     const created = await classService.createClass(classData);

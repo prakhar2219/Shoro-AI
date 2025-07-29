@@ -15,9 +15,10 @@ export const createBoard = async (
       supported_language_ids,
       description,
       logo_url,
+      content,
     } = req.body;
 
-    if (!name || !short_code || !country_id || !default_language_id) {
+    if (!name || !short_code || !country_id || !default_language_id || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -32,6 +33,7 @@ export const createBoard = async (
         : [],
       description,
       logo_url,
+      content,
     } as IBoard;
 
     const created = await boardService.createBoard(board);

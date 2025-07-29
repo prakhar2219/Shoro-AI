@@ -9,8 +9,8 @@ export const createCountry = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { name, code, default_language_code, supported_language_codes } = req.body;
-    if (!name || !code || !default_language_code) {
+    const { name, code, default_language_code, supported_language_codes, content } = req.body;
+    if (!name || !code || !default_language_code || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -21,6 +21,7 @@ export const createCountry = async (
       supported_language_codes: Array.isArray(supported_language_codes)
         ? supported_language_codes
         : [],
+      content,
     };
     const created = await countryService.createCountry(country);
     res.status(201).json(created);

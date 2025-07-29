@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 interface BoardFormProps {
   onSubmit: (data: any) => void;
@@ -20,6 +21,7 @@ interface BoardFormProps {
     supported_language_ids?: string[];
     description?: string;
     logo_url?: string;
+    content?: any;
   };
   countries: { id: string; name: string }[];
   languages: { id: string; name: string }[];
@@ -34,6 +36,7 @@ export function BoardForm({ onSubmit, loading = false, initialData, countries, l
     supported_language_ids: initialData?.supported_language_ids || [],
     description: initialData?.description || "",
     logo_url: initialData?.logo_url || "",
+    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -51,6 +54,10 @@ export function BoardForm({ onSubmit, loading = false, initialData, countries, l
           : [...prev.supported_language_ids, value],
       };
     });
+  };
+
+  const handleContentChange = (json: any) => {
+    setFormData({ ...formData, content: json });
   };
 
   return (
@@ -155,6 +162,11 @@ export function BoardForm({ onSubmit, loading = false, initialData, countries, l
               onChange={(e) => setFormData({ ...formData, logo_url: e.target.value })}
               placeholder="Paste logo image URL"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={formData.content} onChange={handleContentChange} />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">
