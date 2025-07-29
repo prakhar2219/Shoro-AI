@@ -140,8 +140,8 @@ export const getBoardTranslations = async (req: Request, res: Response): Promise
 export const createBoardTranslation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { short_code } = req.params;
-    const { language_id, name, description, translated_by_ai, needs_review, updated_by } = req.body;
-    if (!language_id || !name) {
+    const { language_id, name, description, content, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -149,6 +149,7 @@ export const createBoardTranslation = async (req: Request, res: Response): Promi
       language_id,
       name,
       description,
+      content,
       translated_by_ai,
       needs_review,
       updated_by,

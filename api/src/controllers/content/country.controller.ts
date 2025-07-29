@@ -179,8 +179,8 @@ export const getCountryStats = async (
 export const createCountryTranslation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { code } = req.params;
-    const { language_code, name, translated_by_ai, needs_review, updated_by } = req.body;
-    if (!language_code || !name) {
+    const { language_code, name, content, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_code || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -194,6 +194,7 @@ export const createCountryTranslation = async (req: Request, res: Response): Pro
       country_id: code,
       language_code,
       name,
+      content,
       translated_by_ai,
       needs_review,
       updated_by,

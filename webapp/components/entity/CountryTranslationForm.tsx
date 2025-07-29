@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 interface CountryTranslationFormProps {
   onSubmit: (data: any) => void;
@@ -13,6 +14,7 @@ interface CountryTranslationFormProps {
   initialData?: {
     language_code: string;
     name: string;
+    content?: any;
   };
   languages: { code: string; name: string }[];
 }
@@ -21,7 +23,12 @@ export function CountryTranslationForm({ onSubmit, loading = false, initialData,
   const [formData, setFormData] = useState({
     language_code: initialData?.language_code || (languages[0]?.code || ""),
     name: initialData?.name || "",
+    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
   });
+
+  const handleContentChange = (json: any) => {
+    setFormData({ ...formData, content: json });
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +70,11 @@ export function CountryTranslationForm({ onSubmit, loading = false, initialData,
               placeholder="Enter country name in selected language"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={formData.content} onChange={handleContentChange} />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">

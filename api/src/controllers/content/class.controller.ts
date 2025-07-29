@@ -125,14 +125,15 @@ export const getClassTranslations = async (req: Request, res: Response): Promise
 export const createClassTranslation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { language_id, name, translated_by_ai, needs_review, updated_by } = req.body;
-    if (!language_id || !name) {
+    const { language_id, name, content, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
     const translation = {
       language_id,
       name,
+      content,
       translated_by_ai,
       needs_review,
       updated_by,
