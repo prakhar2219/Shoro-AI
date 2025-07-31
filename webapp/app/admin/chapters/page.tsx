@@ -14,6 +14,13 @@ import { chapterColumns } from '@/components/table/columns/chapterColumns';
 import { getLanguages, ILanguage } from '@/lib/api/entities/language';
 import { ChapterTranslationForm } from '@/components/entity/ChapterTranslationForm';
 import { api } from '@/lib/api/axios';
+import { MCQSection } from "@/components/entity/MCQSection";
+import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
+import { FAQSection } from "@/components/entity/FAQSection";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { MCQFormModal } from "@/components/shared/MCQFormModal";
+import { FAQFormModal } from "@/components/shared/FAQFormModal";
+import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
 
 type Chapter = any;
 
@@ -26,11 +33,17 @@ export default function ChapterAdminPage() {
   const [deleteTarget, setDeleteTarget] = useState<Chapter | null>(null);
   const [loading, setLoading] = useState(false);
   const [openTranslationForm, setOpenTranslationForm] = useState<{ chapter: any; translation?: any } | null>(null);
-  const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ chapter: any; translation: any } | null>(null);
+  const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ chapter: Chapter; translation: any } | null>(null);
+  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
+
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
   // translationsMap is no longer needed; translations are now included in the BE response
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
-  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
@@ -134,12 +147,20 @@ export default function ChapterAdminPage() {
       <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-b-lg">
         <div className="flex justify-between items-center mb-2">
           <span className="font-semibold">Translations</span>
-          <button
-            className="px-3 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs font-semibold shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center"
-            onClick={() => handleAddTranslation(chapter)}
-          >
-            <span className="flex items-center gap-1">+ Add Translation</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 flex items-center"
+              onClick={() => setSelected(chapter)}
+            >
+              <span className="flex items-center gap-1">📚 Manage Content</span>
+            </button>
+            <button
+              className="px-3 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs font-semibold shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center"
+              onClick={() => handleAddTranslation(chapter)}
+            >
+              <span className="flex items-center gap-1">+ Add Translation</span>
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-full border border-zinc-200 dark:border-zinc-700 rounded">
@@ -213,13 +234,27 @@ export default function ChapterAdminPage() {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }: any) => (
-        <div className="flex gap-2">
-          <button className="btn btn-xs btn-secondary" onClick={() => {
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Chapter"
+          onEdit={() => {
             setSelected(row.original);
             setOpenModal(true);
-          }}>Edit</button>
-          <button className="btn btn-xs btn-danger" onClick={() => setDeleteTarget(row.original)}>Delete</button>
-        </div>
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+        />
       ),
     },
   ];
@@ -287,6 +322,68 @@ export default function ChapterAdminPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Content Form Modals */}
+      {selectedEntity && (
+        <>
+          <MCQFormModal
+            open={openMCQModal}
+            onOpenChange={setOpenMCQModal}
+            entityType="Chapter"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <FAQFormModal
+            open={openFAQModal}
+            onOpenChange={setOpenFAQModal}
+            entityType="Chapter"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <DescriptiveQuestionFormModal
+            open={openDescriptiveQuestionModal}
+            onOpenChange={setOpenDescriptiveQuestionModal}
+            entityType="Chapter"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+        </>
+      )}
+
+      {/* Global Content Management for All Chapters */}
+      <div className="mt-8 space-y-6">
+        <h2 className="text-2xl font-bold">Global Content Management</h2>
+        
+        {/* MCQ Section - Show all MCQs for Chapters */}
+        <MCQSection 
+          entityType="Chapter" 
+          entityId="" 
+          entityName="All Chapters" 
+        />
+        
+        {/* Descriptive Questions Section - Show all questions for Chapters */}
+        <DescriptiveQuestionSection 
+          entityType="Chapter" 
+          entityId="" 
+          entityName="All Chapters" 
+        />
+        
+        {/* FAQ Section - Show all FAQs for Chapters */}
+        <FAQSection 
+          entityType="Chapter" 
+          entityId="" 
+          entityName="All Chapters" 
+        />
+      </div>
     </div>
   );
 } 

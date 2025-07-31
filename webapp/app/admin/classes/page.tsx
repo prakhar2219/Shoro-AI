@@ -28,6 +28,13 @@ import { ClassForm } from "@/components/entity/ClassForm";
 import { ClassTranslationForm } from "@/components/entity/ClassTranslationForm";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Loader2 } from "lucide-react";
+import { MCQSection } from "@/components/entity/MCQSection";
+import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
+import { FAQSection } from "@/components/entity/FAQSection";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { MCQFormModal } from "@/components/shared/MCQFormModal";
+import { FAQFormModal } from "@/components/shared/FAQFormModal";
+import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
 
 export default function ClassesPage() {
   const [classes, setClasses] = useState<IClass[]>([]);
@@ -47,6 +54,12 @@ export default function ClassesPage() {
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ classItem: IClass; translation: IClassTranslation } | null>(null);
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
   const [isLoading, setIsLoading] = useState(false);
+
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
 
   // Map for board and language display
   const boardMap = Object.fromEntries(boards.map(b => [b._id || b.short_code, b.name]));
@@ -252,23 +265,27 @@ export default function ClassesPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }: { row: { original: IClass } }) => (
-        <div className="flex gap-2">
-          <button
-            className="text-blue-600 hover:underline text-xs"
-            onClick={() => {
-              setEditing(row.original);
-              setOpenForm(true);
-            }}
-          >
-            Edit
-          </button>
-          <button
-            className="text-red-600 hover:underline text-xs"
-            onClick={() => setDeleteTarget(row.original)}
-          >
-            Delete
-          </button>
-        </div>
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Class"
+          onEdit={() => {
+            setEditing(row.original);
+            setOpenForm(true);
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+        />
       ),
       enableSorting: false,
       enableHiding: false,
@@ -499,6 +516,68 @@ export default function ClassesPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Content Form Modals */}
+      {selectedEntity && (
+        <>
+          <MCQFormModal
+            open={openMCQModal}
+            onOpenChange={setOpenMCQModal}
+            entityType="Class"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <FAQFormModal
+            open={openFAQModal}
+            onOpenChange={setOpenFAQModal}
+            entityType="Class"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <DescriptiveQuestionFormModal
+            open={openDescriptiveQuestionModal}
+            onOpenChange={setOpenDescriptiveQuestionModal}
+            entityType="Class"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+        </>
+      )}
+
+      {/* Global Content Management for All Classes */}
+      <div className="mt-8 space-y-6">
+        <h2 className="text-2xl font-bold">Global Content Management</h2>
+        
+        {/* MCQ Section - Show all MCQs for Classes */}
+        <MCQSection 
+          entityType="Class" 
+          entityId="" 
+          entityName="All Classes" 
+        />
+        
+        {/* Descriptive Questions Section - Show all questions for Classes */}
+        <DescriptiveQuestionSection 
+          entityType="Class" 
+          entityId="" 
+          entityName="All Classes" 
+        />
+        
+        {/* FAQ Section - Show all FAQs for Classes */}
+        <FAQSection 
+          entityType="Class" 
+          entityId="" 
+          entityName="All Classes" 
+        />
+      </div>
     </div>
   );
 }
