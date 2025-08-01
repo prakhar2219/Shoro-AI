@@ -414,7 +414,7 @@ export default function SubjectsPage() {
         <SubjectForm
           initialData={editing ? getSubjectFormInitialData(editing) : undefined}
           onSubmit={handleCreateOrUpdate}
-          classes={classes.map(c => ({ id: c._id as string, name: c.name }))}
+          // classes={classes.map(c => ({ id: c._id as string, name: c.name }))}
           loading={isLoading}
         />
       </EntityFormModal>

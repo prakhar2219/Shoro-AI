@@ -1,6 +1,27 @@
 import { api } from '../axios';
 import { API_ENDPOINTS } from '../endpoints';
 
+export interface IChapter {
+  _id: string;
+  board_id: string;
+  class_id: string;
+  subject_id: string;
+  order: number;
+  is_published: boolean;
+  created_by: string;
+  title: string;
+  slug: string;
+  seo_title?: string;
+  seo_description?: string;
+  content: any[];
+  version?: number;
+  translation?: any;
+  translations?: any[];
+  subject_name?: string;
+  class_name?: string;
+  board_name?: string;
+}
+
 export const getChapters = async ({ page = 1, limit = 10 } = {}) => {
     const res = await api.get(API_ENDPOINTS.chapters, { params: { page, limit } });
     return res.data;

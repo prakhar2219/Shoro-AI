@@ -27,7 +27,7 @@ app.use(helmet());
 app.use(cors(corsConfig));
 
 app.options('*', cors(corsConfig));
-app.use(limiter);
+// app.use(limiter); // Commented out for now
 app.use(securityHeaders);
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
