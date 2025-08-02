@@ -37,6 +37,43 @@ export const getAllBoards = async (language_id?: string) => {
   return boardsWithTranslations;
 };
 
+export const getBoardsByCountry = async (country_code: string, language_id?: string) => {
+  const boards = await Board.find()
+    .populate({
+      path: 'country_id',
+      match: { code: country_code }
+    })
+    .populate('default_language_id')
+    .populate('supported_language_ids')
+    .sort({ createdAt: -1 });
+
+  // Filter boards that have the specified country
+  const filteredBoards = boards.filter((board: any) => board.country_id);
+
+  // Attach translation for each board
+  const boardsWithTranslations = await Promise.all(
+    filteredBoards.map(async (board: any) => {
+      let translation = null;
+      if (language_id) {
+        translation = await BoardTranslation.findOne({
+          board_id: board._id,
+          language_id,
+        });
+      }
+      if (!translation) {
+        translation = await BoardTranslation.findOne({ board_id: board._id });
+      }
+      return {
+        ...board.toObject(),
+        name: translation?.name || board.name,
+        description: translation?.description || board.description,
+        translation,
+      };
+    })
+  );
+  return boardsWithTranslations;
+};
+
 export const getBoardByCode = async (
   short_code: string,
   language_id?: string
@@ -164,6 +201,7 @@ export const deleteBoardTranslation = async (translationId: string) => {
 export default {
   createBoard,
   getAllBoards,
+  getBoardsByCountry,
   getBoardByCode,
   updateBoard,
   deleteBoard,

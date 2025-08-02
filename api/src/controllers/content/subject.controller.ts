@@ -35,8 +35,18 @@ export const getSubjects = async (
 ): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const subjects = await subjectService.getAllSubjects(language_id);
-    res.status(200).json(subjects);
+    const board_short_code = req.query.board_short_code as string | undefined;
+    const class_grade = req.query.class_grade as string | undefined;
+    
+    if (board_short_code && class_grade) {
+      // New functionality: Get subjects by board and class grade
+      const subjects = await subjectService.getSubjectsByBoardAndClass(board_short_code, parseInt(class_grade), language_id);
+      res.status(200).json(subjects);
+    } else {
+      // Existing functionality: Get all subjects
+      const subjects = await subjectService.getAllSubjects(language_id);
+      res.status(200).json(subjects);
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
