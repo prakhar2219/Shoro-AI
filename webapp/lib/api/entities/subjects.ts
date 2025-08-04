@@ -9,6 +9,7 @@ export interface ISubject {
   code: string;
   icon?: string;
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
+  content?: any[];
   translation?: ISubjectTranslation;
   translations?: ISubjectTranslation[];
   createdAt?: string;

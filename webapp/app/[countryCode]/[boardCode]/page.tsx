@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
+import { TipTapContentArray } from '@/components/tiptap-content-array';
 
 interface BoardPageProps {
   params: {
@@ -49,28 +50,56 @@ export default async function BoardPage({ params }: BoardPageProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes.map((cls: any) => (
-            <Link key={cls._id} href={`/${countryCode}/${boardCode}/${cls.grade}`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Board Content */}
+          {board.content && board.content.length > 0 && (
+            <div className="lg:col-span-3">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>Grade {cls.grade}</span>
-                    <Badge variant="secondary">Class {cls.grade}</Badge>
-                  </CardTitle>
+                  <CardTitle>About {board.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 text-sm mb-4">
-                    {cls.description || 'No description available'}
-                  </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>Age: {cls.age_range || 'N/A'}</span>
-                    <span>{cls.subjects?.length || 0} Subjects</span>
+                  <div className="prose max-w-none">
+                    <TipTapContentArray content={board.content} />
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            </div>
+          )}
+
+          {/* Classes List */}
+          <div className={board.content && board.content.length > 0 ? "lg:col-span-1" : "lg:col-span-4"}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Classes</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+                  {classes.map((cls: any) => (
+                    <Link key={cls._id} href={`/${countryCode}/${boardCode}/${cls.grade}`}>
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center justify-between text-base">
+                            <span>Grade {cls.grade}</span>
+                            <Badge variant="secondary">Class {cls.grade}</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-gray-600 text-sm mb-2">
+                            {cls.description || 'No description available'}
+                          </p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Age: {cls.age_range || 'N/A'}</span>
+                            <span>{cls.subjects?.length || 0} Subjects</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {classes.length === 0 && (

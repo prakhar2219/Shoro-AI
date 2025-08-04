@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
+import { TipTapContentArray } from '@/components/tiptap-content-array';
 
 interface SubjectPageProps {
   params: {
@@ -64,30 +65,58 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {chapters.map((chapter: any) => (
-            <Link key={chapter._id} href={`/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapter.slug}`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Subject Content */}
+          {subject.content && subject.content.length > 0 && (
+            <div className="lg:col-span-3">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{chapter.title}</span>
-                    <Badge variant="secondary">Chapter {chapter.order}</Badge>
-                  </CardTitle>
+                  <CardTitle>About {subject.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 text-sm mb-4">
-                    {chapter.seo_description || 'No description available'}
-                  </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>Order: {chapter.order}</span>
-                    <Badge variant={chapter.is_published ? "default" : "secondary"}>
-                      {chapter.is_published ? 'Published' : 'Draft'}
-                    </Badge>
+                  <div className="prose max-w-none">
+                    <TipTapContentArray content={subject.content} />
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
+            </div>
+          )}
+
+          {/* Chapters List */}
+          <div className={subject.content && subject.content.length > 0 ? "lg:col-span-1" : "lg:col-span-4"}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Chapters</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+                  {chapters.map((chapter: any) => (
+                    <Link key={chapter._id} href={`/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapter.slug}`}>
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center justify-between text-base">
+                            <span>{chapter.title}</span>
+                            <Badge variant="secondary">Chapter {chapter.order}</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-gray-600 text-sm mb-2">
+                            {chapter.seo_description || 'No description available'}
+                          </p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Order: {chapter.order}</span>
+                            <Badge variant={chapter.is_published ? "default" : "secondary"}>
+                              {chapter.is_published ? 'Published' : 'Draft'}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {chapters.length === 0 && (

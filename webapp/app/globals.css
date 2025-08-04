@@ -147,3 +147,61 @@
   border-top: 2px solid rgba(13, 13, 13, 0.1);
   margin: 2rem 0;
 }
+
+/* TipTap Renderer Styles */
+.tiptap-renderer {
+  @apply text-gray-900;
+}
+
+.tiptap-renderer .ProseMirror {
+  @apply text-gray-900;
+}
+
+.tiptap-renderer .ProseMirror h1 {
+  @apply text-3xl font-bold text-gray-900 mb-4 mt-6;
+}
+
+.tiptap-renderer .ProseMirror h2 {
+  @apply text-2xl font-semibold text-gray-900 mb-3 mt-5;
+}
+
+.tiptap-renderer .ProseMirror h3 {
+  @apply text-xl font-semibold text-gray-900 mb-2 mt-4;
+}
+
+.tiptap-renderer .ProseMirror p {
+  @apply text-gray-800 leading-relaxed mb-4;
+}
+
+.tiptap-renderer .ProseMirror ul,
+.tiptap-renderer .ProseMirror ol {
+  @apply mb-4 pl-6;
+}
+
+.tiptap-renderer .ProseMirror li {
+  @apply mb-1 text-gray-800;
+}
+
+.tiptap-renderer .ProseMirror blockquote {
+  @apply border-l-4 border-blue-500 pl-4 py-2 my-4 bg-blue-50;
+}
+
+.tiptap-renderer .ProseMirror code {
+  @apply bg-gray-100 px-2 py-1 rounded text-sm font-mono;
+}
+
+.tiptap-renderer .ProseMirror pre {
+  @apply bg-gray-100 p-4 rounded-lg overflow-x-auto;
+}
+
+.tiptap-renderer .ProseMirror table {
+  @apply border-collapse border border-gray-300 w-full mb-4;
+}
+
+.tiptap-renderer .ProseMirror th {
+  @apply bg-gray-100 font-semibold text-left p-3 border border-gray-300;
+}
+
+.tiptap-renderer .ProseMirror td {
+  @apply p-3 border border-gray-300;
+}

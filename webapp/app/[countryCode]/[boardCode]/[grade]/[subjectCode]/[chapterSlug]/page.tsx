@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
+import { TipTapContentArray } from '@/components/tiptap-content-array';
 
 interface ChapterPageProps {
   params: {
@@ -79,47 +80,7 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
               </CardHeader>
               <CardContent>
                 <div className="prose max-w-none">
-                  {chapter.content && Array.isArray(chapter.content) ? (
-                    <div className="space-y-4">
-                      {chapter.content.map((contentItem: any, index: number) => (
-                        <div key={index} className="border-b border-gray-200 pb-4 last:border-b-0">
-                          {contentItem.type === 'text' && (
-                            <div className="text-gray-800 leading-relaxed">
-                              {contentItem.content}
-                            </div>
-                          )}
-                          {contentItem.type === 'heading' && (
-                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                              {contentItem.content}
-                            </h2>
-                          )}
-                          {contentItem.type === 'list' && (
-                            <ul className="list-disc list-inside space-y-1 text-gray-800">
-                              {contentItem.content.map((item: string, itemIndex: number) => (
-                                <li key={itemIndex}>{item}</li>
-                              ))}
-                            </ul>
-                          )}
-                          {contentItem.type === 'image' && (
-                            <div className="my-4">
-                              <img 
-                                src={contentItem.url} 
-                                alt={contentItem.alt || 'Chapter image'} 
-                                className="max-w-full h-auto rounded-lg"
-                              />
-                              {contentItem.caption && (
-                                <p className="text-sm text-gray-600 mt-2 text-center">{contentItem.caption}</p>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-gray-500 text-center py-8">
-                      <p>No content available for this chapter.</p>
-                    </div>
-                  )}
+                  <TipTapContentArray content={chapter.content} />
                 </div>
               </CardContent>
             </Card>

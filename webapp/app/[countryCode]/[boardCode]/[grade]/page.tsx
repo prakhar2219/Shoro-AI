@@ -1,10 +1,12 @@
 import { getCountry } from '@/lib/api/entities/countries';
 import { getBoard } from '@/lib/api/entities/boards';
 import { getSubjectsByBoardAndClass } from '@/lib/api/entities/subjects';
+import { getClassesByBoardShortCode } from '@/lib/api/entities/classes';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
+import { TipTapContentArray } from '@/components/tiptap-content-array';
 
 interface ClassPageProps {
   params: {
@@ -15,22 +17,25 @@ interface ClassPageProps {
 }
 
 export default async function ClassPage({ params }: ClassPageProps) {
-  console.log('Raw params:', params);
   const { countryCode, boardCode, grade } = params;
   
   // Simple grade parsing - just parse the number directly
   const gradeNumber = parseInt(grade) || 0;
 
   try {
-    const [country, board, subjects] = await Promise.all([
+    const [country, board, subjects, classes] = await Promise.all([
       getCountry(countryCode),
       getBoard(boardCode),
-      getSubjectsByBoardAndClass(boardCode, gradeNumber)
+      getSubjectsByBoardAndClass(boardCode, gradeNumber),
+      getClassesByBoardShortCode(boardCode)
     ]);
 
     if (!country || !board) {
       notFound();
     }
+
+    // Find the specific class for this grade
+    const currentClass = classes.find((cls: any) => cls.grade === gradeNumber);
 
     return (
       <div className="container mx-auto px-4 py-8">
@@ -56,49 +61,63 @@ export default async function ClassPage({ params }: ClassPageProps) {
           </div>
         </div>
 
-        {/* Debug Info - Temporary */}
-        <div className="mb-4 p-4 bg-yellow-100 border border-yellow-300 rounded">
-          <h3 className="font-bold text-yellow-800">Debug Info:</h3>
-          <p>Country Code: {countryCode}</p>
-          <p>Board Code: {boardCode}</p>
-          <p>Grade Param: {grade} (type: {typeof grade})</p>
-          <p>Grade Number: {gradeNumber} (type: {typeof gradeNumber})</p>
-          <p>Subjects Count: {subjects?.length || 0}</p>
-          <p>Country Name: {country?.name}</p>
-          <p>Board Name: {board?.name}</p>
-          <p>API Call: getSubjectsByBoardAndClass({boardCode}, {gradeNumber})</p>
-          <p>Full params object: {JSON.stringify(params)}</p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {subjects.map((subject: any) => (
-            <Link key={subject._id} href={`/${countryCode}/${boardCode}/${gradeNumber}/${subject.code}`}>
-              <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Class Content */}
+          {currentClass?.content && currentClass.content.length > 0 && (
+            <div className="lg:col-span-3">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <span>{subject.name}</span>
-                    <Badge variant="secondary">{subject.code}</Badge>
-                  </CardTitle>
+                  <CardTitle>About Grade {gradeNumber}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-gray-600 text-sm mb-4">
-                    {subject.description || 'No description available'}
-                  </p>
-                  <div className="flex items-center justify-between text-sm text-gray-500">
-                    <span>Code: {subject.code}</span>
-                    <span>{subject.chapters?.length || 0} Chapters</span>
+                  <div className="prose max-w-none">
+                    <TipTapContentArray content={currentClass.content} />
                   </div>
                 </CardContent>
               </Card>
-            </Link>
-          ))}
-        </div>
+            </div>
+          )}
 
-        {subjects.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No subjects available for this class.</p>
+          {/* Subjects List */}
+          <div className={currentClass?.content && currentClass.content.length > 0 ? "lg:col-span-1" : "lg:col-span-4"}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Available Subjects</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+                  {subjects.map((subject: any) => (
+                    <Link key={subject._id} href={`/${countryCode}/${boardCode}/${gradeNumber}/${subject.code}`}>
+                      <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+                        <CardHeader className="pb-3">
+                          <CardTitle className="flex items-center justify-between text-base">
+                            <span>{subject.name}</span>
+                            <Badge variant="secondary">{subject.code}</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <p className="text-gray-600 text-sm mb-2">
+                            {subject.description || 'No description available'}
+                          </p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>Code: {subject.code}</span>
+                            <span>{subject.chapters?.length || 0} Chapters</span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+
+                {subjects.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No subjects available for this class.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        )}
+        </div>
       </div>
     );
   } catch (error) {

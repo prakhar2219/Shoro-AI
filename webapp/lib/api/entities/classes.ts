@@ -8,6 +8,7 @@ export interface IClass {
   name: string;
   grade: number;
   board_id: string | { _id: string; name: string; short_code: string; [key: string]: any };
+  content?: any[];
   translation?: IClassTranslation;
   translations?: IClassTranslation[];
   createdAt?: string;

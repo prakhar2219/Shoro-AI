@@ -12,6 +12,7 @@ export interface IBoard {
   supported_language_ids: (string | { _id: string; name: string; code: string; [key: string]: any })[];
   description?: string;
   logo_url?: string;
+  content?: any[];
   translation?: IBoardTranslation;
   translations?: IBoardTranslation[];
   createdAt?: string;
