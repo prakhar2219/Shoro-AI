@@ -87,3 +87,10 @@ export const getClassesByBoard = async (board_id: string): Promise<IClass[]> => 
   const res = await api.get(`${API_ENDPOINTS.classes}/by-board/${board_id}`);
   return res.data;
 };
+
+export const getClassesByBoardShortCode = async (board_short_code: string, language_id?: string): Promise<IClass[]> => {
+  const params: any = { board_short_code };
+  if (language_id) params.language_id = language_id;
+  const res = await api.get(API_ENDPOINTS.classes, { params });
+  return res.data;
+};

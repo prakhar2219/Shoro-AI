@@ -27,6 +27,20 @@ export const getChapters = async ({ page = 1, limit = 10 } = {}) => {
     return res.data;
 };
 
+export const getChaptersByBoardClassAndSubject = async (board_short_code: string, class_grade: number, subject_code: string, language_id?: string) => {
+    const params: any = { board_short_code, class_grade, subject_code };
+    if (language_id) params.language_id = language_id;
+    const res = await api.get(API_ENDPOINTS.chapters, { params });
+    return res.data;
+};
+
+export const getChapterBySlug = async (board_short_code: string, class_grade: number, subject_code: string, chapter_slug: string, language_id?: string) => {
+    const params: any = { board_short_code, class_grade, subject_code, chapter_slug };
+    if (language_id) params.language_id = language_id;
+    const res = await api.get(`${API_ENDPOINTS.chapters}/by-slug`, { params });
+    return res.data;
+};
+
 export const createChapter = async (data: any) => {
     const res = await api.post(API_ENDPOINTS.chapters, data);
     return res.data;

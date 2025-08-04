@@ -46,6 +46,13 @@ export const getBoards = async (language_id?: string): Promise<IBoard[]> => {
   return res.data;
 };
 
+export const getBoardsByCountry = async (country_code: string, language_id?: string): Promise<IBoard[]> => {
+  const params: any = { country_code };
+  if (language_id) params.language_id = language_id;
+  const res = await api.get(API_ENDPOINTS.boards, { params });
+  return res.data;
+};
+
 export const getBoard = async (short_code: string, language_id?: string): Promise<IBoard> => {
   const params = language_id ? { language_id } : undefined;
   const res = await api.get(`${API_ENDPOINTS.boards}/${short_code}`, { params });
