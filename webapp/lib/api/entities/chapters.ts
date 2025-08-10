@@ -3,9 +3,9 @@ import { API_ENDPOINTS } from '../endpoints';
 
 export interface IChapter {
   _id: string;
-  board_id: string;
-  class_id: string;
-  subject_id: string;
+  board_id: string | { _id: string; name: string; grade: number; [key: string]: any };
+  class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
+  subject_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   order: number;
   is_published: boolean;
   created_by: string;
@@ -17,9 +17,6 @@ export interface IChapter {
   version?: number;
   translation?: any;
   translations?: any[];
-  subject_name?: string;
-  class_name?: string;
-  board_name?: string;
 }
 
 export const getChapters = async ({ page = 1, limit = 10 } = {}) => {

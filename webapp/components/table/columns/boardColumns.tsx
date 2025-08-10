@@ -45,5 +45,15 @@ export const boardColumns: ColumnDef<IBoard>[] = [
   },
   { accessorKey: "name", header: "Name" },
   { accessorKey: "short_code", header: "Short Code" },
-  { accessorKey: "country_name", header: "Country" },
+  {
+    accessorKey: "country_id",
+    header: "Country",
+    cell: ({ row }) => {
+      const country = row.original.country_id;
+      if (country && typeof country === 'object' && 'name' in country) {
+        return <span>{country.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
 ]; 

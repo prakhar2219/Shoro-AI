@@ -5,13 +5,13 @@ import { Copy, Check } from "lucide-react";
 import React, { useState } from "react";
 
 export const classColumns: ColumnDef<IClass>[] = [
-  { 
-    accessorKey: "_id", 
+  {
+    accessorKey: "_id",
     header: "ID",
     cell: ({ row }) => {
       const [copied, setCopied] = useState(false);
       const id = row.getValue("_id") as string;
-      
+
       const copyToClipboard = async () => {
         try {
           await navigator.clipboard.writeText(id);
@@ -45,5 +45,15 @@ export const classColumns: ColumnDef<IClass>[] = [
   },
   { accessorKey: "name", header: "Name" },
   { accessorKey: "grade", header: "Grade" },
-  { accessorKey: "board_name", header: "Board" },
+  {
+    accessorKey: "board_id",
+    header: "Board",
+    cell: ({ row }) => {
+      const board = row.original.board_id;
+      if (board && typeof board === 'object' && 'name' in board) {
+        return <span>{board.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
 ]; 

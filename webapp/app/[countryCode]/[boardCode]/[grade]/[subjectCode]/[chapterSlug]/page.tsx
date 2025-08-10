@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
 import { TipTapContentArray } from '@/components/tiptap-content-array';
+import { MCQSection, FAQSection, DescriptiveQuestionSection } from '@/components/content';
 import { FileText, BookOpen, Calendar, Users, ArrowLeft, Building2, GraduationCap, Brain, Clock, Eye, HelpCircle } from 'lucide-react';
 
 interface ChapterPageProps {
@@ -140,49 +141,29 @@ export default async function ChapterPage({ params }: ChapterPageProps) {
                 </CardContent>
               </Card>
 
-              {/* MCQs Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-emerald-100 rounded-lg">
-                      <Brain className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Multiple Choice Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Practice with interactive MCQs</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">MCQ content will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Practice questions for better understanding</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* MCQs Section */}
+              <MCQSection 
+                entityType="Chapter"
+                entityId={chapter._id!}
+                title="Multiple Choice Questions"
+                description="Practice with interactive MCQs"
+              />
 
-              {/* FAQs Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-violet-100 rounded-lg">
-                      <HelpCircle className="h-5 w-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Frequently Asked Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Common questions and answers</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">FAQ content will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Find answers to common questions</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* FAQs Section */}
+              <FAQSection 
+                entityType="Chapter"
+                entityId={chapter._id!}
+                title="Frequently Asked Questions"
+                description="Common questions and answers"
+              />
+
+              {/* Descriptive Questions Section */}
+              <DescriptiveQuestionSection 
+                entityType="Chapter"
+                entityId={chapter._id!}
+                title="Descriptive Questions"
+                description="Detailed answers and explanations"
+              />
             </div>
 
             {/* Sidebar */}

@@ -5,13 +5,13 @@ import { Copy, Check } from "lucide-react";
 import React, { useState } from "react";
 
 export const chapterColumns: ColumnDef<IChapter>[] = [
-  { 
-    accessorKey: "_id", 
+  {
+    accessorKey: "_id",
     header: "ID",
     cell: ({ row }) => {
       const [copied, setCopied] = useState(false);
       const id = row.getValue("_id") as string;
-      
+
       const copyToClipboard = async () => {
         try {
           await navigator.clipboard.writeText(id);
@@ -43,9 +43,52 @@ export const chapterColumns: ColumnDef<IChapter>[] = [
       );
     }
   },
-  { accessorKey: "title", header: "Title" },
-  { accessorKey: "order", header: "Order" },
-  { accessorKey: "subject_name", header: "Subject" },
-  { accessorKey: "class_name", header: "Class" },
-  { accessorKey: "board_name", header: "Board" },
+  {
+    accessorKey: "order",
+    header: "Order",
+    cell: info => info.getValue(),
+  },
+  {
+    accessorKey: "title",
+    header: "Title",
+    cell: info => info.getValue(),
+  },
+  {
+    accessorKey: "board_id",
+    header: "Board",
+    cell: ({ row }) => {
+      const board = row.original.board_id;
+      if (board && typeof board === "object" && "name" in board) {
+        return <span>{board.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
+  {
+    accessorKey: "class_id",
+    header: "Class",
+    cell: ({ row }) => {
+      const classs = row.original.class_id;
+      if (classs && typeof classs === "object" && "name" in classs) {
+        return <span>{classs.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
+  {
+    accessorKey: "subject_id",
+    header: "Subject",
+    cell: ({ row }) => {
+      const subject = row.original.subject_id;
+      if (subject && typeof subject === "object" && "name" in subject) {
+        return <span>{subject.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
+  {
+    accessorKey: "is_published",
+    header: "Published",
+    cell: info => (info.getValue() ? "Yes" : "No"),
+  },
 ]; 

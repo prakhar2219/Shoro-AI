@@ -50,7 +50,7 @@ export function FAQForm({ onSubmit, loading = false, initialData, entityType, en
       <CardHeader>
         <CardTitle>{initialData ? "Edit FAQ" : "Create FAQ"}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           {!entityType && (
             <div className="space-y-2">

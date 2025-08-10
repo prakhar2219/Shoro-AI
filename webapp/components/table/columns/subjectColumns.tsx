@@ -45,5 +45,15 @@ export const subjectColumns: ColumnDef<ISubject>[] = [
   },
   { accessorKey: "name", header: "Name" },
   { accessorKey: "code", header: "Code" },
-  { accessorKey: "class_name", header: "Class" },
+   {
+    accessorKey: "class_id",
+    header: "Class",
+    cell: ({ row }) => {
+      const classs = row.original.class_id;
+      if (classs && typeof classs === 'object' && 'name' in classs) {
+        return <span>{classs.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
 ]; 

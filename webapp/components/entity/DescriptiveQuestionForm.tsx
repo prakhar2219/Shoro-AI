@@ -65,7 +65,7 @@ export function DescriptiveQuestionForm({ onSubmit, loading = false, initialData
       <CardHeader>
         <CardTitle>{initialData ? "Edit Descriptive Question" : "Create Descriptive Question"}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           {!entityType && (
             <div className="space-y-2">

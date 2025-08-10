@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
 import { TipTapContentArray } from '@/components/tiptap-content-array';
-import { Brain, BookOpen, Calendar, Users, ArrowRight, Building2, GraduationCap, FileText, HelpCircle } from 'lucide-react';
+import { MCQSection, FAQSection, DescriptiveQuestionSection } from '@/components/content';
+import { BookOpen, GraduationCap, Calendar, Users, ArrowRight, Building2, Brain, HelpCircle, FileText, Globe, Award } from 'lucide-react';
 
 interface SubjectPageProps {
   params: {
@@ -71,7 +72,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
               <span>/</span>
               <Link href={`/${countryCode}/${boardCode}/${gradeNumber}`} className="hover:text-blue-600 transition-colors">Grade {gradeNumber}</Link>
               <span>/</span>
-              <span className="text-gray-800">{subject.name}</span>
+              <span className="text-gray-800">{subject.code}</span>
             </div>
             
             <div className="text-center mb-8">
@@ -85,7 +86,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
               </div>
               
               <h1 className="text-4xl md:text-6xl font-bold text-gray-900 tracking-tight mb-4">
-                {subject.name}
+                {subject.code}
               </h1>
               <p className="text-xl md:text-2xl max-w-3xl mx-auto text-gray-700 mb-8">
                 {board.name} • Grade {gradeNumber} • Comprehensive learning journey
@@ -118,11 +119,11 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-pink-100 rounded-lg">
-                        <Brain className="h-5 w-5 text-pink-600" />
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <BookOpen className="h-5 w-5 text-indigo-600" />
                       </div>
                       <div>
-                        <CardTitle className="text-2xl">About {subject.name}</CardTitle>
+                        <CardTitle className="text-2xl">About {subject.code}</CardTitle>
                         <p className="text-gray-600 mt-1">Subject overview and learning objectives</p>
                       </div>
                     </div>
@@ -135,85 +136,43 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                 </Card>
               )}
 
-              {/* MCQs Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-emerald-100 rounded-lg">
-                      <Brain className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Multiple Choice Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Practice with interactive MCQs</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">MCQ content will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Practice questions for better understanding</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* MCQs Section */}
+              <MCQSection 
+                entityType="Subject"
+                entityId={subject._id!}
+                title="Multiple Choice Questions"
+                description="Practice with interactive MCQs"
+              />
 
-              {/* FAQs Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-violet-100 rounded-lg">
-                      <HelpCircle className="h-5 w-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Frequently Asked Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Common questions and answers</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">FAQ content will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Find answers to common questions</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* FAQs Section */}
+              <FAQSection 
+                entityType="Subject"
+                entityId={subject._id!}
+                title="Frequently Asked Questions"
+                description="Common questions and answers"
+              />
 
-              {/* Descriptive Questions Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <FileText className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Descriptive Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Detailed answers and explanations</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Descriptive questions will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Comprehensive answers with detailed explanations</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Descriptive Questions Section */}
+              <DescriptiveQuestionSection 
+                entityType="Subject"
+                entityId={subject._id!}
+                title="Descriptive Questions"
+                description="Detailed answers and explanations"
+              />
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
-              {/* Chapters List */}
+              {/* All Chapters List */}
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-orange-100 rounded-lg">
-                      <FileText className="h-5 w-5 text-orange-600" />
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <FileText className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">Available Chapters</CardTitle>
-                      <p className="text-gray-600 text-sm">Explore learning modules</p>
+                      <CardTitle className="text-lg">All Available Chapters</CardTitle>
+                      <p className="text-gray-600 text-sm">Choose your chapter</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -221,7 +180,7 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                   <div className="space-y-4">
                     {chapters.map((chapter: any) => (
                       <Link key={chapter._id} href={`/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapter.slug}`}>
-                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-pink-200 bg-white/60 hover:bg-white rounded-lg">
+                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-indigo-200 bg-white/60 hover:bg-white rounded-lg">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -232,24 +191,19 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
                                   </Badge>
                                 </div>
                                 <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-                                  {chapter.seo_description || 'Comprehensive learning module with detailed content and exercises'}
+                                  {chapter.seo_description || 'Comprehensive learning module with detailed content'}
                                 </p>
                                 <div className="flex items-center justify-between text-xs text-gray-500">
-                                  <span>Order: {chapter.order}</span>
-                                  <div className="flex items-center space-x-2">
-                                    <Badge variant={chapter.is_published ? "default" : "secondary"} className="text-xs">
-                                      {chapter.is_published ? 'Published' : 'Draft'}
-                                    </Badge>
-                                    <div className="flex items-center space-x-1">
-                                      <span>Read</span>
-                                      <ArrowRight className="h-3 w-3" />
-                                    </div>
+                                  <span>{subject.code}</span>
+                                  <div className="flex items-center space-x-1">
+                                    <span>View</span>
+                                    <ArrowRight className="h-3 w-3" />
                                   </div>
                                 </div>
                               </div>
                               <div className="ml-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-pink-100 to-orange-100 rounded-lg flex items-center justify-center">
-                                  <span className="text-pink-600 font-bold text-lg">{chapter.order}</span>
+                                <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
+                                  <span className="text-indigo-600 font-bold text-lg">{chapter.order}</span>
                                 </div>
                               </div>
                             </div>
@@ -296,12 +250,12 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-pink-100 rounded-lg">
-                      <Brain className="h-5 w-5 text-pink-600" />
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <Brain className="h-5 w-5 text-indigo-600" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">Other Subjects</CardTitle>
-                      <p className="text-gray-600 text-sm">Explore different topics</p>
+                      <p className="text-gray-600 text-sm">Explore different subjects</p>
                     </div>
                   </div>
                 </CardHeader>

@@ -110,7 +110,7 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
       <CardHeader>
         <CardTitle>{initialData ? "Edit MCQ" : "Create MCQ"}</CardTitle>
       </CardHeader>
-      <CardContent>
+  <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           {!entityType && (
             <div className="space-y-2">

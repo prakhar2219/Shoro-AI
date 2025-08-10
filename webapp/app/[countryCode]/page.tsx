@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { notFound } from 'next/navigation';
 import { TipTapContentArray } from '@/components/tiptap-content-array';
+import { MCQSection, FAQSection, DescriptiveQuestionSection } from '@/components/content';
 import { Globe, Calendar, Languages, BookOpen, ArrowRight, MapPin, Brain, HelpCircle, FileText, Award } from 'lucide-react';
 
 interface CountryPageProps {
@@ -68,17 +69,17 @@ export default async function CountryPage({ params }: CountryPageProps) {
                 {country.name}
               </h1>
               <p className="text-xl md:text-2xl max-w-3xl mx-auto text-gray-700 mb-8">
-                Discover educational excellence across {boards.length} educational boards
+                Comprehensive educational resources and curriculum standards
               </p>
               
               <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-600">
                 <div className="flex items-center space-x-2">
-                  <Languages className="h-4 w-4" />
-                  <span>Default: {country.default_language_code}</span>
-                </div>
-                <div className="flex items-center space-x-2">
                   <BookOpen className="h-4 w-4" />
                   <span>{boards.length} Boards</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Languages className="h-4 w-4" />
+                  <span>Multiple Languages</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4" />
@@ -98,12 +99,12 @@ export default async function CountryPage({ params }: CountryPageProps) {
                 <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                   <CardHeader className="pb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="p-2 bg-sky-100 rounded-lg">
-                        <MapPin className="h-5 w-5 text-sky-600" />
+                      <div className="p-2 bg-indigo-100 rounded-lg">
+                        <BookOpen className="h-5 w-5 text-indigo-600" />
                       </div>
                       <div>
                         <CardTitle className="text-2xl">About {country.name}</CardTitle>
-                        <p className="text-gray-600 mt-1">Educational landscape and opportunities</p>
+                        <p className="text-gray-600 mt-1">Educational overview and curriculum standards</p>
                       </div>
                     </div>
                   </CardHeader>
@@ -119,12 +120,12 @@ export default async function CountryPage({ params }: CountryPageProps) {
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <Award className="h-5 w-5 text-indigo-600" />
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <Award className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
                       <CardTitle className="text-xl">Top Educational Boards</CardTitle>
-                      <p className="text-gray-600 text-sm">Leading curricula and standards</p>
+                      <p className="text-gray-600 text-sm">Most popular curriculum boards</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -132,7 +133,7 @@ export default async function CountryPage({ params }: CountryPageProps) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {boards.slice(0, 4).map((board: any) => (
                       <Link key={board._id} href={`/${countryCode}/${board.short_code}`}>
-                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-sky-200 bg-white/60 hover:bg-white rounded-lg">
+                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-indigo-200 bg-white/60 hover:bg-white rounded-lg">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -153,15 +154,11 @@ export default async function CountryPage({ params }: CountryPageProps) {
                                   </div>
                                 </div>
                               </div>
-                              {board.logo_url && (
-                                <div className="ml-4">
-                                  <img 
-                                    src={board.logo_url} 
-                                    alt={`${board.name} logo`}
-                                    className="w-12 h-12 object-contain rounded-lg bg-gray-50"
-                                  />
+                              <div className="ml-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
+                                  <BookOpen className="h-6 w-6 text-indigo-600" />
                                 </div>
-                              )}
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -180,71 +177,29 @@ export default async function CountryPage({ params }: CountryPageProps) {
                 </CardContent>
               </Card>
 
-              {/* MCQs Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-emerald-100 rounded-lg">
-                      <Brain className="h-5 w-5 text-emerald-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Multiple Choice Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Practice with interactive MCQs</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Brain className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">MCQ content will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Practice questions for better understanding</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* MCQs Section */}
+              <MCQSection 
+                entityType="Country"
+                entityId={country._id!}
+                title="Multiple Choice Questions"
+                description="Practice with interactive MCQs"
+              />
 
-              {/* FAQs Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-violet-100 rounded-lg">
-                      <HelpCircle className="h-5 w-5 text-violet-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Frequently Asked Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Common questions and answers</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <HelpCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">FAQ content will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Find answers to common questions</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* FAQs Section */}
+              <FAQSection 
+                entityType="Country"
+                entityId={country._id!}
+                title="Frequently Asked Questions"
+                description="Common questions and answers"
+              />
 
-              {/* Descriptive Questions Section - Reserved Space */}
-              <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
-                <CardHeader>
-                  <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <FileText className="h-5 w-5 text-amber-600" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-xl">Descriptive Questions</CardTitle>
-                      <p className="text-gray-600 text-sm">Detailed answers and explanations</p>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500">Descriptive questions will be available soon</p>
-                    <p className="text-sm text-gray-400 mt-2">Comprehensive answers with detailed explanations</p>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Descriptive Questions Section */}
+              <DescriptiveQuestionSection 
+                entityType="Country"
+                entityId={country._id!}
+                title="Descriptive Questions"
+                description="Detailed answers and explanations"
+              />
             </div>
 
             {/* Sidebar */}
@@ -253,12 +208,12 @@ export default async function CountryPage({ params }: CountryPageProps) {
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <BookOpen className="h-5 w-5 text-indigo-600" />
+                    <div className="p-2 bg-purple-100 rounded-lg">
+                      <BookOpen className="h-5 w-5 text-purple-600" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg">All Educational Boards</CardTitle>
-                      <p className="text-gray-600 text-sm">Choose your preferred curriculum</p>
+                      <CardTitle className="text-lg">All Available Boards</CardTitle>
+                      <p className="text-gray-600 text-sm">Choose your curriculum</p>
                     </div>
                   </div>
                 </CardHeader>
@@ -266,7 +221,7 @@ export default async function CountryPage({ params }: CountryPageProps) {
                   <div className="space-y-4">
                     {boards.map((board: any) => (
                       <Link key={board._id} href={`/${countryCode}/${board.short_code}`}>
-                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-sky-200 bg-white/60 hover:bg-white rounded-lg">
+                        <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer border border-gray-100 hover:border-indigo-200 bg-white/60 hover:bg-white rounded-lg">
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
@@ -287,15 +242,11 @@ export default async function CountryPage({ params }: CountryPageProps) {
                                   </div>
                                 </div>
                               </div>
-                              {board.logo_url && (
-                                <div className="ml-4">
-                                  <img 
-                                    src={board.logo_url} 
-                                    alt={`${board.name} logo`}
-                                    className="w-12 h-12 object-contain rounded-lg bg-gray-50"
-                                  />
+                              <div className="ml-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-lg flex items-center justify-center">
+                                  <BookOpen className="h-6 w-6 text-indigo-600" />
                                 </div>
-                              )}
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -340,8 +291,8 @@ export default async function CountryPage({ params }: CountryPageProps) {
               <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl">
                 <CardHeader>
                   <div className="flex items-center space-x-3">
-                    <div className="p-2 bg-purple-100 rounded-lg">
-                      <Globe className="h-5 w-5 text-purple-600" />
+                    <div className="p-2 bg-indigo-100 rounded-lg">
+                      <Globe className="h-5 w-5 text-indigo-600" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">Other Countries</CardTitle>
@@ -353,7 +304,7 @@ export default async function CountryPage({ params }: CountryPageProps) {
                   <div className="text-center py-8">
                     <Globe className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                     <p className="text-gray-500">More countries coming soon</p>
-                    <p className="text-sm text-gray-400 mt-1">Explore educational content from other regions</p>
+                    <p className="text-sm text-gray-400 mt-1">Explore educational content from other countries</p>
                   </div>
                 </CardContent>
               </Card>
