@@ -46,8 +46,17 @@ export const createBoard = async (
 export const getBoards = async (req: Request, res: Response): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const boards = await boardService.getAllBoards(language_id);
-    res.status(200).json(boards);
+    const country_code = req.query.country_code as string | undefined;
+    
+    if (country_code) {
+      // New functionality: Get boards by country code
+      const boards = await boardService.getBoardsByCountry(country_code, language_id);
+      res.status(200).json(boards);
+    } else {
+      // Existing functionality: Get all boards
+      const boards = await boardService.getAllBoards(language_id);
+      res.status(200).json(boards);
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

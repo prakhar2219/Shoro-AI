@@ -12,7 +12,10 @@ import {
     LayoutList,
     ChevronLeft,
     ChevronRight,
-    Languages
+    Languages,
+    HelpCircle,
+    MessageSquare,
+    CheckSquare
 } from "lucide-react"
 import clsx from "clsx"
 
@@ -24,6 +27,9 @@ const navItems = [
     { name: "Classes", href: "/admin/classes", icon: Book },
     { name: "Subjects", href: "/admin/subjects", icon: FileText },
     { name: "Chapters", href: "/admin/chapters", icon: LayoutList },
+    { name: "MCQs", href: "/admin/mcqs", icon: CheckSquare },
+    { name: "Descriptive Questions", href: "/admin/descriptive-questions", icon: MessageSquare },
+    { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
 ]
 
 export function AdminSidebar() {

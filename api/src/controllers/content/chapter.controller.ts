@@ -41,7 +41,31 @@ export const getChapters = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { page = 1, limit = 10, board_id, class_id, subject_id, language_id } = req.query;
+    const { 
+      page = 1, 
+      limit = 10, 
+      board_id, 
+      class_id, 
+      subject_id, 
+      language_id,
+      board_short_code,
+      class_grade,
+      subject_code
+    } = req.query;
+    
+    // New functionality: Filter by human-readable identifiers
+    if (board_short_code && class_grade && subject_code) {
+      const chapters = await chapterService.getChaptersByBoardClassAndSubject(
+        board_short_code as string,
+        parseInt(class_grade as string),
+        subject_code as string,
+        language_id as string
+      );
+      res.status(200).json(chapters);
+      return;
+    }
+    
+    // Existing functionality: Filter by IDs
     if (page || limit || board_id || class_id || subject_id || language_id) {
       const result = await chapterService.getChaptersWithPagination(
         Number(page),
@@ -73,6 +97,37 @@ export const getChapter = async (
       res.status(404).json({ error: 'Chapter not found' });
       return;
     }
+    res.status(200).json(chapter);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+export const getChapterBySlug = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { board_short_code, class_grade, subject_code, chapter_slug, language_id } = req.query;
+    
+    if (!board_short_code || !class_grade || !subject_code || !chapter_slug) {
+      res.status(400).json({ error: 'Missing required parameters: board_short_code, class_grade, subject_code, chapter_slug' });
+      return;
+    }
+
+    const chapter = await chapterService.getChapterBySlug(
+      board_short_code as string,
+      parseInt(class_grade as string),
+      subject_code as string,
+      chapter_slug as string,
+      language_id as string
+    );
+
+    if (!chapter) {
+      res.status(404).json({ error: 'Chapter not found' });
+      return;
+    }
+
     res.status(200).json(chapter);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

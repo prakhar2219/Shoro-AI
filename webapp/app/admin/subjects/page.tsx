@@ -26,6 +26,13 @@ import {
 import { getClasses, IClass } from "@/lib/api/entities/classes";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
 import { Loader2 } from "lucide-react";
+import { MCQSection } from "@/components/entity/MCQSection";
+import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
+import { FAQSection } from "@/components/entity/FAQSection";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { MCQFormModal } from "@/components/shared/MCQFormModal";
+import { FAQFormModal } from "@/components/shared/FAQFormModal";
+import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
 
 export default function SubjectsPage() {
   const [subjects, setSubjects] = useState<ISubject[]>([]);
@@ -43,6 +50,12 @@ export default function SubjectsPage() {
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ subject: ISubject; translation: ISubjectTranslation } | null>(null);
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
   const [isLoading, setIsLoading] = useState(false);
+
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
 
   // Map for class and language display
   const classMap = Object.fromEntries(classes.map(c => [c._id, c.name]));
@@ -208,23 +221,27 @@ export default function SubjectsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }: { row: { original: ISubject } }) => (
-        <div className="flex gap-2">
-          <button
-            className="text-blue-600 hover:underline text-xs"
-            onClick={() => {
-              setEditing(row.original);
-              setOpenForm(true);
-            }}
-          >
-            Edit
-          </button>
-          <button
-            className="text-red-600 hover:underline text-xs"
-            onClick={() => setDeleteTarget(row.original)}
-          >
-            Delete
-          </button>
-        </div>
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Subject"
+          onEdit={() => {
+            setEditing(row.original);
+            setOpenForm(true);
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+        />
       ),
       enableSorting: false,
       enableHiding: false,
@@ -397,7 +414,7 @@ export default function SubjectsPage() {
         <SubjectForm
           initialData={editing ? getSubjectFormInitialData(editing) : undefined}
           onSubmit={handleCreateOrUpdate}
-          classes={classes.map(c => ({ id: c._id as string, name: c.name }))}
+          // classes={classes.map(c => ({ id: c._id as string, name: c.name }))}
           loading={isLoading}
         />
       </EntityFormModal>
@@ -430,6 +447,68 @@ export default function SubjectsPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Content Form Modals */}
+      {selectedEntity && (
+        <>
+          <MCQFormModal
+            open={openMCQModal}
+            onOpenChange={setOpenMCQModal}
+            entityType="Subject"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <FAQFormModal
+            open={openFAQModal}
+            onOpenChange={setOpenFAQModal}
+            entityType="Subject"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <DescriptiveQuestionFormModal
+            open={openDescriptiveQuestionModal}
+            onOpenChange={setOpenDescriptiveQuestionModal}
+            entityType="Subject"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+        </>
+      )}
+
+      {/* Global Content Management for All Subjects */}
+      <div className="mt-8 space-y-6">
+        <h2 className="text-2xl font-bold">Global Content Management</h2>
+        
+        {/* MCQ Section - Show all MCQs for Subjects */}
+        <MCQSection 
+          entityType="Subject" 
+          entityId="" 
+          entityName="All Subjects" 
+        />
+        
+        {/* Descriptive Questions Section - Show all questions for Subjects */}
+        <DescriptiveQuestionSection 
+          entityType="Subject" 
+          entityId="" 
+          entityName="All Subjects" 
+        />
+        
+        {/* FAQ Section - Show all FAQs for Subjects */}
+        <FAQSection 
+          entityType="Subject" 
+          entityId="" 
+          entityName="All Subjects" 
+        />
+      </div>
     </div>
   );
 } 

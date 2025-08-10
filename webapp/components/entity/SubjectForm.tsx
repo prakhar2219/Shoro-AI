@@ -87,7 +87,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
       <CardHeader>
         <CardTitle>{initialData ? 'Edit Subject' : 'Create Subject'}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="board_id">Board</Label>

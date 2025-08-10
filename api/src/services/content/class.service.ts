@@ -146,3 +146,37 @@ export const deleteClassTranslation = async (translationId: string) => {
 export const getClassesByBoard = async (board_id: string) => {
   return await ClassModel.find({ board_id }).sort({ grade: 1 });
 };
+
+export const getClassesByBoardShortCode = async (board_short_code: string, language_id?: string) => {
+  const classes = await ClassModel.find()
+    .populate({
+      path: 'board_id',
+      match: { short_code: board_short_code }
+    })
+    .sort({ grade: 1 });
+
+  // Filter classes that have the specified board
+  const filteredClasses = classes.filter((cls: any) => cls.board_id);
+
+  // Attach translation for each class
+  const classesWithTranslations = await Promise.all(
+    filteredClasses.map(async (cls: any) => {
+      let translation = null;
+      if (language_id) {
+        translation = await ClassTranslation.findOne({
+          class_id: cls._id,
+          language_id,
+        });
+      }
+      if (!translation) {
+        translation = await ClassTranslation.findOne({ class_id: cls._id });
+      }
+      return {
+        ...cls.toObject(),
+        name: translation?.name || cls.name,
+        translation,
+      };
+    })
+  );
+  return classesWithTranslations;
+};

@@ -31,6 +31,13 @@ import { BoardForm } from "@/components/entity/BoardForm";
 import { BoardTranslationForm } from "@/components/entity/BoardTranslationForm";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Loader2 } from "lucide-react";
+import { MCQSection } from "@/components/entity/MCQSection";
+import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
+import { FAQSection } from "@/components/entity/FAQSection";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { MCQFormModal } from "@/components/shared/MCQFormModal";
+import { FAQFormModal } from "@/components/shared/FAQFormModal";
+import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
 
 export default function BoardsPage() {
   const [boards, setBoards] = useState<IBoard[]>([]);
@@ -50,6 +57,12 @@ export default function BoardsPage() {
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ board: IBoard; translation: IBoardTranslation } | null>(null);
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
   const [isLoading, setIsLoading] = useState(false);
+
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
 
   // Map for country and language display
   const countryMap = Object.fromEntries(countries.map(c => [c._id || c.code, c.name]));
@@ -255,23 +268,27 @@ export default function BoardsPage() {
       id: "actions",
       header: "Actions",
       cell: ({ row }: { row: { original: IBoard } }) => (
-        <div className="flex gap-2">
-          <button
-            className="text-blue-600 hover:underline text-xs"
-            onClick={() => {
-              setEditing(row.original);
-              setOpenForm(true);
-            }}
-          >
-            Edit
-          </button>
-          <button
-            className="text-red-600 hover:underline text-xs"
-            onClick={() => setDeleteTarget(row.original)}
-          >
-            Delete
-          </button>
-        </div>
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Board"
+          onEdit={() => {
+            setEditing(row.original);
+            setOpenForm(true);
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+        />
       ),
       enableSorting: false,
       enableHiding: false,
@@ -525,7 +542,69 @@ export default function BoardsPage() {
         description={`Are you sure you want to delete the translation "${deleteTranslationTarget?.translation.name}"?`}
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
-            />
+      />
+
+      {/* Content Form Modals */}
+      {selectedEntity && (
+        <>
+          <MCQFormModal
+            open={openMCQModal}
+            onOpenChange={setOpenMCQModal}
+            entityType="Board"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <FAQFormModal
+            open={openFAQModal}
+            onOpenChange={setOpenFAQModal}
+            entityType="Board"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <DescriptiveQuestionFormModal
+            open={openDescriptiveQuestionModal}
+            onOpenChange={setOpenDescriptiveQuestionModal}
+            entityType="Board"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+        </>
+      )}
+
+      {/* Global Content Management for All Boards */}
+      <div className="mt-8 space-y-6">
+        <h2 className="text-2xl font-bold">Global Content Management</h2>
+        
+        {/* MCQ Section - Show all MCQs for Boards */}
+        <MCQSection 
+          entityType="Board" 
+          entityId="" 
+          entityName="All Boards" 
+        />
+        
+        {/* Descriptive Questions Section - Show all questions for Boards */}
+        <DescriptiveQuestionSection 
+          entityType="Board" 
+          entityId="" 
+          entityName="All Boards" 
+        />
+        
+        {/* FAQ Section - Show all FAQs for Boards */}
+        <FAQSection 
+          entityType="Board" 
+          entityId="" 
+          entityName="All Boards" 
+        />
+      </div>
         </div>
     );
 }

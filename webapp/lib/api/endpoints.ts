@@ -5,5 +5,8 @@ export const API_ENDPOINTS = {
     subjects: '/content/subjects',
     chapters: '/content/chapters',
     languages: '/content/languages',
+    mcqs: '/content/mcqs',
+    descriptiveQuestions: '/content/descriptive-questions',
+    faqs: '/content/faqs',
     upload: '/upload',
 };

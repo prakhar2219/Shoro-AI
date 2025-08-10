@@ -34,8 +34,17 @@ export const getClasses = async (
 ): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const classes = await classService.getAllClasses(language_id);
-    res.status(200).json(classes);
+    const board_short_code = req.query.board_short_code as string | undefined;
+    
+    if (board_short_code) {
+      // New functionality: Get classes by board short code
+      const classes = await classService.getClassesByBoardShortCode(board_short_code, language_id);
+      res.status(200).json(classes);
+    } else {
+      // Existing functionality: Get all classes
+      const classes = await classService.getAllClasses(language_id);
+      res.status(200).json(classes);
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

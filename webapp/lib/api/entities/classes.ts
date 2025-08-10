@@ -8,6 +8,9 @@ export interface IClass {
   name: string;
   grade: number;
   board_id: string | { _id: string; name: string; short_code: string; [key: string]: any };
+  description?: string;
+  age_range?: string;
+  content?: any[];
   translation?: IClassTranslation;
   translations?: IClassTranslation[];
   createdAt?: string;
@@ -85,5 +88,12 @@ export const deleteClassTranslation = async (id: string, translationId: string) 
 
 export const getClassesByBoard = async (board_id: string): Promise<IClass[]> => {
   const res = await api.get(`${API_ENDPOINTS.classes}/by-board/${board_id}`);
+  return res.data;
+};
+
+export const getClassesByBoardShortCode = async (board_short_code: string, language_id?: string): Promise<IClass[]> => {
+  const params: any = { board_short_code };
+  if (language_id) params.language_id = language_id;
+  const res = await api.get(API_ENDPOINTS.classes, { params });
   return res.data;
 };

@@ -65,7 +65,7 @@ export function BoardForm({ onSubmit, loading = false, initialData, countries, l
       <CardHeader>
         <CardTitle>{initialData ? "Edit Board" : "Create Board"}</CardTitle>
       </CardHeader>
-      <CardContent>
+  <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Board Name</Label>

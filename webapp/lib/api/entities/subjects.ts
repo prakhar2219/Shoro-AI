@@ -9,6 +9,7 @@ export interface ISubject {
   code: string;
   icon?: string;
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
+  content?: any[];
   translation?: ISubjectTranslation;
   translations?: ISubjectTranslation[];
   createdAt?: string;
@@ -39,6 +40,13 @@ export const getSubjectsWithPagination = async (page = 1, limit = 15, search = '
 export const getSubjects = async (language_id?: string): Promise<ISubject[]> => {
   // Only pass language_id if explicitly provided
   const params = language_id ? { language_id } : undefined;
+  const res = await api.get(API_ENDPOINTS.subjects, { params });
+  return res.data;
+};
+
+export const getSubjectsByBoardAndClass = async (board_short_code: string, class_grade: number, language_id?: string): Promise<ISubject[]> => {
+  const params: any = { board_short_code, class_grade };
+  if (language_id) params.language_id = language_id;
   const res = await api.get(API_ENDPOINTS.subjects, { params });
   return res.data;
 };
