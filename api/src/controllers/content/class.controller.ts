@@ -7,9 +7,9 @@ export const createClass = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { board_id, number, name, grade } = req.body;
+    const { board_id, number, name, grade, content } = req.body;
 
-    if (!board_id || typeof grade !== 'number' || !name) {
+    if (!board_id || typeof grade !== 'number' || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -18,6 +18,7 @@ export const createClass = async (
       board_id,
       name,
       grade,
+      content,
     } as IClass;
 
     const created = await classService.createClass(classData);
@@ -33,8 +34,17 @@ export const getClasses = async (
 ): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const classes = await classService.getAllClasses(language_id);
-    res.status(200).json(classes);
+    const board_short_code = req.query.board_short_code as string | undefined;
+    
+    if (board_short_code) {
+      // New functionality: Get classes by board short code
+      const classes = await classService.getClassesByBoardShortCode(board_short_code, language_id);
+      res.status(200).json(classes);
+    } else {
+      // Existing functionality: Get all classes
+      const classes = await classService.getAllClasses(language_id);
+      res.status(200).json(classes);
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -124,14 +134,15 @@ export const getClassTranslations = async (req: Request, res: Response): Promise
 export const createClassTranslation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { language_id, name, translated_by_ai, needs_review, updated_by } = req.body;
-    if (!language_id || !name) {
+    const { language_id, name, content, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
     const translation = {
       language_id,
       name,
+      content,
       translated_by_ai,
       needs_review,
       updated_by,

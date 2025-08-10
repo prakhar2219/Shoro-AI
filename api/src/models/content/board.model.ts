@@ -14,6 +14,7 @@ const BoardSchema = new Schema<IBoard>(
     supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
     description: { type: String },
     logo_url: { type: String },
+    content: { type: [Schema.Types.Mixed], required: true } as any,
   },
   { timestamps: true }
 );

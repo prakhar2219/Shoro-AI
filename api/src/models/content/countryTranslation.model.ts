@@ -9,6 +9,7 @@ const CountryTranslationSchema = new Schema<ICountryTranslation>(
     translated_by_ai: { type: Boolean, default: false },
     needs_review: { type: Boolean, default: false },
     updated_by: { type: String },
+    content: { type: [Schema.Types.Mixed], required: true } as any,
   },
   { timestamps: true }
 );

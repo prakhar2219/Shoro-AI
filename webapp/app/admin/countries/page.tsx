@@ -38,6 +38,13 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { CountryTranslationForm } from "@/components/entity/CountryTranslationForm";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { Loader2 } from "lucide-react";
+import { MCQSection } from "@/components/entity/MCQSection";
+import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
+import { FAQSection } from "@/components/entity/FAQSection";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { MCQFormModal } from "@/components/shared/MCQFormModal";
+import { FAQFormModal } from "@/components/shared/FAQFormModal";
+import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
 
 export default function CountriesPage() {
   const [countries, setCountries] = useState<ICountry[]>([]);
@@ -57,6 +64,12 @@ export default function CountriesPage() {
   const [openTranslationForm, setOpenTranslationForm] = useState<{ country: ICountry; translation?: any } | null>(null);
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ country: ICountry; translation: ICountryTranslation } | null>(null);
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
+
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
 
   // Language code-to-name map
   const languageMap = Object.fromEntries(languages.map(l => [l.code, l.name]));
@@ -302,47 +315,34 @@ export default function CountriesPage() {
     }
   };
 
-  // Extend columns with actions (no expand column here)
+  // Extend columns with actions and display
   const columns: ColumnDef<ICountry>[] = [
-    ...((countryColumns as ColumnDef<ICountry>[]) || []).map(col => {
-      if ('accessorKey' in col && col.accessorKey === "default_language_code") {
-        return {
-          ...col,
-          cell: ({ row }: { row: { original: ICountry } }) => languageMap[row.original.default_language_code] || row.original.default_language_code,
-        };
-      }
-      if ('accessorKey' in col && col.accessorKey === "supported_language_codes") {
-        return {
-          ...col,
-          cell: ({ row }: { row: { original: ICountry } }) =>
-            (row.original.supported_language_codes || [])
-              .map((code: string) => languageMap[code] || code)
-              .join(", ") || "-",
-        };
-      }
-      return col;
-    }),
+    ...countryColumns,
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }: { row: { original: ICountry } }) => (
-        <div className="flex gap-2">
-          <button
-            className="text-blue-600 hover:underline text-xs"
-            onClick={() => {
-              setEditing(row.original);
-              setOpenForm(true);
-            }}
-          >
-            Edit
-          </button>
-          <button
-            className="text-red-600 hover:underline text-xs"
-            onClick={() => setDeleteTarget(row.original)}
-          >
-            Delete
-          </button>
-        </div>
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Country"
+          onEdit={() => {
+            setEditing(row.original);
+            setOpenForm(true);
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.name });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+        />
       ),
       enableSorting: false,
       enableHiding: false,
@@ -571,6 +571,68 @@ export default function CountriesPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Content Form Modals */}
+      {selectedEntity && (
+        <>
+          <MCQFormModal
+            open={openMCQModal}
+            onOpenChange={setOpenMCQModal}
+            entityType="Country"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <FAQFormModal
+            open={openFAQModal}
+            onOpenChange={setOpenFAQModal}
+            entityType="Country"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+          <DescriptiveQuestionFormModal
+            open={openDescriptiveQuestionModal}
+            onOpenChange={setOpenDescriptiveQuestionModal}
+            entityType="Country"
+            entityId={selectedEntity.id}
+            entityName={selectedEntity.name}
+            onSuccess={() => {
+              // Optionally refresh data or show success message
+            }}
+          />
+        </>
+      )}
+
+      {/* Global Content Management for All Countries */}
+      <div className="mt-8 space-y-6">
+        <h2 className="text-2xl font-bold">Global Content Management</h2>
+        
+        {/* MCQ Section - Show all MCQs for Countries */}
+        <MCQSection 
+          entityType="Country" 
+          entityId="" 
+          entityName="All Countries" 
+        />
+        
+        {/* Descriptive Questions Section - Show all questions for Countries */}
+        <DescriptiveQuestionSection 
+          entityType="Country" 
+          entityId="" 
+          entityName="All Countries" 
+        />
+        
+        {/* FAQ Section - Show all FAQs for Countries */}
+        <FAQSection 
+          entityType="Country" 
+          entityId="" 
+          entityName="All Countries" 
+        />
+      </div>
     </div>
   );
 }

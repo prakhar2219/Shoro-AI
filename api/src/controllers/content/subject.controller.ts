@@ -7,9 +7,9 @@ export const createSubject = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { class_id, code, icon, name } = req.body;
+    const { class_id, code, icon, name, content } = req.body;
 
-    if (!class_id || !code || !name) {
+    if (!class_id || !code || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -19,6 +19,7 @@ export const createSubject = async (
       code,
       icon,
       name,
+      content,
     } as ISubject;
 
     const created = await subjectService.createSubject(subject);
@@ -34,8 +35,18 @@ export const getSubjects = async (
 ): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const subjects = await subjectService.getAllSubjects(language_id);
-    res.status(200).json(subjects);
+    const board_short_code = req.query.board_short_code as string | undefined;
+    const class_grade = req.query.class_grade as string | undefined;
+    
+    if (board_short_code && class_grade) {
+      // New functionality: Get subjects by board and class grade
+      const subjects = await subjectService.getSubjectsByBoardAndClass(board_short_code, parseInt(class_grade), language_id);
+      res.status(200).json(subjects);
+    } else {
+      // Existing functionality: Get all subjects
+      const subjects = await subjectService.getAllSubjects(language_id);
+      res.status(200).json(subjects);
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -128,14 +139,15 @@ export const getSubjectTranslations = async (req: Request, res: Response): Promi
 export const createSubjectTranslation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { language_id, name, translated_by_ai, needs_review, updated_by } = req.body;
-    if (!language_id || !name) {
+    const { language_id, name, content, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
     const translation = {
       language_id,
       name,
+      content,
       translated_by_ai,
       needs_review,
       updated_by,

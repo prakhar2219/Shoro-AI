@@ -7,6 +7,7 @@ export interface ICountry {
   code: string;
   default_language_code: string;
   supported_language_codes: string[];
+  content?: any[];
   createdAt?: string;
   updatedAt?: string;
   translation?: ICountryTranslation; // single translation (already present in BE)

@@ -8,6 +8,7 @@ export interface IBoardTranslation {
   translated_by_ai?: boolean;
   needs_review?: boolean;
   updated_by?: Schema.Types.ObjectId;
+  content: any[];
   createdAt?: Date;
   updatedAt?: Date;
   _id?: string;

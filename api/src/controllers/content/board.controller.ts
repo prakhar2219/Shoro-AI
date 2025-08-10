@@ -15,9 +15,10 @@ export const createBoard = async (
       supported_language_ids,
       description,
       logo_url,
+      content,
     } = req.body;
 
-    if (!name || !short_code || !country_id || !default_language_id) {
+    if (!name || !short_code || !country_id || !default_language_id || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -32,6 +33,7 @@ export const createBoard = async (
         : [],
       description,
       logo_url,
+      content,
     } as IBoard;
 
     const created = await boardService.createBoard(board);
@@ -44,8 +46,17 @@ export const createBoard = async (
 export const getBoards = async (req: Request, res: Response): Promise<void> => {
   try {
     const language_id = req.query.language_id as string | undefined;
-    const boards = await boardService.getAllBoards(language_id);
-    res.status(200).json(boards);
+    const country_code = req.query.country_code as string | undefined;
+    
+    if (country_code) {
+      // New functionality: Get boards by country code
+      const boards = await boardService.getBoardsByCountry(country_code, language_id);
+      res.status(200).json(boards);
+    } else {
+      // Existing functionality: Get all boards
+      const boards = await boardService.getAllBoards(language_id);
+      res.status(200).json(boards);
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -138,8 +149,8 @@ export const getBoardTranslations = async (req: Request, res: Response): Promise
 export const createBoardTranslation = async (req: Request, res: Response): Promise<void> => {
   try {
     const { short_code } = req.params;
-    const { language_id, name, description, translated_by_ai, needs_review, updated_by } = req.body;
-    if (!language_id || !name) {
+    const { language_id, name, description, content, translated_by_ai, needs_review, updated_by } = req.body;
+    if (!language_id || !name || !content) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -147,6 +158,7 @@ export const createBoardTranslation = async (req: Request, res: Response): Promi
       language_id,
       name,
       description,
+      content,
       translated_by_ai,
       needs_review,
       updated_by,

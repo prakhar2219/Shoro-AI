@@ -12,6 +12,7 @@ export interface IBoard {
   supported_language_ids: (string | { _id: string; name: string; code: string; [key: string]: any })[];
   description?: string;
   logo_url?: string;
+  content?: any[];
   translation?: IBoardTranslation;
   translations?: IBoardTranslation[];
   createdAt?: string;
@@ -42,6 +43,13 @@ export const getBoardsWithPagination = async (page = 1, limit = 15, search = '',
 
 export const getBoards = async (language_id?: string): Promise<IBoard[]> => {
   const params = language_id ? { language_id } : undefined;
+  const res = await api.get(API_ENDPOINTS.boards, { params });
+  return res.data;
+};
+
+export const getBoardsByCountry = async (country_code: string, language_id?: string): Promise<IBoard[]> => {
+  const params: any = { country_code };
+  if (language_id) params.language_id = language_id;
   const res = await api.get(API_ENDPOINTS.boards, { params });
   return res.data;
 };

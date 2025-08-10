@@ -3,6 +3,7 @@ import {
   createChapter,
   getChapters,
   getChapter,
+  getChapterBySlug,
   updateChapter,
   deleteChapter,
   addChapterTranslation,
@@ -14,6 +15,7 @@ const router = Router();
 
 router.post('/', createChapter);
 router.get('/', getChapters);
+router.get('/by-slug', getChapterBySlug);
 router.get('/:id', getChapter);
 router.put('/:id', updateChapter);
 router.delete('/:id', deleteChapter);

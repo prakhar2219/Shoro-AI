@@ -148,3 +148,43 @@ export const updateSubjectTranslation = async (translationId: string, data: any)
 export const deleteSubjectTranslation = async (translationId: string) => {
   return await SubjectTranslation.findByIdAndDelete(translationId);
 };
+
+export const getSubjectsByBoardAndClass = async (board_short_code: string, class_grade: number, language_id?: string) => {
+  const subjects = await SubjectModel.find()
+    .populate({
+      path: 'class_id',
+      populate: {
+        path: 'board_id',
+        match: { short_code: board_short_code }
+      },
+      match: { grade: class_grade }
+    })
+    .sort({ name: 1 });
+
+  // Filter subjects that have the specified board and class grade
+  const filteredSubjects = subjects.filter((subject: any) => 
+    subject.class_id && subject.class_id.board_id
+  );
+
+  // Attach translation for each subject
+  const subjectsWithTranslations = await Promise.all(
+    filteredSubjects.map(async (subject: any) => {
+      let translation = null;
+      if (language_id) {
+        translation = await SubjectTranslation.findOne({
+          subject_id: subject._id,
+          language_id,
+        });
+      }
+      if (!translation) {
+        translation = await SubjectTranslation.findOne({ subject_id: subject._id });
+      }
+      return {
+        ...subject.toObject(),
+        name: translation?.name || subject.name,
+        translation,
+      };
+    })
+  );
+  return subjectsWithTranslations;
+};

@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { RichTextEditor } from "@/components/rich-text-editor"
+import { useState } from "react"
 
 const classSchema = z.object({
     name: z.string().min(1, "Class name is required"),
@@ -17,13 +19,17 @@ const classSchema = z.object({
 type ClassFormValues = z.infer<typeof classSchema>
 
 type ClassFormProps = {
-    defaultValues?: Partial<ClassFormValues>
-    onSubmit: (data: ClassFormValues) => void
+    defaultValues?: Partial<ClassFormValues> & { content?: any }
+    onSubmit: (data: ClassFormValues & { content: any }) => void
     boards: { id: string; name: string }[]
     loading?: boolean
 }
 
 export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: ClassFormProps) => {
+    const [content, setContent] = useState(
+        Array.isArray(defaultValues?.content) ? defaultValues.content[0] : defaultValues?.content || { type: 'doc', content: [] }
+    )
+
     const {
         register,
         handleSubmit,
@@ -38,9 +44,17 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
         },
     })
 
+    const handleFormSubmit = (data: ClassFormValues) => {
+        onSubmit({ ...data, content })
+    }
+
+    const handleContentChange = (json: any) => {
+        setContent(json)
+    }
+
     return (
         <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(handleFormSubmit)}
             className="space-y-4 px-1 py-2"
         >
             <div>
@@ -87,6 +101,11 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 {errors.board_id && (
                     <p className="text-sm text-red-500">{errors.board_id.message}</p>
                 )}
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium mb-1">Content</Label>
+                <RichTextEditor value={content} onChange={handleContentChange} />
             </div>
 
             <div className="pt-1 text-right">

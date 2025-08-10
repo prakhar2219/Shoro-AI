@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandInput, CommandList, CommandItem, CommandEmpty } from "@/components/ui/command";
+import { RichTextEditor } from "@/components/rich-text-editor";
 
 interface CountryFormProps {
   onSubmit: (data: any) => void;
@@ -18,6 +19,7 @@ interface CountryFormProps {
     code: string;
     default_language_code: string;
     supported_language_codes?: string[];
+    content?: any;
   };
   languages: { code: string; name: string }[];
 }
@@ -28,6 +30,7 @@ export function CountryForm({ onSubmit, loading = false, initialData, languages 
     code: initialData?.code || "",
     default_language_code: initialData?.default_language_code || (languages[0]?.code || ""),
     supported_language_codes: initialData?.supported_language_codes || [],
+    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
   });
 
   // Local filter state for dropdown and chips
@@ -64,12 +67,16 @@ export function CountryForm({ onSubmit, loading = false, initialData, languages 
     });
   };
 
+  const handleContentChange = (json: any) => {
+    setFormData({ ...formData, content: json });
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>{initialData ? "Edit Country" : "Create Country"}</CardTitle>
       </CardHeader>
-      <CardContent>
+  <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="name">Country Name</Label>
@@ -163,6 +170,11 @@ export function CountryForm({ onSubmit, loading = false, initialData, languages 
                 ))
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={formData.content} onChange={handleContentChange} />
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">
