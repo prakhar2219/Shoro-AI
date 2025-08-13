@@ -1,58 +1,70 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { PageTitleWithActions } from "@/components/shared/PageTitleWithActions";
+import { useEffect, useState, useCallback } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { ChapterForm } from "@/components/entity/ChapterForm";
 import { ChapterCard } from "@/components/entity/ChapterCard";
 import Link from "next/link";
 import { getChapters, createChapter, updateChapter, deleteChapter } from "@/lib/api/entities/chapters";
-import { DataTable } from '@/components/ui/DataTable';
 import { chapterColumns } from '@/components/table/columns/chapterColumns';
 import { getLanguages, ILanguage } from '@/lib/api/entities/language';
 import { ChapterTranslationForm } from '@/components/entity/ChapterTranslationForm';
 import { api } from '@/lib/api/axios';
-import { MCQSection } from "@/components/entity/MCQSection";
-import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
-import { FAQSection } from "@/components/entity/FAQSection";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
-import { MCQFormModal } from "@/components/shared/MCQFormModal";
-import { FAQFormModal } from "@/components/shared/FAQFormModal";
-import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
+import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
+import { ContentFormModals } from "@/components/shared/ContentFormModals";
+import { useAdminPage } from "@/hooks/use-admin-page";
+import { ColumnDef } from "@tanstack/react-table";
 
 type Chapter = any;
 
 type ChapterInput = any;
 
 export default function ChapterAdminPage() {
-  const [chapters, setChapters] = useState<Chapter[]>([]);
   const [selected, setSelected] = useState<Chapter | null>(null);
   const [openModal, setOpenModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Chapter | null>(null);
-  const [loading, setLoading] = useState(false);
   const [openTranslationForm, setOpenTranslationForm] = useState<{ chapter: any; translation?: any } | null>(null);
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ chapter: Chapter; translation: any } | null>(null);
-  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
+  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   // Content modal states
   const [openMCQModal, setOpenMCQModal] = useState(false);
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
-  // translationsMap is no longer needed; translations are now included in the BE response
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    fetchChapters();
-    // eslint-disable-next-line
-  }, [page, limit]);
+  // Wrap fetchData in useCallback to prevent infinite loop
+  const fetchChaptersData = useCallback(async (pageNum: number, size: number, search: string) => {
+    const result = await getChapters({ page: pageNum, limit: size });
+    return {
+      data: result.data || [],
+      totalPages: result.totalPages || 1,
+      total: result.total || 0,
+    };
+  }, []);
+
+  // Use the custom hook for common admin page functionality
+  const {
+    data: chapters,
+    searchTerm,
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    isLoading: isDataLoading,
+    handleSearchInputChange,
+    handlePageSizeChange,
+    fetchPaginatedData,
+  } = useAdminPage<Chapter>({
+    fetchData: fetchChaptersData,
+    pageSize: 10
+  });
 
   useEffect(() => {
     getLanguages().then((langs) => {
@@ -61,45 +73,24 @@ export default function ChapterAdminPage() {
     });
   }, []);
 
-  // Remove translationsMap and related useEffect
-
-  const fetchChapters = async () => {
-    setLoading(true);
-    try {
-      const result = await getChapters({ page, limit });
-      setChapters(result.data || []);
-      setTotal(result.total || 0);
-      setTotalPages(result.totalPages || 1);
-    } catch (e) {
-      setChapters([]);
-      setTotal(0);
-      setTotalPages(1);
-    }
-    setLoading(false);
-  };
-
   const handleSave = async (data: ChapterInput) => {
-    setLoading(true);
     try {
       if (selected && selected._id) await updateChapter(selected._id, data);
       else await createChapter(data);
-      await fetchChapters();
+      await fetchPaginatedData(page, pageSize, searchTerm);
     } finally {
       setOpenModal(false);
       setSelected(null);
-      setLoading(false);
     }
   };
 
   const handleDelete = async () => {
     if (deleteTarget?._id) {
-      setLoading(true);
       try {
         await deleteChapter(deleteTarget._id);
-        await fetchChapters();
+        await fetchPaginatedData(page, pageSize, searchTerm);
       } finally {
         setDeleteTarget(null);
-        setLoading(false);
       }
     }
   };
@@ -107,24 +98,26 @@ export default function ChapterAdminPage() {
   const handleAddTranslation = (chapter: any) => {
     setOpenTranslationForm({ chapter });
   };
+  
   const handleEditTranslation = (chapter: any, translation: any) => {
     setOpenTranslationForm({ chapter, translation });
   };
+  
   const handleDeleteTranslation = (chapter: any, translation: any) => {
     setDeleteTranslationTarget({ chapter, translation });
   };
+  
   const confirmDeleteTranslation = async () => {
     if (deleteTranslationTarget) {
       setActiveTranslationAction(deleteTranslationTarget.translation._id);
       await api.delete(`/content/chapters/${deleteTranslationTarget.chapter._id}/translations/${deleteTranslationTarget.translation._id}`);
-      await fetchChapters();
+      await fetchPaginatedData(page, pageSize, searchTerm);
       setDeleteTranslationTarget(null);
       setActiveTranslationAction(null);
     }
   };
 
   const handleTranslationSubmit = async (data: any) => {
-    setLoading(true);
     try {
       if (openTranslationForm?.translation && openTranslationForm.translation._id) {
         // Edit
@@ -133,102 +126,31 @@ export default function ChapterAdminPage() {
         // Add
         await api.post(`/content/chapters/${openTranslationForm?.chapter?._id}/translations`, data);
       }
-      await fetchChapters();
+      await fetchPaginatedData(page, pageSize, searchTerm);
       setOpenTranslationForm(null);
     } catch (e) {
       // Optionally show error toast
     }
-    setLoading(false);
   };
 
   const renderExpandedRow = (chapter: any) => {
     const translations = chapter.translations || [];
     return (
-      <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-b-lg">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-semibold">Translations</span>
-          <div className="flex gap-2">
-            <button
-              className="px-3 py-1 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 flex items-center"
-              onClick={() => setSelected(chapter)}
-            >
-              <span className="flex items-center gap-1">📚 Manage Content</span>
-            </button>
-            <button
-              className="px-3 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs font-semibold shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center"
-              onClick={() => handleAddTranslation(chapter)}
-            >
-              <span className="flex items-center gap-1">+ Add Translation</span>
-            </button>
-          </div>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-zinc-200 dark:border-zinc-700 rounded">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Language</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Title</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Slug</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">SEO Title</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Needs Review</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">AI</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {translations.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-4 py-3 text-center text-xs text-zinc-500">
-                    No translations available.
-                  </td>
-                </tr>
-              ) : (
-                translations.map((t: any) => (
-                  <tr key={t._id || t.id} className="border-b border-zinc-200 dark:border-zinc-700">
-                    <td className="px-4 py-2 text-xs">{languageIdMap[t.language_id] || t.language_id || '-'}</td>
-                    <td className="px-4 py-2 text-xs">{t.title || '-'}</td>
-                    <td className="px-4 py-2 text-xs">{t.slug || '-'}</td>
-                    <td className="px-4 py-2 text-xs">{t.seo_title || '-'}</td>
-                    <td className="px-4 py-2 text-xs">{t.needs_review ? 'Yes' : 'No'}</td>
-                    <td className="px-4 py-2 text-xs">{t.translated_by_ai ? 'Yes' : 'No'}</td>
-                    <td className="px-4 py-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                          onClick={() => handleEditTranslation(chapter, t)}
-                          tabIndex={0}
-                          aria-label="Edit Translation"
-                        >
-                          Edit
-                          {activeTranslationAction === t._id && loading && (
-                            <span className="ml-1 animate-spin">...</span>
-                          )}
-                        </button>
-                        <button
-                          className="text-red-600 hover:underline text-xs flex items-center gap-1"
-                          onClick={() => handleDeleteTranslation(chapter, t)}
-                          tabIndex={0}
-                          aria-label="Delete Translation"
-                        >
-                          Delete
-                          {activeTranslationAction === t._id && loading && (
-                            <span className="ml-1 animate-spin">...</span>
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <TranslationManagementSection
+        translations={translations}
+        languageMap={languageIdMap}
+        onAddTranslation={() => handleAddTranslation(chapter)}
+        onEditTranslation={(translation) => handleEditTranslation(chapter, translation)}
+        onDeleteTranslation={(translation) => handleDeleteTranslation(chapter, translation)}
+        activeTranslationAction={activeTranslationAction}
+        isLoading={isDataLoading}
+        entityName="Chapter"
+      />
     );
   };
 
   // Add actions column to columns
-  const columns = [
+  const columns: ColumnDef<Chapter>[] = [
     ...chapterColumns,
     {
       id: 'actions',
@@ -259,41 +181,42 @@ export default function ChapterAdminPage() {
     },
   ];
 
-  // DataTable expects 0-based page
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage + 1); // DataTable uses 0-based, API uses 1-based
-  };
-
   return (
-    <div className="p-6 space-y-6">
-      <PageTitleWithActions
-        title="Chapters"
-        onAddClick={() => {
-          setSelected(null);
-          setOpenModal(true);
-        }}
-      />
-      {loading ? (
-        <div>Loading...</div>
-      ) : chapters.length === 0 ? (
-        <EmptyState title="No chapters found" />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={chapters}
-          renderExpandedRow={renderExpandedRow}
-          page={page - 1}
-          setPage={handlePageChange}
-          totalPages={totalPages}
-        />
-      )}
+    <AdminPageLayout
+      title="Chapters"
+      onAddClick={() => {
+        setSelected(null);
+        setOpenModal(true);
+      }}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchInputChange}
+      searchPlaceholder="Search chapters..."
+      pageSize={pageSize}
+      onPageSizeChange={handlePageSizeChange}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      isLoading={isDataLoading}
+      data={chapters}
+      columns={columns}
+      renderExpandedRow={renderExpandedRow}
+      emptyStateTitle="No chapters found"
+      emptyStateMessage="There are no chapters yet. Try adding one."
+      emptyStateAction={
+        <button className="btn btn-primary mt-2" onClick={() => setOpenModal(true)}>
+          Add Chapter
+        </button>
+      }
+    >
+      {/* Modals and dialogs */}
       <EntityFormModal
         title={selected ? "Edit Chapter" : "Add Chapter"}
         open={openModal}
         onOpenChange={setOpenModal}
       >
-        <ChapterForm initialData={selected || {}} onSubmit={handleSave} loading={loading} />
+        <ChapterForm initialData={selected || {}} onSubmit={handleSave} loading={isDataLoading} />
       </EntityFormModal>
+      
       <ConfirmationDialog
         open={!!deleteTarget}
         title="Delete Chapter"
@@ -301,6 +224,7 @@ export default function ChapterAdminPage() {
         onCancel={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
+      
       <EntityFormModal
         title={openTranslationForm?.translation ? "Edit Translation" : "Add Translation"}
         open={!!openTranslationForm}
@@ -310,11 +234,12 @@ export default function ChapterAdminPage() {
           <ChapterTranslationForm
             initialData={openTranslationForm.translation || {}}
             onSubmit={handleTranslationSubmit}
-            loading={loading}
+            loading={isDataLoading}
             languages={languages.filter(l => l._id).map(l => ({ _id: l._id || l.code, name: l.name, code: l.code }))}
           />
         )}
       </EntityFormModal>
+      
       <ConfirmationDialog
         open={!!deleteTranslationTarget}
         title="Delete Translation"
@@ -324,66 +249,23 @@ export default function ChapterAdminPage() {
       />
 
       {/* Content Form Modals */}
-      {selectedEntity && (
-        <>
-          <MCQFormModal
-            open={openMCQModal}
-            onOpenChange={setOpenMCQModal}
-            entityType="Chapter"
-            entityId={selectedEntity.id}
-            entityName={selectedEntity.name}
-            onSuccess={() => {
-              // Optionally refresh data or show success message
-            }}
-          />
-          <FAQFormModal
-            open={openFAQModal}
-            onOpenChange={setOpenFAQModal}
-            entityType="Chapter"
-            entityId={selectedEntity.id}
-            entityName={selectedEntity.name}
-            onSuccess={() => {
-              // Optionally refresh data or show success message
-            }}
-          />
-          <DescriptiveQuestionFormModal
-            open={openDescriptiveQuestionModal}
-            onOpenChange={setOpenDescriptiveQuestionModal}
-            entityType="Chapter"
-            entityId={selectedEntity.id}
-            entityName={selectedEntity.name}
-            onSuccess={() => {
-              // Optionally refresh data or show success message
-            }}
-          />
-        </>
-      )}
+      <ContentFormModals
+        selectedEntity={selectedEntity}
+        openMCQModal={openMCQModal}
+        setOpenMCQModal={setOpenMCQModal}
+        openFAQModal={openFAQModal}
+        setOpenFAQModal={setOpenFAQModal}
+        openDescriptiveQuestionModal={openDescriptiveQuestionModal}
+        setOpenDescriptiveQuestionModal={setOpenDescriptiveQuestionModal}
+        entityType="Chapter"
+      />
 
       {/* Global Content Management for All Chapters */}
-      <div className="mt-8 space-y-6">
-        <h2 className="text-2xl font-bold">Global Content Management</h2>
-        
-        {/* MCQ Section - Show all MCQs for Chapters */}
-        <MCQSection 
-          entityType="Chapter" 
-          entityId="" 
-          entityName="All Chapters" 
-        />
-        
-        {/* Descriptive Questions Section - Show all questions for Chapters */}
-        <DescriptiveQuestionSection 
-          entityType="Chapter" 
-          entityId="" 
-          entityName="All Chapters" 
-        />
-        
-        {/* FAQ Section - Show all FAQs for Chapters */}
-        <FAQSection 
-          entityType="Chapter" 
-          entityId="" 
-          entityName="All Chapters" 
-        />
-      </div>
-    </div>
+      <GlobalContentManagement
+        entityType="Chapter"
+        entityId=""
+        entityName="All Chapters"
+      />
+    </AdminPageLayout>
   );
 } 

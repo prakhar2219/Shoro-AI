@@ -1,19 +1,12 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState } from "react";
-import { PageTitleWithActions } from "@/components/shared/PageTitleWithActions";
+import { useEffect, useState, useCallback } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { useLoading } from "@/hooks/use-loading";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
-import { SearchBar } from "@/components/shared/SearchBar";
-import { DataTable } from "@/components/ui/DataTable";
-import { ColumnDef } from "@tanstack/react-table";
-import { useToast } from "@/hooks/use-toast";
 import { MCQForm } from "@/components/entity/MCQForm";
 import { MCQTranslationForm } from "@/components/entity/MCQTranslationForm";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Plus, Languages } from "lucide-react";
@@ -33,18 +26,16 @@ import {
   IMCQ,
   IMCQTranslation,
 } from "@/lib/api/entities/mcqs";
+import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { useAdminPage } from "@/hooks/use-admin-page";
+import { ColumnDef } from "@tanstack/react-table";
 
 export default function MCQsPage() {
-  const [mcqs, setMCQs] = useState<IMCQ[]>([]);
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<IMCQ | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<IMCQ | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   // Translation management
   const [openTranslationForm, setOpenTranslationForm] = useState<{
@@ -58,36 +49,39 @@ export default function MCQsPage() {
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   const { isLoading, startLoading, stopLoading } = useLoading();
-  const { toast } = useToast();
 
-  const fetchMCQs = async () => {
-    try {
-      startLoading();
-      const result = await getMCQs({ page, limit, search: searchTerm });
-      setMCQs(result.data);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to fetch MCQs",
-        variant: "destructive",
-      });
-    } finally {
-      stopLoading();
-    }
-  };
+  // Wrap fetchData in useCallback to prevent infinite loop
+  const fetchMCQsData = useCallback(async (pageNum: number, size: number, search: string) => {
+    const result = await getMCQs({ page: pageNum, limit: size, search });
+    return {
+      data: result.data || [],
+      totalPages: result.totalPages || 1,
+      total: result.total || 0,
+    };
+  }, []);
+
+  // Use the custom hook for common admin page functionality
+  const {
+    data: mcqs,
+    searchTerm,
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    handleSearchInputChange,
+    handlePageSizeChange,
+    fetchPaginatedData,
+  } = useAdminPage<IMCQ>({
+    fetchData: fetchMCQsData,
+    pageSize: 10
+  });
 
   const fetchLanguages = async () => {
     try {
       const languagesData = await getLanguages();
       setLanguages(languagesData);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch languages",
-        variant: "destructive",
-      });
+      console.error('Failed to fetch languages:', error);
     }
   };
 
@@ -95,35 +89,19 @@ export default function MCQsPage() {
     fetchLanguages();
   }, []);
 
-  useEffect(() => {
-    fetchMCQs();
-  }, [page, limit, searchTerm]);
-
   const handleCreateOrUpdate = async (data: any) => {
     try {
       startLoading();
       if (editing?._id) {
         await updateMCQ(editing._id, data);
-        toast({
-          title: "Success",
-          description: "MCQ updated successfully.",
-        });
       } else {
         await createMCQ(data);
-        toast({
-          title: "Success",
-          description: "MCQ created successfully.",
-        });
       }
       setOpenForm(false);
       setEditing(null);
-      fetchMCQs();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to save MCQ",
-        variant: "destructive",
-      });
+      console.error('Failed to save MCQ:', error);
     } finally {
       stopLoading();
     }
@@ -134,18 +112,10 @@ export default function MCQsPage() {
       try {
         startLoading();
         await deleteMCQ(deleteTarget._id);
-        toast({
-          title: "Success",
-          description: "MCQ deleted successfully.",
-        });
         setDeleteTarget(null);
-        fetchMCQs();
+        fetchPaginatedData(page, pageSize, searchTerm);
       } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.error || "Failed to delete MCQ",
-          variant: "destructive",
-        });
+        console.error('Failed to delete MCQ:', error);
       } finally {
         stopLoading();
       }
@@ -170,21 +140,15 @@ export default function MCQsPage() {
       startLoading();
       if (translation && translation._id && mcq._id) {
         await updateMCQTranslation(mcq._id, translation._id, data);
-        toast({ title: "Success", description: "Translation updated." });
       } else if (mcq._id) {
         await createMCQTranslation(mcq._id, data);
-        toast({ title: "Success", description: "Translation added." });
       } else {
         throw new Error("Missing MCQ ID");
       }
       setOpenTranslationForm(null);
-      fetchMCQs();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to save translation",
-        variant: "destructive",
-      });
+      console.error('Failed to save translation:', error);
     } finally {
       stopLoading();
     }
@@ -204,15 +168,10 @@ export default function MCQsPage() {
         throw new Error("Missing MCQ or translation ID");
       }
       await deleteMCQTranslation(mcq._id, translation._id);
-      toast({ title: "Success", description: "Translation deleted." });
       setDeleteTranslationTarget(null);
-      fetchMCQs();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to delete translation",
-        variant: "destructive",
-      });
+      console.error('Failed to delete translation:', error);
     } finally {
       stopLoading();
       setActiveTranslationAction(null);
@@ -391,45 +350,29 @@ export default function MCQsPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6">
-      {isLoading && <LoadingOverlay />}
-      
-      <PageTitleWithActions
-        title="MCQs"
-        onAddClick={() => setOpenForm(true)}
-      />
-
-      <div className="mt-6">
-        <SearchBar
-          placeholder="Search MCQs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      <div className="mt-6">
-        {mcqs.length === 0 ? (
-          <EmptyState
-            title="No MCQs found"
-            message="Get started by creating your first MCQ."
-            action={
-              <Button onClick={() => setOpenForm(true)}>
-                Create MCQ
-              </Button>
-            }
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={mcqs}
-            renderExpandedRow={renderExpandedRow}
-            page={page - 1}
-            totalPages={totalPages}
-            setPage={(newPage) => setPage(newPage + 1)}
-          />
-        )}
-      </div>
-
+    <AdminPageLayout
+      title="MCQs"
+      onAddClick={() => setOpenForm(true)}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchInputChange}
+      searchPlaceholder="Search MCQs..."
+      pageSize={pageSize}
+      onPageSizeChange={handlePageSizeChange}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      isLoading={isLoading}
+      data={mcqs}
+      columns={columns}
+      renderExpandedRow={renderExpandedRow}
+      emptyStateTitle="No MCQs found"
+      emptyStateMessage="Get started by creating your first MCQ."
+      emptyStateAction={
+        <Button onClick={() => setOpenForm(true)}>
+          Create MCQ
+        </Button>
+      }
+    >
       {/* MCQ Form Modal */}
       <EntityFormModal
         open={openForm}
@@ -467,7 +410,6 @@ export default function MCQsPage() {
         title="Delete MCQ"
         description="Are you sure you want to delete this MCQ? This action cannot be undone."
         onConfirm={handleDelete}
-        // loading={isLoading}
       />
 
       {/* Delete Translation Confirmation */}
@@ -477,8 +419,7 @@ export default function MCQsPage() {
         title="Delete Translation"
         description="Are you sure you want to delete this translation? This action cannot be undone."
         onConfirm={confirmDeleteTranslation}
-        // loading={isLoading}
       />
-    </div>
+    </AdminPageLayout>
   );
 } 

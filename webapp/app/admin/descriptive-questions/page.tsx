@@ -1,19 +1,12 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState } from "react";
-import { PageTitleWithActions } from "@/components/shared/PageTitleWithActions";
+import { useEffect, useState, useCallback } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { useLoading } from "@/hooks/use-loading";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
-import { SearchBar } from "@/components/shared/SearchBar";
-import { DataTable } from "@/components/ui/DataTable";
-import { ColumnDef } from "@tanstack/react-table";
-import { useToast } from "@/hooks/use-toast";
 import { DescriptiveQuestionForm } from "@/components/entity/DescriptiveQuestionForm";
 import { DescriptiveQuestionTranslationForm } from "@/components/entity/DescriptiveQuestionTranslationForm";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Plus, Languages } from "lucide-react";
@@ -30,18 +23,16 @@ import {
   IDescriptiveQuestionTranslation,
 } from "@/lib/api/entities/descriptiveQuestions";
 import { ILanguage } from "@/lib/api/entities/language";
+import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { useAdminPage } from "@/hooks/use-admin-page";
+import { ColumnDef } from "@tanstack/react-table";
 
 export default function DescriptiveQuestionsPage() {
-  const [questions, setQuestions] = useState<IDescriptiveQuestion[]>([]);
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<IDescriptiveQuestion | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<IDescriptiveQuestion | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   // Translation management
   const [openTranslationForm, setOpenTranslationForm] = useState<{
@@ -55,36 +46,39 @@ export default function DescriptiveQuestionsPage() {
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   const { isLoading, startLoading, stopLoading } = useLoading();
-  const { toast } = useToast();
 
-  const fetchQuestions = async () => {
-    try {
-      startLoading();
-      const result = await getDescriptiveQuestions({ page, limit, search: searchTerm });
-      setQuestions(result.data);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to fetch questions",
-        variant: "destructive",
-      });
-    } finally {
-      stopLoading();
-    }
-  };
+  // Wrap fetchData in useCallback to prevent infinite loop
+  const fetchDescriptiveQuestionsData = useCallback(async (pageNum: number, size: number, search: string) => {
+    const result = await getDescriptiveQuestions({ page: pageNum, limit: size, search });
+    return {
+      data: result.data || [],
+      totalPages: result.totalPages || 1,
+      total: result.total || 0,
+    };
+  }, []);
+
+  // Use the custom hook for common admin page functionality
+  const {
+    data: questions,
+    searchTerm,
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    handleSearchInputChange,
+    handlePageSizeChange,
+    fetchPaginatedData,
+  } = useAdminPage<IDescriptiveQuestion>({
+    fetchData: fetchDescriptiveQuestionsData,
+    pageSize: 10
+  });
 
   const fetchLanguages = async () => {
     try {
       const languagesData = await getLanguages();
       setLanguages(languagesData);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch languages",
-        variant: "destructive",
-      });
+      console.error('Failed to fetch languages:', error);
     }
   };
 
@@ -92,35 +86,19 @@ export default function DescriptiveQuestionsPage() {
     fetchLanguages();
   }, []);
 
-  useEffect(() => {
-    fetchQuestions();
-  }, [page, limit, searchTerm]);
-
   const handleCreateOrUpdate = async (data: any) => {
     try {
       startLoading();
       if (editing?._id) {
         await updateDescriptiveQuestion(editing._id, data);
-        toast({
-          title: "Success",
-          description: "Question updated successfully.",
-        });
       } else {
         await createDescriptiveQuestion(data);
-        toast({
-          title: "Success",
-          description: "Question created successfully.",
-        });
       }
       setOpenForm(false);
       setEditing(null);
-      fetchQuestions();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to save question",
-        variant: "destructive",
-      });
+      console.error('Failed to save question:', error);
     } finally {
       stopLoading();
     }
@@ -131,18 +109,10 @@ export default function DescriptiveQuestionsPage() {
       try {
         startLoading();
         await deleteDescriptiveQuestion(deleteTarget._id);
-        toast({
-          title: "Success",
-          description: "Question deleted successfully.",
-        });
         setDeleteTarget(null);
-        fetchQuestions();
+        fetchPaginatedData(page, pageSize, searchTerm);
       } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.error || "Failed to delete question",
-          variant: "destructive",
-        });
+        console.error('Failed to delete question:', error);
       } finally {
         stopLoading();
       }
@@ -167,19 +137,13 @@ export default function DescriptiveQuestionsPage() {
       startLoading();
       if (translation && translation._id) {
         await updateDescriptiveQuestionTranslation(question._id!, translation._id, data);
-        toast({ title: "Success", description: "Translation updated." });
       } else {
         await createDescriptiveQuestionTranslation(question._id!, data);
-        toast({ title: "Success", description: "Translation added." });
       }
       setOpenTranslationForm(null);
-      fetchQuestions();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to save translation",
-        variant: "destructive",
-      });
+      console.error('Failed to save translation:', error);
     } finally {
       stopLoading();
     }
@@ -196,15 +160,10 @@ export default function DescriptiveQuestionsPage() {
     try {
       startLoading();
       await deleteDescriptiveQuestionTranslation(question._id!, translation._id!);
-      toast({ title: "Success", description: "Translation deleted." });
       setDeleteTranslationTarget(null);
-      fetchQuestions();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to delete translation",
-        variant: "destructive",
-      });
+      console.error('Failed to delete translation:', error);
     } finally {
       stopLoading();
       setActiveTranslationAction(null);
@@ -365,45 +324,29 @@ export default function DescriptiveQuestionsPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6">
-      {isLoading && <LoadingOverlay />}
-      
-      <PageTitleWithActions
-        title="Descriptive Questions"
-        onAddClick={() => setOpenForm(true)}
-      />
-
-      <div className="mt-6">
-        <SearchBar
-          placeholder="Search questions..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      <div className="mt-6">
-        {questions.length === 0 ? (
-          <EmptyState
-            title="No questions found"
-            message="Get started by creating your first descriptive question."
-            action={
-              <Button onClick={() => setOpenForm(true)}>
-                Create Question
-              </Button>
-            }
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={questions}
-            renderExpandedRow={renderExpandedRow}
-            page={page - 1}
-            totalPages={totalPages}
-            setPage={(newPage) => setPage(newPage + 1)}
-          />
-        )}
-      </div>
-
+    <AdminPageLayout
+      title="Descriptive Questions"
+      onAddClick={() => setOpenForm(true)}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchInputChange}
+      searchPlaceholder="Search questions..."
+      pageSize={pageSize}
+      onPageSizeChange={handlePageSizeChange}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      isLoading={isLoading}
+      data={questions}
+      columns={columns}
+      renderExpandedRow={renderExpandedRow}
+      emptyStateTitle="No questions found"
+      emptyStateMessage="Get started by creating your first descriptive question."
+      emptyStateAction={
+        <Button onClick={() => setOpenForm(true)}>
+          Create Question
+        </Button>
+      }
+    >
       {/* Question Form Modal */}
       <EntityFormModal
         open={openForm}
@@ -440,7 +383,6 @@ export default function DescriptiveQuestionsPage() {
         title="Delete Question"
         description="Are you sure you want to delete this question? This action cannot be undone."
         onConfirm={handleDelete}
-        // loading={isLoading}
       />
 
       {/* Delete Translation Confirmation */}
@@ -450,8 +392,7 @@ export default function DescriptiveQuestionsPage() {
         title="Delete Translation"
         description="Are you sure you want to delete this translation? This action cannot be undone."
         onConfirm={confirmDeleteTranslation}
-        // loading={isLoading}
       />
-    </div>
+    </AdminPageLayout>
   );
 } 

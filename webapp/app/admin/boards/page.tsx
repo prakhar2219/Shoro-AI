@@ -2,19 +2,15 @@
 
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { PageTitleWithActions } from "@/components/shared/PageTitleWithActions";
+import React, { useEffect, useState } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
-import { useToast } from "@/hooks/use-toast";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
-import { SearchBar } from "@/components/shared/SearchBar";
 import { DataTable } from "@/components/ui/DataTable";
 import { boardColumns } from "@/components/table/columns/boardColumns";
 import { ColumnDef } from "@tanstack/react-table";
 import {
   getBoardsWithPagination,
-  getBoard,
   createBoard,
   updateBoard,
   deleteBoard,
@@ -29,15 +25,16 @@ import { getCountries, ICountry } from "@/lib/api/entities/countries";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
 import { BoardForm } from "@/components/entity/BoardForm";
 import { BoardTranslationForm } from "@/components/entity/BoardTranslationForm";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { Loader2 } from "lucide-react";
-import { MCQSection } from "@/components/entity/MCQSection";
-import { DescriptiveQuestionSection } from "@/components/entity/DescriptiveQuestionSection";
-import { FAQSection } from "@/components/entity/FAQSection";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { MCQFormModal } from "@/components/shared/MCQFormModal";
 import { FAQFormModal } from "@/components/shared/FAQFormModal";
 import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
+import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
+import { ContentFormModals } from "@/components/shared/ContentFormModals";
+import { useAdminPage } from "@/hooks/use-admin-page";
+import { useToast } from "@/hooks/use-toast";
 
 export default function BoardsPage() {
   const [boards, setBoards] = useState<IBoard[]>([]);
@@ -46,16 +43,11 @@ export default function BoardsPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<IBoard | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<IBoard | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
   const [openCsvUpload, setOpenCsvUpload] = useState(false);
-  const [page, setPage] = useState(0);
-  const [pageSize, setPageSize] = useState(15);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalRows, setTotalRows] = useState(0);
   const { toast } = useToast();
-  const [openTranslationForm, setOpenTranslationForm] = useState<{ board: IBoard; translation?: any } | null>(null);
+  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
+  const [openTranslationForm, setOpenTranslationForm] = useState<{ board: IBoard; translation?: IBoardTranslation } | null>(null);
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ board: IBoard; translation: IBoardTranslation } | null>(null);
-  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null); // translationId for spinner
   const [isLoading, setIsLoading] = useState(false);
 
   // Content modal states
@@ -63,6 +55,23 @@ export default function BoardsPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+
+  // Use the custom hook for common admin page functionality
+  const {
+    data: boardsData,
+    searchTerm,
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    isLoading: isDataLoading,
+    handleSearchInputChange,
+    handlePageSizeChange,
+    fetchPaginatedData,
+  } = useAdminPage<IBoard>({
+    fetchData: getBoardsWithPagination,
+    pageSize: 15
+  });
 
   // Map for country and language display
   const countryMap = Object.fromEntries(countries.map(c => [c._id || c.code, c.name]));
@@ -78,6 +87,7 @@ export default function BoardsPage() {
       setCountries([]);
     }
   };
+
   const fetchLanguages = async () => {
     try {
       const res = await getLanguages();
@@ -87,77 +97,10 @@ export default function BoardsPage() {
     }
   };
 
-  // Fetch paginated boards
-  const fetchPaginatedBoards = async (pageNum = 0, size = pageSize, search = searchTerm) => {
-    try {
-      setIsLoading(true);
-      const res = await getBoardsWithPagination(pageNum + 1, size, search);
-      setBoards(res.data || []);
-      setTotalPages(res.totalPages || 1);
-      setTotalRows(res.total || 0);
-    } catch (error: any) {
-      setBoards([]);
-      setTotalPages(1);
-      setTotalRows(0);
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to fetch boards. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Debounced search
-  const debouncedSearch = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (query: string) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          handleSearch(query);
-        }, 300);
-      };
-    })(),
-    []
-  );
-
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      fetchPaginatedBoards(page, pageSize, "");
-      return;
-    }
-    try {
-      setIsLoading(true);
-      const res = await getBoardsWithPagination(1, pageSize, query);
-      setBoards(res.data || []);
-      setTotalPages(res.totalPages || 1);
-      setTotalRows(res.total || 0);
-      setPage(0);
-    } catch (error: any) {
-      setBoards([]);
-      setTotalPages(1);
-      setTotalRows(0);
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to search boards. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-    useEffect(() => {
-        fetchCountries();
-    fetchLanguages();
-    }, []);
-
   useEffect(() => {
-    fetchPaginatedBoards(page, pageSize, searchTerm);
-    // eslint-disable-next-line
-  }, [page, pageSize, searchTerm]);
+    fetchCountries();
+    fetchLanguages();
+  }, []);
 
   const handleCreateOrUpdate = async (data: any) => {
     try {
@@ -165,13 +108,13 @@ export default function BoardsPage() {
       if (editing?.short_code) {
         await updateBoard(editing.short_code, data);
         toast({ title: "Success", description: "Board updated successfully." });
-        } else {
-            await createBoard(data);
+      } else {
+        await createBoard(data);
         toast({ title: "Success", description: "Board created successfully." });
       }
       setOpenForm(false);
       setEditing(null);
-      fetchPaginatedBoards(page, pageSize, searchTerm);
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -181,16 +124,16 @@ export default function BoardsPage() {
     } finally {
       setIsLoading(false);
     }
-    };
+  };
 
-    const handleDelete = async () => {
+  const handleDelete = async () => {
     if (deleteTarget?.short_code) {
       try {
         setIsLoading(true);
         await deleteBoard(deleteTarget.short_code);
         toast({ title: "Success", description: "Board deleted successfully." });
         setDeleteTarget(null);
-        fetchPaginatedBoards(page, pageSize, searchTerm);
+        fetchPaginatedData(page, pageSize, searchTerm);
       } catch (error: any) {
         toast({
           title: "Error",
@@ -207,11 +150,13 @@ export default function BoardsPage() {
   const handleAddTranslation = async (board: IBoard) => {
     setOpenTranslationForm({ board });
   };
+
   const handleEditTranslation = async (board: IBoard, translation: IBoardTranslation) => {
     setActiveTranslationAction(translation._id!);
     setOpenTranslationForm({ board, translation });
     setTimeout(() => setActiveTranslationAction(null), 500);
   };
+
   const handleTranslationSubmit = async (data: any) => {
     if (!openTranslationForm) return;
     const { board, translation } = openTranslationForm;
@@ -225,7 +170,7 @@ export default function BoardsPage() {
         toast({ title: "Success", description: "Translation added." });
       }
       setOpenTranslationForm(null);
-      fetchPaginatedBoards(page, pageSize, searchTerm);
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -236,10 +181,12 @@ export default function BoardsPage() {
       setIsLoading(false);
     }
   };
+
   const handleDeleteTranslation = (board: IBoard, translation: IBoardTranslation) => {
     setActiveTranslationAction(translation._id!);
     setDeleteTranslationTarget({ board, translation });
   };
+
   const confirmDeleteTranslation = async () => {
     if (!deleteTranslationTarget) return;
     const { board, translation } = deleteTranslationTarget;
@@ -248,7 +195,7 @@ export default function BoardsPage() {
       await deleteBoardTranslation(board.short_code, translation._id!);
       toast({ title: "Success", description: "Translation deleted." });
       setDeleteTranslationTarget(null);
-      fetchPaginatedBoards(page, pageSize, searchTerm);
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({
         title: "Error",
@@ -259,6 +206,23 @@ export default function BoardsPage() {
       setIsLoading(false);
       setActiveTranslationAction(null);
     }
+  };
+
+  // Render translations for expanded row
+  const renderExpandedRow = (board: IBoard) => {
+    const translations = board.translations || [];
+    return (
+      <TranslationManagementSection
+        translations={translations}
+        languageMap={languageIdMap}
+        onAddTranslation={() => handleAddTranslation(board)}
+        onEditTranslation={(translation) => handleEditTranslation(board, translation as IBoardTranslation)}
+        onDeleteTranslation={(translation) => handleDeleteTranslation(board, translation as IBoardTranslation)}
+        activeTranslationAction={activeTranslationAction}
+        isLoading={isLoading}
+        entityName="Board"
+      />
+    );
   };
 
   // Extend columns with actions and display
@@ -298,105 +262,13 @@ export default function BoardsPage() {
   // CSV schema for boards
   const boardCsvSchema: CsvSchema = {
     title: "Upload Boards CSV",
-    description: "Upload a CSV file with columns: short_code, name, country_id, default_language_id, supported_language_ids (comma-separated), description, logo_url.",
+    description: "Upload a CSV file with columns: short_code, name, country_id, default_language_id.",
     fields: [
       { name: "short_code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "country_id", type: "text", required: true } as FieldSchema,
       { name: "default_language_id", type: "text", required: true } as FieldSchema,
-      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
-      { name: "description", type: "text", required: false } as FieldSchema,
-      { name: "logo_url", type: "text", required: false } as FieldSchema,
     ],
-    instructions: {
-      required: ["short_code", "name", "country_id", "default_language_id"],
-      optional: ["supported_language_ids", "description", "logo_url"],
-    },
-  };
-
-  // Render translations for expanded row
-  const renderExpandedRow = (board: IBoard) => {
-    const translations = board.translations || [];
-    return (
-      <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-b-lg">
-        <div className="flex justify-between items-center mb-2">
-          <span className="font-semibold">Translations</span>
-          <button
-            className="px-3 py-1 rounded-md bg-green-600 hover:bg-green-700 text-white text-xs font-semibold shadow transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 flex items-center"
-            onClick={() => setOpenTranslationForm({ board })}
-          >
-            <span className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 20 20">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 5v10m5-5H5" />
-              </svg>
-              Add Translation
-            </span>
-          </button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-zinc-200 dark:border-zinc-700 rounded">
-            <thead>
-              <tr>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Language</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Name</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Description</th>
-                <th className="px-4 py-2 text-xs font-semibold border-b border-zinc-200 dark:border-zinc-700 text-left bg-zinc-100 dark:bg-zinc-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {translations.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-3 text-center text-xs text-zinc-500">
-                    No translations available.
-                  </td>
-                </tr>
-              ) :
-                translations.map((t: any) => (
-                  <tr key={t._id || t.id} className="border-b border-zinc-200 dark:border-zinc-700">
-                    <td className="px-4 py-2 text-xs">
-                      {languageIdMap[t.language_id] || t.language_id}
-                    </td>
-                    <td className="px-4 py-2 text-xs">
-                      {t.name}
-                    </td>
-                    <td className="px-4 py-2 text-xs">
-                      {t.description}
-                    </td>
-                    <td className="px-4 py-2 text-xs">
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-blue-600 hover:underline text-xs flex items-center gap-1"
-                          onClick={() => handleEditTranslation(board, t)}
-                          disabled={isLoading}
-                          tabIndex={0}
-                          aria-label="Edit Translation"
-                        >
-                          Edit
-                          {activeTranslationAction === t._id && isLoading && (
-                            <Loader2 className="animate-spin h-3 w-3 ml-1" />
-                          )}
-                        </button>
-                        <button
-                          className="text-red-600 hover:underline text-xs flex items-center gap-1"
-                          onClick={() => handleDeleteTranslation(board, t)}
-                          disabled={isLoading}
-                          tabIndex={0}
-                          aria-label="Delete Translation"
-                        >
-                          Delete
-                          {activeTranslationAction === t._id && isLoading && (
-                            <Loader2 className="animate-spin h-3 w-3 ml-1" />
-                          )}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    );
   };
 
   const getBoardFormInitialData = (board: IBoard) => ({
@@ -427,68 +299,32 @@ export default function BoardsPage() {
   });
 
   return (
-    <div className="p-4 sm:p-6 md:p-8">
-            <PageTitleWithActions
-                title="Boards"
-        onAddClick={() => setOpenForm(true)}
-        onImportClick={() => setOpenCsvUpload(true)}
-      />
-      <hr className="my-4" />
-      <div className="flex items-center justify-between mb-2">
-        <SearchBar
-          value={searchTerm}
-          onChange={e => {
-            setSearchTerm(e.target.value);
-            debouncedSearch(e.target.value);
-          }}
-          placeholder="Search boards by name or short code..."
-          className="w-full max-w-xs"
-        />
-        <div className="flex items-center gap-2">
-          <label htmlFor="pageSize" className="text-xs text-zinc-500 dark:text-zinc-400">Rows per page:</label>
-          <select
-            id="pageSize"
-            className="border rounded px-2 py-1 text-xs bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
-            value={pageSize}
-            onChange={e => {
-              setPageSize(Number(e.target.value));
-              setPage(0);
-            }}
-          >
-            <option value={10}>10</option>
-            <option value={15}>15</option>
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-          </select>
-        </div>
-      </div>
-      <hr className="my-4" />
-      {isLoading ? (
-        <div className="flex justify-center items-center min-h-[200px]">
-          <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
-        </div>
-      ) : boards.length === 0 ? (
-        <EmptyState
-          title="No boards found"
-          message="There are no boards yet. Try adding one or importing via CSV."
-          action={
-            <button className="btn btn-primary mt-2" onClick={() => setOpenForm(true)}>
-              Add Board
-            </button>
-          }
-        />
-      ) : (
-        <DataTable
-          columns={columns}
-          data={boards}
-          page={page}
-          setPage={setPage}
-          totalPages={totalPages}
-          renderExpandedRow={renderExpandedRow}
-        />
-      )}
+    <AdminPageLayout
+      title="Boards"
+      onAddClick={() => setOpenForm(true)}
+      onImportClick={() => setOpenCsvUpload(true)}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchInputChange}
+      searchPlaceholder="Search boards by name or short code..."
+      pageSize={pageSize}
+      onPageSizeChange={handlePageSizeChange}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      isLoading={isDataLoading}
+      data={boardsData}
+      columns={columns}
+      renderExpandedRow={renderExpandedRow}
+      emptyStateTitle="No boards found"
+      emptyStateMessage="There are no boards yet. Try adding one or importing via CSV."
+      emptyStateAction={
+        <button className="btn btn-primary mt-2" onClick={() => setOpenForm(true)}>
+          Add Board
+        </button>
+      }
+    >
       {/* Modals and dialogs */}
-            <EntityFormModal
+      <EntityFormModal
         title={editing ? "Edit Board" : "Add Board"}
         open={openForm}
         onClose={() => {
@@ -496,37 +332,39 @@ export default function BoardsPage() {
           setEditing(null);
         }}
         onOpenChange={setOpenForm}
-            >
-                <BoardForm
+      >
+        <BoardForm
           initialData={editing ? getBoardFormInitialData(editing) : undefined}
           onSubmit={handleCreateOrUpdate}
           countries={countries.map(c => ({ id: c._id || c.code, name: c.name }))}
           languages={languages.filter(l => l._id).map(l => ({ id: l._id as string, name: l.name }))}
           loading={isLoading}
-                />
-            </EntityFormModal>
-            <ConfirmationDialog
-                open={!!deleteTarget}
-                title="Delete Board"
+        />
+      </EntityFormModal>
+
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        title="Delete Board"
         description={`Are you sure you want to delete "${deleteTarget?.name}" (${deleteTarget?.short_code})?`}
-                onCancel={() => setDeleteTarget(null)}
-                onConfirm={handleDelete}
-            />
-            <CsvUploadDialog
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={handleDelete}
+      />
+
+      <CsvUploadDialog
         schema={boardCsvSchema}
-                onUpload={() => {
+        onUpload={() => {
           toast({ title: "Success", description: "CSV imported (stub)." });
-          // fetchPaginatedBoards(page, pageSize, searchTerm);
         }}
         open={openCsvUpload}
         onOpenChange={setOpenCsvUpload}
       />
+
       {openTranslationForm && (
         <EntityFormModal
           title={openTranslationForm.translation ? "Edit Translation" : "Add Translation"}
           open={!!openTranslationForm}
           onClose={() => setOpenTranslationForm(null)}
-          onOpenChange={open => !open && setOpenTranslationForm(null)}
+          onOpenChange={(open) => !open && setOpenTranslationForm(null)}
         >
           <BoardTranslationForm
             initialData={openTranslationForm.translation || undefined}
@@ -536,6 +374,7 @@ export default function BoardsPage() {
           />
         </EntityFormModal>
       )}
+
       <ConfirmationDialog
         open={!!deleteTranslationTarget}
         title="Delete Translation"
@@ -545,66 +384,23 @@ export default function BoardsPage() {
       />
 
       {/* Content Form Modals */}
-      {selectedEntity && (
-        <>
-          <MCQFormModal
-            open={openMCQModal}
-            onOpenChange={setOpenMCQModal}
-            entityType="Board"
-            entityId={selectedEntity.id}
-            entityName={selectedEntity.name}
-            onSuccess={() => {
-              // Optionally refresh data or show success message
-            }}
-          />
-          <FAQFormModal
-            open={openFAQModal}
-            onOpenChange={setOpenFAQModal}
-            entityType="Board"
-            entityId={selectedEntity.id}
-            entityName={selectedEntity.name}
-            onSuccess={() => {
-              // Optionally refresh data or show success message
-            }}
-          />
-          <DescriptiveQuestionFormModal
-            open={openDescriptiveQuestionModal}
-            onOpenChange={setOpenDescriptiveQuestionModal}
-            entityType="Board"
-            entityId={selectedEntity.id}
-            entityName={selectedEntity.name}
-            onSuccess={() => {
-              // Optionally refresh data or show success message
-            }}
-          />
-        </>
-      )}
+      <ContentFormModals
+        selectedEntity={selectedEntity}
+        openMCQModal={openMCQModal}
+        setOpenMCQModal={setOpenMCQModal}
+        openFAQModal={openFAQModal}
+        setOpenFAQModal={setOpenFAQModal}
+        openDescriptiveQuestionModal={openDescriptiveQuestionModal}
+        setOpenDescriptiveQuestionModal={setOpenDescriptiveQuestionModal}
+        entityType="Board"
+      />
 
       {/* Global Content Management for All Boards */}
-      <div className="mt-8 space-y-6">
-        <h2 className="text-2xl font-bold">Global Content Management</h2>
-        
-        {/* MCQ Section - Show all MCQs for Boards */}
-        <MCQSection 
-          entityType="Board" 
-          entityId="" 
-          entityName="All Boards" 
-        />
-        
-        {/* Descriptive Questions Section - Show all questions for Boards */}
-        <DescriptiveQuestionSection 
-          entityType="Board" 
-          entityId="" 
-          entityName="All Boards" 
-        />
-        
-        {/* FAQ Section - Show all FAQs for Boards */}
-        <FAQSection 
-          entityType="Board" 
-          entityId="" 
-          entityName="All Boards" 
-        />
-      </div>
-        </div>
-    );
+      <GlobalContentManagement
+        entityType="Board"
+        entityId=""
+        entityName="All Boards"
+      />
+    </AdminPageLayout>
+  );
 }
