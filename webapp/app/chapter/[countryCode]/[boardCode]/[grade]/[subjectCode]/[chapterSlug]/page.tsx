@@ -1,13 +1,14 @@
 import { notFound } from 'next/navigation';
-import { SubjectPageContent } from '@/components/subject/SubjectPageContent';
-import { getSubjectDataWithCache } from '@/lib/services/subject.service';
+import { ChapterPageContent } from '@/components/chapter/ChapterPageContent';
+import { getChapterDataWithCache } from '@/lib/services/chapter.service';
 
-interface SubjectPageProps {
+interface ChapterPageProps {
   params: {
     countryCode: string;
     boardCode: string;
     grade: string;
     subjectCode: string;
+    chapterSlug: string;
   };
 }
 
@@ -16,28 +17,28 @@ export const revalidate = 3600; // Revalidate every hour
 
 // Generate static params for better performance
 export async function generateStaticParams() {
-  // This can be extended to pre-generate pages for known country-board-grade-subject combinations
+  // This can be extended to pre-generate pages for known country-board-grade-subject-chapter combinations
   // For now, we'll let Next.js handle it dynamically
   return [];
 }
 
-export default async function SubjectPage({ params }: SubjectPageProps) {
-  const { countryCode, boardCode, grade, subjectCode } = params;
+export default async function ChapterPage({ params }: ChapterPageProps) {
+  const { countryCode, boardCode, grade, subjectCode, chapterSlug } = params;
 
   try {
     // Fetch all data with caching
-    const { country, board, subject, chapters, mcqs, faqs, descriptiveQuestions } = await getSubjectDataWithCache(countryCode, boardCode, grade, subjectCode);
+    const { country, board, subject, chapter, mcqs, faqs, descriptiveQuestions } = await getChapterDataWithCache(countryCode, boardCode, grade, subjectCode, chapterSlug);
 
-    if (!country || !board || !subject) {
+    if (!country || !board || !subject || !chapter) {
       notFound();
     }
 
     return (
-      <SubjectPageContent
+      <ChapterPageContent
         country={country}
         board={board}
         subject={subject}
-        chapters={chapters}
+        chapter={chapter}
         mcqs={mcqs}
         faqs={faqs}
         descriptiveQuestions={descriptiveQuestions}
@@ -45,10 +46,11 @@ export default async function SubjectPage({ params }: SubjectPageProps) {
         boardCode={boardCode}
         grade={grade}
         subjectCode={subjectCode}
+        chapterSlug={chapterSlug}
       />
     );
   } catch (error) {
-    console.error('Error in SubjectPage:', error);
+    console.error('Error in ChapterPage:', error);
     notFound();
   }
 }
