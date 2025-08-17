@@ -29,7 +29,7 @@ export async function getGradeData(countryCode: string, boardCode: string, grade
     }
 
     // Now fetch all other data using the class's actual ID
-    const [country, board, subjects, mcqs, faqs, descriptiveQuestions] = await Promise.all([
+    const results = await Promise.allSettled([
       getCountry(countryCode),
       getBoard(boardCode),
       getSubjectsByBoardAndClass(boardCode, gradeNumber),
@@ -37,6 +37,10 @@ export async function getGradeData(countryCode: string, boardCode: string, grade
       getFAQs({ entity_type: 'Class', entity_id: classData._id, page: 1, limit: 10 }),
       getDescriptiveQuestions({ entity_type: 'Class', entity_id: classData._id, page: 1, limit: 10 })
     ]);
+
+    const [country, board, subjects, mcqs, faqs, descriptiveQuestions] = results.map(result => 
+      result.status === 'fulfilled' ? result.value : []
+    );
 
     return {
       country: country || null,

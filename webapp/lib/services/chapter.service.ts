@@ -27,7 +27,7 @@ export async function getChapterData(countryCode: string, boardCode: string, gra
     }
 
     // Now fetch all other data using the chapter's actual ID
-    const [country, board, subjects, mcqs, faqs, descriptiveQuestions] = await Promise.all([
+    const results = await Promise.allSettled([
       getCountry(countryCode),
       getBoard(boardCode),
       getSubjectsByBoardAndClass(boardCode, gradeNumber),
@@ -35,6 +35,10 @@ export async function getChapterData(countryCode: string, boardCode: string, gra
       getFAQs({ entity_type: 'Chapter', entity_id: chapter._id, page: 1, limit: 10 }),
       getDescriptiveQuestions({ entity_type: 'Chapter', entity_id: chapter._id, page: 1, limit: 10 })
     ]);
+
+    const [country, board, subjects, mcqs, faqs, descriptiveQuestions] = results.map(result => 
+      result.status === 'fulfilled' ? result.value : []
+    );
 
     // Find the specific subject by code from the subjects list
     const subject = subjects.find((s: any) => s.code === subjectCode);

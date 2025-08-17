@@ -7,6 +7,17 @@ interface DynamicSubjectsSectionProps {
   countryCode: string
 }
 
+interface Subject {
+  _id: string
+  name: string
+  short_code?: string
+  code: string
+  class_id: {
+    _id: string
+    grade: number
+  }
+}
+
 const SUBJECT_ICONS = {
   mathematics: { icon: Calculator, color: "text-blue-500" },
   science: { icon: Atom, color: "text-green-500" },
@@ -42,8 +53,8 @@ export default async function DynamicSubjectsSection({ countryCode }: DynamicSub
       return null
     }
 
-    console.log(`Found ${subjects.length} subjects`)
-    const displaySubjects = subjects
+    console.log(`Found ${subjects.length} subjects`, subjects)
+    const displaySubjects: Subject[] = subjects
 
     return (
       <section className="bg-gray-100 dark:bg-gray-900 py-20">
@@ -54,22 +65,22 @@ export default async function DynamicSubjectsSection({ countryCode }: DynamicSub
               Explore core subjects designed for comprehensive education
             </p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {displaySubjects.map((subject) => {
               const subjectName = subject.name?.toLowerCase()
               const iconConfig = SUBJECT_ICONS[subjectName as keyof typeof SUBJECT_ICONS] || SUBJECT_ICONS.default
               const Icon = iconConfig.icon
               
               return (
-                                 <Link 
-                   href={`/subjects/${subject.short_code}`} 
-                   key={subject._id}
-                 >
-                  <div className="p-4 rounded-lg hover:shadow-lg hover:-translate-y-1 transition-transform duration-200 bg-white text-black dark:bg-gray-800 dark:text-white">
-                    <div className="flex flex-col items-center gap-2 text-center">
-                      <Icon className={`w-8 h-8 ${iconConfig.color}`} />
-                      <h3 className="text-sm font-medium">{subject.name}</h3>
-                      <span className="bg-sky-100 text-sky-700 text-xs font-medium px-2 py-1 rounded-full dark:bg-sky-900 dark:text-sky-300">
+                <Link 
+                  href={`/${countryCode}/${firstBoard?.short_code}/${subject?.class_id?.grade}/${subject?.code}`} 
+                  key={subject?._id}
+                >
+                  <div className="p-6 rounded-lg hover:shadow-lg hover:-translate-y-1 transition-transform duration-200 bg-white text-black dark:bg-gray-800 dark:text-white h-full">
+                    <div className="flex flex-col items-center gap-4 text-center">
+                      <Icon className={`w-12 h-12 ${iconConfig.color}`} />
+                      <h3 className="text-base font-semibold">{subject.name}</h3>
+                      <span className="bg-sky-100 text-sky-700 text-sm font-medium px-3 py-1.5 rounded-full dark:bg-sky-900 dark:text-sky-300">
                         Secondary
                       </span>
                     </div>

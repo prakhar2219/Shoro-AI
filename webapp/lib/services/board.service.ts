@@ -23,13 +23,17 @@ export async function getBoardData(countryCode: string, boardCode: string): Prom
     }
 
     // Now fetch all other data using the board's actual ID
-    const [country, classes, mcqs, faqs, descriptiveQuestions] = await Promise.all([
+    const results = await Promise.allSettled([
       getCountry(countryCode),
       getClassesByBoardShortCode(boardCode),
       getMCQs({ entity_type: 'Board', entity_id: board._id, page: 1, limit: 10 }),
       getFAQs({ entity_type: 'Board', entity_id: board._id, page: 1, limit: 10 }),
       getDescriptiveQuestions({ entity_type: 'Board', entity_id: board._id, page: 1, limit: 10 })
     ]);
+
+    const [country, classes, mcqs, faqs, descriptiveQuestions] = results.map(result => 
+      result.status === 'fulfilled' ? result.value : []
+    );
 
     return {
       country: country || null,

@@ -7,6 +7,13 @@ interface DynamicBoardsSectionProps {
   countryCode: string
 }
 
+interface Board {
+  _id: string
+  name: string
+  short_code: string
+  description?: string
+}
+
 const BOARD_ICONS = {
   cbse: { icon: BookOpen, color: "text-sky-500" },
   ncert: { icon: GraduationCap, color: "text-emerald-500" },
@@ -26,7 +33,7 @@ export default async function DynamicBoardsSection({ countryCode }: DynamicBoard
     }
 
     console.log(`Found ${boards.length} boards`)
-    const displayBoards = boards
+    const displayBoards: Board[] = boards
 
     return (
       <section className="bg-background py-20">
@@ -37,14 +44,14 @@ export default async function DynamicBoardsSection({ countryCode }: DynamicBoard
               Select from various education boards to access tailored content and curriculum
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {displayBoards.map((board) => {
               const boardCode = board.short_code?.toLowerCase()
               const iconConfig = BOARD_ICONS[boardCode as keyof typeof BOARD_ICONS] || BOARD_ICONS.default
               const Icon = iconConfig.icon
               
               return (
-                <Link href={`/${countryCode}/${board.short_code}`} key={board._id} className="block h-full">
+                <Link href={`/${countryCode}/${board.short_code}`} key={board._id} className="block">
                   <BoardCard
                     name={board.name}
                     description={board.description || `${board.name} Board`}

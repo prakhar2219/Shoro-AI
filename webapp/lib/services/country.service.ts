@@ -21,12 +21,16 @@ export async function getCountryData(countryCode: string): Promise<CountryData> 
     }
 
     // Now fetch all other data using the country's actual ID
-    const [boards, mcqs, faqs, descriptiveQuestions] = await Promise.all([
+    const results = await Promise.allSettled([
       getBoardsByCountryAPI(countryCode),
       getMCQs({ entity_type: 'Country', entity_id: country._id, page: 1, limit: 10 }),
       getFAQs({ entity_type: 'Country', entity_id: country._id, page: 1, limit: 10 }),
       getDescriptiveQuestions({ entity_type: 'Country', entity_id: country._id, page: 1, limit: 10 })
     ]);
+
+    const [boards, mcqs, faqs, descriptiveQuestions] = results.map(result => 
+      result.status === 'fulfilled' ? result.value : []
+    );
 
     return {
       country: country || null,
