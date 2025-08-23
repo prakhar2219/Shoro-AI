@@ -1,16 +1,6 @@
-import { getCountry } from '@/lib/api/entities/countries';
-import { getBoard } from '@/lib/api/entities/boards';
-import { getClassesByBoardShortCode } from '@/lib/api/entities/classes';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { TipTapContentArray } from '@/components/tiptap-content-array';
-import { MCQSection, FAQSection, DescriptiveQuestionSection } from '@/components/content';
-import { PageLayout } from '@/components/layout/page-layout';
-import { ContentCard } from '@/components/layout/content-card';
-import { GridItemCard } from '@/components/layout/grid-item-card';
-import { SidebarCard } from '@/components/layout/sidebar-card';
-import { EmptyState } from '@/components/layout/empty-state';
-import { BookOpen, GraduationCap, Calendar, Users, Building2, Award } from 'lucide-react';
+import { BoardPageContent } from '@/components/board/BoardPageContent';
+import { getBoardDataWithCache } from '@/lib/services/board.service';
 
 interface BoardPageProps {
   params: {
@@ -19,165 +9,41 @@ interface BoardPageProps {
   };
 }
 
+// Enable caching for this page
+export const revalidate = 3600; // Revalidate every hour
+
+// Generate static params for better performance
+export async function generateStaticParams() {
+  // This can be extended to pre-generate pages for known country-board combinations
+  // For now, we'll let Next.js handle it dynamically
+  return [];
+}
+
 export default async function BoardPage({ params }: BoardPageProps) {
   const { countryCode, boardCode } = params;
 
   try {
-    const [country, board, classes] = await Promise.all([
-      getCountry(countryCode),
-      getBoard(boardCode),
-      getClassesByBoardShortCode(boardCode)
-    ]);
+    // Fetch all data with caching
+    const { country, board, classes, mcqs, faqs, descriptiveQuestions } = await getBoardDataWithCache(countryCode, boardCode);
 
     if (!country || !board) {
       notFound();
     }
 
     return (
-      <PageLayout
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: country.name, href: `/${countryCode}` },
-          { label: board.name }
-        ]}
-        icon={Building2}
-        badge={board.short_code}
-        title={board.name}
-        description={board.description || 'Comprehensive curriculum designed for academic excellence'}
-        stats={[
-          { icon: GraduationCap, label: `${classes.length} Classes` },
-          { icon: Users, label: `Est. ${new Date(board.createdAt || '').getFullYear()}` }
-        ]}
-        logoUrl={board.logo_url}
-        sidebar={
-          <>
-            <SidebarCard
-              icon={GraduationCap}
-              iconColor="purple"
-              title="All Available Classes"
-              description="Choose your grade level"
-            >
-              <div className="space-y-4">
-                {classes.map((cls: any) => (
-                  <GridItemCard
-                    key={cls._id}
-                    href={`/${countryCode}/${boardCode}/${cls.grade}`}
-                    title={`Grade ${cls.grade}`}
-                    badge={`Class ${cls.grade}`}
-                    description={cls.description || 'Comprehensive learning program for this grade level'}
-                    metadata={`Age: ${cls.age_range || 'N/A'}`}
-                    actionText="View"
-                    icon={<span className="text-indigo-600 font-bold text-lg">{cls.grade}</span>}
-                  />
-                ))}
-              </div>
-              
-              {classes.length === 0 && (
-                <EmptyState
-                  icon={GraduationCap}
-                  title="No classes available for this board."
-                />
-              )}
-            </SidebarCard>
-
-            <SidebarCard
-              icon={Calendar}
-              iconColor="sky"
-              title="Recent Visits"
-              description="Your learning journey"
-            >
-              <EmptyState
-                icon={Calendar}
-                title="No recent visits"
-                description="Start exploring to see your history"
-              />
-            </SidebarCard>
-
-            <SidebarCard
-              icon={BookOpen}
-              iconColor="indigo"
-              title="Other Boards"
-              description="Explore different curricula"
-            >
-              <EmptyState
-                icon={BookOpen}
-                title="More boards coming soon"
-                description="Explore educational content from other boards"
-              />
-            </SidebarCard>
-          </>
-        }
-      >
-        {/* Board Content */}
-        {board.content && board.content.length > 0 && (
-          <ContentCard
-            icon={BookOpen}
-            iconColor="indigo"
-            title={`About ${board.name}`}
-            description="Curriculum overview and educational approach"
-          >
-            <div className="prose prose-lg max-w-none">
-              <TipTapContentArray content={board.content} />
-            </div>
-          </ContentCard>
-        )}
-
-        {/* Top Classes Section */}
-        <ContentCard
-          icon={Award}
-          iconColor="purple"
-          title="Popular Classes"
-          description="Most accessed grade levels"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {classes.slice(0, 4).map((cls: any) => (
-              <GridItemCard
-                key={cls._id}
-                href={`/${countryCode}/${boardCode}/${cls.grade}`}
-                title={`Grade ${cls.grade}`}
-                badge={`Class ${cls.grade}`}
-                description={cls.description || 'Comprehensive learning program for this grade level'}
-                metadata={`Age: ${cls.age_range || 'N/A'}`}
-                actionText="Explore"
-                icon={<span className="text-indigo-600 font-bold text-lg">{cls.grade}</span>}
-              />
-            ))}
-          </div>
-          
-          {classes.length === 0 && (
-            <EmptyState
-              icon={Award}
-              title="No classes available for this board."
-            />
-          )}
-        </ContentCard>
-
-        {/* MCQs Section */}
-        <MCQSection 
-          entityType="Board"
-          entityId={board._id!}
-          title="Multiple Choice Questions"
-          description="Practice with interactive MCQs"
-        />
-
-        {/* FAQs Section */}
-        <FAQSection 
-          entityType="Board"
-          entityId={board._id!}
-          title="Frequently Asked Questions"
-          description="Common questions and answers"
-        />
-
-        {/* Descriptive Questions Section */}
-        <DescriptiveQuestionSection 
-          entityType="Board"
-          entityId={board._id!}
-          title="Descriptive Questions"
-          description="Detailed answers and explanations"
-        />
-      </PageLayout>
+      <BoardPageContent
+        country={country}
+        board={board}
+        classes={classes}
+        mcqs={mcqs}
+        faqs={faqs}
+        descriptiveQuestions={descriptiveQuestions}
+        countryCode={countryCode}
+        boardCode={boardCode}
+      />
     );
   } catch (error) {
+    console.error('Error in BoardPage:', error);
     notFound();
   }
 }

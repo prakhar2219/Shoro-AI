@@ -12,6 +12,7 @@ import {
   Moon,
   BookOpen,
 } from "lucide-react"
+import CountrySelector from "@/components/custom/CountrySelector"
 
 const NAV_ITEMS = [
   {
@@ -95,6 +96,7 @@ export function Navbar() {
 
         {/* Desktop Nav */}
         <nav className="hidden md:flex space-x-6 items-center">
+          <CountrySelector className="mr-4" />
           {NAV_ITEMS.map((item) => (
             <div
               key={item.label}
@@ -164,7 +166,10 @@ export function Navbar() {
       {/* Mobile Nav */}
       {mobileOpen && (
         <div className="absolute top-full left-0 w-full bg-white dark:bg-gray-900 shadow-md z-40 px-4 pb-4">
-          <nav className="space-y-2 pt-4">
+          <div className="pt-4 mb-4">
+            <CountrySelector className="w-full" />
+          </div>
+          <nav className="space-y-2">
             {NAV_ITEMS.map((item) => (
               <div key={item.label}>
                 <Link
