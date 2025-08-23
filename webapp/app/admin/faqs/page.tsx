@@ -1,19 +1,12 @@
 "use client";
 
 import React from "react";
-import { useEffect, useState } from "react";
-import { PageTitleWithActions } from "@/components/shared/PageTitleWithActions";
+import { useEffect, useState, useCallback } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { useLoading } from "@/hooks/use-loading";
-import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
-import { SearchBar } from "@/components/shared/SearchBar";
-import { DataTable } from "@/components/ui/DataTable";
-import { ColumnDef } from "@tanstack/react-table";
-import { useToast } from "@/hooks/use-toast";
 import { FAQForm } from "@/components/entity/FAQForm";
 import { FAQTranslationForm } from "@/components/entity/FAQTranslationForm";
-import { EmptyState } from "@/components/shared/EmptyState";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Plus, Languages } from "lucide-react";
@@ -30,18 +23,16 @@ import {
   IFAQTranslation,
 } from "@/lib/api/entities/faqs";
 import { ILanguage } from "@/lib/api/entities/language";
+import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { useAdminPage } from "@/hooks/use-admin-page";
+import { ColumnDef } from "@tanstack/react-table";
 
 export default function FAQsPage() {
-  const [faqs, setFaqs] = useState<IFAQ[]>([]);
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<IFAQ | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<IFAQ | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [total, setTotal] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
 
   // Translation management
   const [openTranslationForm, setOpenTranslationForm] = useState<{
@@ -55,36 +46,39 @@ export default function FAQsPage() {
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   const { isLoading, startLoading, stopLoading } = useLoading();
-  const { toast } = useToast();
 
-  const fetchFAQs = async () => {
-    try {
-      startLoading();
-      const result = await getFAQs({ page, limit, search: searchTerm });
-      setFaqs(result.data);
-      setTotal(result.total);
-      setTotalPages(result.totalPages);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to fetch FAQs",
-        variant: "destructive",
-      });
-    } finally {
-      stopLoading();
-    }
-  };
+  // Wrap fetchData in useCallback to prevent infinite loop
+  const fetchFAQsData = useCallback(async (pageNum: number, size: number, search: string) => {
+    const result = await getFAQs({ page: pageNum, limit: size, search });
+    return {
+      data: result.data || [],
+      totalPages: result.totalPages || 1,
+      total: result.total || 0,
+    };
+  }, []);
+
+  // Use the custom hook for common admin page functionality
+  const {
+    data: faqs,
+    searchTerm,
+    page,
+    setPage,
+    pageSize,
+    totalPages,
+    handleSearchInputChange,
+    handlePageSizeChange,
+    fetchPaginatedData,
+  } = useAdminPage<IFAQ>({
+    fetchData: fetchFAQsData,
+    pageSize: 10
+  });
 
   const fetchLanguages = async () => {
     try {
       const languagesData = await getLanguages();
       setLanguages(languagesData);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to fetch languages",
-        variant: "destructive",
-      });
+      console.error('Failed to fetch languages:', error);
     }
   };
 
@@ -92,35 +86,19 @@ export default function FAQsPage() {
     fetchLanguages();
   }, []);
 
-  useEffect(() => {
-    fetchFAQs();
-  }, [page, limit, searchTerm]);
-
   const handleCreateOrUpdate = async (data: any) => {
     try {
       startLoading();
       if (editing?._id) {
         await updateFAQ(editing._id, data);
-        toast({
-          title: "Success",
-          description: "FAQ updated successfully.",
-        });
       } else {
         await createFAQ(data);
-        toast({
-          title: "Success",
-          description: "FAQ created successfully.",
-        });
       }
       setOpenForm(false);
       setEditing(null);
-      fetchFAQs();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to save FAQ",
-        variant: "destructive",
-      });
+      console.error('Failed to save FAQ:', error);
     } finally {
       stopLoading();
     }
@@ -131,18 +109,10 @@ export default function FAQsPage() {
       try {
         startLoading();
         await deleteFAQ(deleteTarget._id);
-        toast({
-          title: "Success",
-          description: "FAQ deleted successfully.",
-        });
         setDeleteTarget(null);
-        fetchFAQs();
+        fetchPaginatedData(page, pageSize, searchTerm);
       } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.response?.data?.error || "Failed to delete FAQ",
-          variant: "destructive",
-        });
+        console.error('Failed to delete FAQ:', error);
       } finally {
         stopLoading();
       }
@@ -167,19 +137,13 @@ export default function FAQsPage() {
       startLoading();
       if (translation && translation._id) {
         await updateFAQTranslation(faq._id!, translation._id, data);
-        toast({ title: "Success", description: "Translation updated." });
       } else {
         await createFAQTranslation(faq._id!, data);
-        toast({ title: "Success", description: "Translation added." });
       }
       setOpenTranslationForm(null);
-      fetchFAQs();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to save translation",
-        variant: "destructive",
-      });
+      console.error('Failed to save translation:', error);
     } finally {
       stopLoading();
     }
@@ -196,15 +160,10 @@ export default function FAQsPage() {
     try {
       startLoading();
       await deleteFAQTranslation(faq._id!, translation._id!);
-      toast({ title: "Success", description: "Translation deleted." });
       setDeleteTranslationTarget(null);
-      fetchFAQs();
+      fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.error || "Failed to delete translation",
-        variant: "destructive",
-      });
+      console.error('Failed to delete translation:', error);
     } finally {
       stopLoading();
       setActiveTranslationAction(null);
@@ -362,45 +321,29 @@ export default function FAQsPage() {
   ];
 
   return (
-    <div className="container mx-auto py-6">
-      {isLoading && <LoadingOverlay />}
-      
-      <PageTitleWithActions
-        title="FAQs"
-        onAddClick={() => setOpenForm(true)}
-      />
-
-      <div className="mt-6">
-        <SearchBar
-          placeholder="Search FAQs..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-      </div>
-
-      <div className="mt-6">
-        {faqs.length === 0 ? (
-          <EmptyState
-            title="No FAQs found"
-            message="Get started by creating your first FAQ."
-            action={
-              <Button onClick={() => setOpenForm(true)}>
-                Create FAQ
-              </Button>
-            }
-          />
-        ) : (
-          <DataTable
-            columns={columns}
-            data={faqs}
-            renderExpandedRow={renderExpandedRow}
-            page={page - 1}
-            totalPages={totalPages}
-            setPage={(newPage) => setPage(newPage + 1)}
-          />
-        )}
-      </div>
-
+    <AdminPageLayout
+      title="FAQs"
+      onAddClick={() => setOpenForm(true)}
+      searchTerm={searchTerm}
+      onSearchChange={handleSearchInputChange}
+      searchPlaceholder="Search FAQs..."
+      pageSize={pageSize}
+      onPageSizeChange={handlePageSizeChange}
+      page={page}
+      setPage={setPage}
+      totalPages={totalPages}
+      isLoading={isLoading}
+      data={faqs}
+      columns={columns}
+      renderExpandedRow={renderExpandedRow}
+      emptyStateTitle="No FAQs found"
+      emptyStateMessage="Get started by creating your first FAQ."
+      emptyStateAction={
+        <Button onClick={() => setOpenForm(true)}>
+          Create FAQ
+        </Button>
+      }
+    >
       {/* FAQ Form Modal */}
       <EntityFormModal
         open={openForm}
@@ -437,7 +380,6 @@ export default function FAQsPage() {
         title="Delete FAQ"
         description="Are you sure you want to delete this FAQ? This action cannot be undone."
         onConfirm={handleDelete}
-        // loading={isLoading}
       />
 
       {/* Delete Translation Confirmation */}
@@ -447,8 +389,7 @@ export default function FAQsPage() {
         title="Delete Translation"
         description="Are you sure you want to delete this translation? This action cannot be undone."
         onConfirm={confirmDeleteTranslation}
-        // loading={isLoading}
       />
-    </div>
+    </AdminPageLayout>
   );
 } 
