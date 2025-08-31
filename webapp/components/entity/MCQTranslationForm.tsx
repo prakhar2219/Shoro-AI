@@ -44,11 +44,11 @@ export function MCQTranslationForm({
     ],
     correct_answer: initialData?.correct_answer || originalMCQ?.correct_answer || "A",
     explanation: initialData?.explanation || "",
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
-  const handleContentChange = (json: any) => {
-    setFormData({ ...formData, content: json });
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
   };
 
   const handleOptionChange = (index: number, field: 'key' | 'text', value: string) => {

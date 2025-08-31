@@ -28,8 +28,8 @@ export const getAllBoards = async (language_id?: string) => {
       }
       return {
         ...board.toObject(),
-        name: translation?.name || board.name,
-        description: translation?.description || board.description,
+        name: board.name,
+        description: board.description,
         translation,
       };
     })
@@ -65,8 +65,8 @@ export const getBoardsByCountry = async (country_code: string, language_id?: str
       }
       return {
         ...board.toObject(),
-        name: translation?.name || board.name,
-        description: translation?.description || board.description,
+        name: board.name,
+        description: board.description,
         translation,
       };
     })

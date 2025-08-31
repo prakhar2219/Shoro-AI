@@ -23,7 +23,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     icon: initialData?.icon || '',
     board_id: initialData?.board_id || '',
     class_id: initialData?.class_id || '',
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
   useEffect(() => {
@@ -73,8 +73,8 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     setForm(f => ({ ...f, class_id: value }));
   };
 
-  const handleContentChange = (json: any) => {
-    setForm({ ...form, content: json });
+  const handleContentChange = (html: string) => {
+    setForm({ ...form, content: html });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

@@ -7,7 +7,7 @@ export interface IChapterTranslation extends Document {
   slug: string;
   seo_title: string;
   seo_description: string;
-  content: any[];
+  content: string;
   version: number;
   translated_by_ai: boolean;
   needs_review: boolean;

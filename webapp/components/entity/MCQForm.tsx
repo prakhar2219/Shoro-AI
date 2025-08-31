@@ -43,13 +43,13 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
     explanation: initialData?.explanation || "",
     difficulty: initialData?.difficulty || "medium",
     tags: initialData?.tags || [],
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
   const [newTag, setNewTag] = useState("");
 
-  const handleContentChange = (json: any) => {
-    setForm({ ...form, content: json });
+  const handleContentChange = (html: string) => {
+    setForm({ ...form, content: html });
   };
 
   const handleOptionChange = (index: number, field: 'key' | 'text', value: string) => {

@@ -14,7 +14,7 @@ const FAQTranslationSchema = new Schema<IFAQTranslation>(
     translated_by_ai: { type: Boolean, default: false },
     needs_review: { type: Boolean, default: false },
     updated_by: { type: Schema.Types.ObjectId, ref: 'User' },
-    content: { type: [Schema.Types.Mixed], required: true } as any,
+    content: { type: String, required: true },
   },
   { timestamps: true }
 );

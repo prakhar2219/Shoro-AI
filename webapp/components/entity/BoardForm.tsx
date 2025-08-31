@@ -21,7 +21,7 @@ interface BoardFormProps {
     supported_language_ids?: string[];
     description?: string;
     logo_url?: string;
-    content?: any;
+    content?: string;
   };
   countries: { id: string; name: string }[];
   languages: { id: string; name: string }[];
@@ -36,7 +36,7 @@ export function BoardForm({ onSubmit, loading = false, initialData, countries, l
     supported_language_ids: initialData?.supported_language_ids || [],
     description: initialData?.description || "",
     logo_url: initialData?.logo_url || "",
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,8 +56,8 @@ export function BoardForm({ onSubmit, loading = false, initialData, countries, l
     });
   };
 
-  const handleContentChange = (json: any) => {
-    setFormData({ ...formData, content: json });
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
   };
 
   return (

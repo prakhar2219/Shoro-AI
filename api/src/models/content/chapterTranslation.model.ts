@@ -13,7 +13,7 @@ const ChapterTranslationSchema = new Schema<IChapterTranslation>(
     slug: { type: String, required: true },
     seo_title: { type: String },
     seo_description: { type: String },
-    content: { type: [Schema.Types.Mixed], required: true } as any,
+    content: { type: String, required: true },
     version: { type: Number, default: 1 },
     translated_by_ai: { type: Boolean, default: false },
     needs_review: { type: Boolean, default: false },
