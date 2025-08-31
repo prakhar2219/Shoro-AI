@@ -19,6 +19,7 @@ import {
   Table,
   Link,
   ExternalLink,
+  Eye,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -35,6 +36,15 @@ export function EditorToolbar({ editor, onOpenLinkModal, onOpenTableModal }: Edi
 
     if (url && text) {
       editor.chain().focus().extendMarkRange("link").setLink({ href: url }).insertContent(text).run()
+    }
+  }
+
+  const previewHtml = () => {
+    const html = editor.getHTML()
+    const previewWindow = window.open('', '_blank')
+    if (previewWindow) {
+      previewWindow.document.write(`<!DOCTYPE html><html><head><title>Preview</title><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tailwindcss/typography@0.5.2/dist/typography.min.css"></head><body class="prose mx-auto p-4">${html}</body></html>`)
+      previewWindow.document.close()
     }
   }
 
@@ -153,6 +163,13 @@ export function EditorToolbar({ editor, onOpenLinkModal, onOpenTableModal }: Edi
 
       <Button variant="ghost" size="sm" onClick={onOpenLinkModal} title="Add Internal Link">
         <Link className="h-4 w-4" />
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
+      {/* Preview */}
+      <Button variant="ghost" size="sm" onClick={previewHtml} title="Preview HTML in new tab">
+        <Eye className="h-4 w-4" />
       </Button>
 
       <Separator orientation="vertical" className="h-6" />
