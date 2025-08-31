@@ -98,6 +98,8 @@ export default function ClassesPage() {
 
   const handleCreateOrUpdate = async (data: any) => {
     try {
+      console.log('Submitting class data:', data);
+      console.log('Current editing state:', editing);
       setIsLoading(true);
       if (editing?._id) {
         await updateClass(editing._id, data);
@@ -203,15 +205,20 @@ export default function ClassesPage() {
   };
 
   // Normalize class data for form
-  const getClassFormInitialData = (classItem: IClass) => ({
-    ...classItem,
-    board_id:
-      typeof classItem.board_id === 'object' && classItem.board_id !== null && '_id' in classItem.board_id && typeof classItem.board_id._id === 'string'
-        ? classItem.board_id._id
-        : typeof classItem.board_id === 'string'
-          ? classItem.board_id
-          : '',
-  });
+  const getClassFormInitialData = (classItem: IClass) => {
+    const result = {
+      ...classItem,
+      board_id:
+        typeof classItem.board_id === 'object' && classItem.board_id !== null && '_id' in classItem.board_id && typeof classItem.board_id._id === 'string'
+          ? classItem.board_id._id
+          : typeof classItem.board_id === 'string'
+            ? classItem.board_id
+            : '',
+    };
+    console.log('getClassFormInitialData input:', classItem);
+    console.log('getClassFormInitialData output:', result);
+    return result;
+  };
 
   // Render translations for expanded row
   const renderExpandedRow = (classItem: IClass) => {
@@ -249,6 +256,8 @@ export default function ClassesPage() {
           entity={row.original}
           entityType="Class"
           onEdit={() => {
+            console.log('Editing class:', row.original);
+            console.log('Class board_id:', row.original.board_id);
             setEditing(row.original);
             setOpenForm(true);
           }}
@@ -317,12 +326,31 @@ export default function ClassesPage() {
           setOpenForm(false);
           setEditing(null);
         }}
-        onOpenChange={setOpenForm}
+        onOpenChange={(open) => {
+          setOpenForm(open);
+          if (!open) {
+            setEditing(null);
+          }
+        }}
       >
         <ClassForm
-          defaultValues={editing ? getClassFormInitialData(editing) : undefined}
+          key={editing?._id || 'new'}
+          defaultValues={editing ? (() => {
+            const defaultVals = {
+              name: editing.name,
+              grade: editing.grade,
+              board_id: getClassFormInitialData(editing).board_id,
+              content: typeof editing.content === 'string' ? editing.content : undefined
+            };
+            console.log('ClassForm defaultValues:', defaultVals);
+            return defaultVals;
+          })() : undefined}
           onSubmit={handleCreateOrUpdate}
-          boards={boards.map(b => ({ id: b._id || b.short_code, name: b.name }))}
+          boards={(() => {
+            const boardsArray = boards.map(b => ({ id: b._id || b.short_code, name: b.name }));
+            console.log('ClassForm boards:', boardsArray);
+            return boardsArray;
+          })()}
           loading={isLoading}
         />
       </EntityFormModal>

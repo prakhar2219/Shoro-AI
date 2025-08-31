@@ -28,7 +28,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     slug: initialData?.slug || '',
     seo_title: initialData?.seo_title || '',
     seo_description: initialData?.seo_description || '',
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
     order: initialData?.order || '',
     is_published: initialData?.is_published || false,
   });
@@ -112,8 +112,8 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     setForm(f => ({ ...f, subject_id: value }));
   };
 
-  const handleContentChange = (json: any) => {
-    setForm({ ...form, content: json });
+  const handleContentChange = (html: string) => {
+    setForm({ ...form, content: html });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

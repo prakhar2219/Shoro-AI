@@ -21,7 +21,7 @@ export function ChapterTranslationForm({ initialData, onSubmit, loading = false,
     slug: initialData?.slug || '',
     seo_title: initialData?.seo_title || '',
     seo_description: initialData?.seo_description || '',
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
     needs_review: initialData?.needs_review || false,
     translated_by_ai: initialData?.translated_by_ai || false,
   });
@@ -49,8 +49,8 @@ export function ChapterTranslationForm({ initialData, onSubmit, loading = false,
     }));
   };
 
-  const handleContentChange = (json: any) => {
-    setForm((prev) => ({ ...prev, content: json }));
+  const handleContentChange = (html: string) => {
+    setForm((prev) => ({ ...prev, content: html }));
   };
 
   const handleSwitchChange = (name: string, value: boolean) => {

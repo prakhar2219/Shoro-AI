@@ -3,5 +3,5 @@ export interface ICountry {
   code: string; // e.g., 'IN'
   default_language_code: string;
   supported_language_codes: string[];
-  content: any[];
+  content: string;
 }

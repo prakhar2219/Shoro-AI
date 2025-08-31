@@ -15,7 +15,7 @@ interface BoardTranslationFormProps {
     language_id: string;
     name: string;
     description?: string;
-    content?: any;
+    content?: string;
   };
   languages: { id: string; name: string }[];
 }
@@ -25,11 +25,11 @@ export function BoardTranslationForm({ onSubmit, loading = false, initialData, l
     language_id: initialData?.language_id || (languages[0]?.id || ""),
     name: initialData?.name || "",
     description: initialData?.description || "",
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
-  const handleContentChange = (json: any) => {
-    setFormData({ ...formData, content: json });
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
   };
 
   const handleSubmit = (e: React.FormEvent) => {

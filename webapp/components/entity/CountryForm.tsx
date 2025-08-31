@@ -19,7 +19,7 @@ interface CountryFormProps {
     code: string;
     default_language_code: string;
     supported_language_codes?: string[];
-    content?: any;
+    content?: string;
   };
   languages: { code: string; name: string }[];
 }
@@ -30,7 +30,7 @@ export function CountryForm({ onSubmit, loading = false, initialData, languages 
     code: initialData?.code || "",
     default_language_code: initialData?.default_language_code || (languages[0]?.code || ""),
     supported_language_codes: initialData?.supported_language_codes || [],
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
   // Local filter state for dropdown and chips
@@ -67,8 +67,8 @@ export function CountryForm({ onSubmit, loading = false, initialData, languages 
     });
   };
 
-  const handleContentChange = (json: any) => {
-    setFormData({ ...formData, content: json });
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
   };
 
   return (

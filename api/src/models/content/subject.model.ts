@@ -7,7 +7,7 @@ const SubjectSchema = new Schema<ISubject>(
     code: { type: String, required: true },
     icon: { type: String },
     name: { type: String, required: true },
-    content: { type: [Schema.Types.Mixed], required: true } as any,
+    content: { type: String, required: true },
   },
   { timestamps: true }
 );

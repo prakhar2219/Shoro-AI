@@ -11,7 +11,7 @@ const DescriptiveQuestionSchema = new Schema<IDescriptiveQuestion>(
     tags: [{ type: String }],
     is_active: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },
-    content: { type: [Schema.Types.Mixed], required: true } as any,
+    content: { type: String, required: true },
   },
   { timestamps: true }
 );

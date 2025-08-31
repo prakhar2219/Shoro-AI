@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils"
 import { TableInsertionModal } from "./table-insertion-modal"
 
 interface RichTextEditorProps {
-  value: JSONContent | string // Accept JSON or HTML for backward compatibility
-  onChange: (json: JSONContent) => void // Always emit JSON for chapters
+  value: string | JSONContent // accept HTML string (preferred) or legacy JSON
+  onChange: (html: string) => void // emit HTML string
   className?: string
   editable?: boolean
 }
@@ -43,7 +43,7 @@ export function RichTextEditor({ value, onChange, className, editable = true }: 
     content: value,
     editable,
     onUpdate: ({ editor }) => {
-      onChange(editor.getJSON()) // Always emit JSON
+      onChange(editor.getHTML()) // emit HTML string
     },
     editorProps: {
       attributes: {

@@ -23,11 +23,11 @@ export function CountryTranslationForm({ onSubmit, loading = false, initialData,
   const [formData, setFormData] = useState({
     language_code: initialData?.language_code || (languages[0]?.code || ""),
     name: initialData?.name || "",
-    content: Array.isArray(initialData?.content) ? initialData.content[0] : initialData?.content || { type: 'doc', content: [] },
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
-  const handleContentChange = (json: any) => {
-    setFormData({ ...formData, content: json });
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
