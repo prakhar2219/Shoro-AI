@@ -5,7 +5,7 @@ export interface ICountryTranslation {
   translated_by_ai?: boolean;
   needs_review?: boolean;
   updated_by?: string;
-  content: any[];
+  content: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
