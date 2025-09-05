@@ -97,7 +97,18 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
   }, [initialData]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // Special handling for slug field
+    if (name === 'slug') {
+      const formattedSlug = value
+        .toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^a-z0-9-]/g, ''); 
+      setForm({ ...form, [name]: formattedSlug });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
   };
 
   const handleBoardChange = (value: string) => {
