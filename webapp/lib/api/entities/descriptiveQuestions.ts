@@ -77,6 +77,12 @@ export const deleteDescriptiveQuestion = async (id: string) => {
   return res.data;
 };
 
+// Bulk create Descriptive Questions
+export const bulkCreateDescriptiveQuestions = async (descriptive_questions: Omit<IDescriptiveQuestion, '_id' | 'createdAt' | 'updatedAt'>[]) => {
+  const res = await api.post(`${API_ENDPOINTS.descriptiveQuestions}/bulk`, { descriptive_questions });
+  return res.data;
+};
+
 // Descriptive Question Translation API
 export const getDescriptiveQuestionTranslations = async (questionId: string): Promise<IDescriptiveQuestionTranslation[]> => {
   const res = await api.get(`${API_ENDPOINTS.descriptiveQuestions}/${questionId}/translations`);

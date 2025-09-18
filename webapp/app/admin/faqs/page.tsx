@@ -27,6 +27,10 @@ import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
 import { useAdminPage } from "@/hooks/use-admin-page";
 import { ColumnDef } from "@tanstack/react-table";
+import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { useToast } from "@/hooks/use-toast";
+import { downloadCSV } from "@/lib/utils/csv-utils";
+import { bulkCreateFAQs } from "@/lib/api/entities/faqs";
 
 export default function FAQsPage() {
   const [languages, setLanguages] = useState<ILanguage[]>([]);
@@ -46,6 +50,8 @@ export default function FAQsPage() {
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   const { isLoading, startLoading, stopLoading } = useLoading();
+  const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const { toast } = useToast();
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchFAQsData = useCallback(async (pageNum: number, size: number, search: string) => {
@@ -320,10 +326,57 @@ export default function FAQsPage() {
     },
   ];
 
+  // CSV schema for FAQs
+  const faqCsvSchema: CsvSchema = {
+    title: "Upload FAQs CSV",
+    description: "CSV columns: entity_type, entity_id, question, answer, category(optional), order(optional), is_active(optional true/false), content(JSON)",
+    fields: [
+      { name: "entity_type", type: "text", required: true } as FieldSchema,
+      { name: "entity_id", type: "text", required: true } as FieldSchema,
+      { name: "question", type: "text", required: true } as FieldSchema,
+      { name: "answer", type: "text", required: true } as FieldSchema,
+      { name: "category", type: "text", required: false } as FieldSchema,
+      { name: "order", type: "number", required: false } as FieldSchema,
+      { name: "is_active", type: "boolean", required: false } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
+    ],
+  };
+
+  const handleBulkUpload = async (rows: any[]) => {
+    try {
+      startLoading();
+      const payload = rows.map((r: any) => {
+        let content: any[] = [];
+        if (r.content) { try { content = JSON.parse(r.content); } catch { content = []; } }
+        const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
+        const is_active = String(r.is_active).toLowerCase() === 'true';
+        return {
+          entity_type: r.entity_type,
+          entity_id: r.entity_id,
+          question: r.question,
+          answer: r.answer,
+          category: r.category || undefined,
+          order,
+          is_active,
+          content,
+        };
+      });
+      await bulkCreateFAQs(payload);
+      toast({ title: 'Success', description: `${payload.length} FAQs uploaded successfully.` });
+      setOpenCsvUpload(false);
+      fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload FAQs.', variant: 'destructive' });
+    } finally {
+      stopLoading();
+    }
+  };
+
   return (
     <AdminPageLayout
       title="FAQs"
       onAddClick={() => setOpenForm(true)}
+      onImportClick={() => setOpenCsvUpload(true)}
       searchTerm={searchTerm}
       onSearchChange={handleSearchInputChange}
       searchPlaceholder="Search FAQs..."
@@ -389,6 +442,14 @@ export default function FAQsPage() {
         title="Delete Translation"
         description="Are you sure you want to delete this translation? This action cannot be undone."
         onConfirm={confirmDeleteTranslation}
+      />
+
+      {/* CSV Upload Dialog */}
+      <CsvUploadDialog
+        schema={faqCsvSchema}
+        open={openCsvUpload}
+        onOpenChange={setOpenCsvUpload}
+        onUpload={handleBulkUpload}
       />
     </AdminPageLayout>
   );

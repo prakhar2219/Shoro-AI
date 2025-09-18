@@ -6,6 +6,18 @@ export const createMCQ = async (data: IMCQ) => {
   return await MCQ.create(data);
 };
 
+// Bulk create MCQs (with duplicate handling)
+export const bulkCreateMCQs = async (mcqs: IMCQ[]) => {
+  try {
+    return await MCQ.insertMany(mcqs as any[], { ordered: false });
+  } catch (error: any) {
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};
+
 export const getAllMCQs = async (entity_type?: string, entity_id?: string) => {
   const filter: any = {};
   if (entity_type) filter.entity_type = entity_type;

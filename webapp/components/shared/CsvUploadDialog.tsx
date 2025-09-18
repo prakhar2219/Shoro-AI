@@ -12,7 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ChevronLeft, ChevronRight, Upload, Edit3, CheckCircle, XCircle, AlertTriangle, Trash2 } from "lucide-react"
+import { ChevronLeft, ChevronRight, Upload, Edit3, CheckCircle, XCircle, AlertTriangle, Trash2, Download } from "lucide-react"
+import { downloadCSV } from "@/lib/utils/csv-utils"
 
 // Schema validation types
 export type ValidationError = {
@@ -307,7 +308,21 @@ export function CsvUploadDialog({
         }
     }
 
-    const renderUploadStep = () => (
+    const renderUploadStep = () => {
+        const derivedRequired = schema.fields.filter(f => f.required).map(f => f.name)
+        const derivedOptional = schema.fields.filter(f => !f.required).map(f => f.name)
+        const requiredList = schema.instructions?.required ?? derivedRequired
+        const optionalList = schema.instructions?.optional ?? derivedOptional
+
+        const handleDownloadBlankTemplate = () => {
+            const headers = schema.fields.map(f => f.name)
+            const blankRow: Record<string, any> = {}
+            headers.forEach(h => { blankRow[h] = "" })
+            const safeTitle = (schema.title || title || 'template').toString().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+            downloadCSV([blankRow], `${safeTitle}-blank.csv`)
+        }
+
+        return (
         <div className="space-y-4">
             <div>
                 <Label className="block text-sm font-medium mb-2">Select CSV File</Label>
@@ -326,29 +341,37 @@ export function CsvUploadDialog({
             )}
             
             <div className="text-sm text-zinc-600 dark:text-zinc-400">
-                {schema.instructions?.required && (
+                {requiredList.length > 0 && (
                     <>
                         <p className="font-medium mb-2">Required columns:</p>
                         <ul className="list-disc list-inside space-y-1">
-                            {schema.instructions.required.map(field => (
+                            {requiredList.map(field => (
                                 <li key={field}><strong>{field}</strong></li>
                             ))}
                         </ul>
                     </>
                 )}
-                {schema.instructions?.optional && (
+                {optionalList.length > 0 && (
                     <>
                         <p className="font-medium mt-3 mb-2">Optional columns:</p>
                         <ul className="list-disc list-inside space-y-1">
-                            {schema.instructions.optional.map(field => (
+                            {optionalList.map(field => (
                                 <li key={field}><strong>{field}</strong></li>
                             ))}
                         </ul>
                     </>
                 )}
             </div>
+
+            <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={handleDownloadBlankTemplate}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Download blank template
+                </Button>
+            </div>
         </div>
-    )
+        )
+    }
 
     const renderPreviewStep = () => (
         <div className="space-y-4">

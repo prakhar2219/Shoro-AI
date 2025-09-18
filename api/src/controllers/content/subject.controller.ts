@@ -2,6 +2,30 @@ import { Request, Response } from 'express';
 import * as subjectService from '../../services/content/subject.service';
 import { ISubject } from '@/types/content/subject.types';
 
+// Bulk create subjects
+export const bulkCreateSubjects = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { subjects } = req.body as { subjects: ISubject[] };
+    if (!Array.isArray(subjects) || subjects.length === 0) {
+      res.status(400).json({ error: 'subjects array is required' });
+      return;
+    }
+    for (const s of subjects) {
+      if (!s.class_id || !s.code || !s.name || !s.content) {
+        res.status(400).json({ error: 'Each subject must have class_id, code, name, and content' });
+        return;
+      }
+    }
+    const created = await subjectService.bulkCreateSubjects(subjects);
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const createSubject = async (
   req: Request,
   res: Response

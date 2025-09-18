@@ -8,6 +8,18 @@ export const createChapter = async (data: IChapter) => {
   return await Chapter.create(data);
 };
 
+// Bulk create chapters (with duplicate handling)
+export const bulkCreateChapters = async (chapters: IChapter[]) => {
+  try {
+    return await Chapter.insertMany(chapters as any[], { ordered: false });
+  } catch (error: any) {
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};
+
 export const getAllChapters = async () => {
   return await Chapter.find()
     .populate({

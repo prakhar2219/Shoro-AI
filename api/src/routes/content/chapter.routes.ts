@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  bulkCreateChapters,
   createChapter,
   getChapters,
   getChapter,
@@ -14,6 +15,8 @@ import {
 const router = Router();
 
 router.post('/', createChapter);
+// Bulk operations
+router.post('/bulk', bulkCreateChapters);
 router.get('/', getChapters);
 router.get('/by-slug', getChapterBySlug);
 router.get('/:id', getChapter);

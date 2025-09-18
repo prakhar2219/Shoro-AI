@@ -4,6 +4,30 @@ import { IDescriptiveQuestion } from '@/types/content/descriptiveQuestion.types'
 import DescriptiveQuestionTranslation from '../../models/content/descriptiveQuestionTranslation.model';
 import { IDescriptiveQuestionTranslation } from '@/types/content/descriptiveQuestionTranslation.types';
 
+// Bulk create descriptive questions
+export const bulkCreateDescriptiveQuestions = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { descriptive_questions } = req.body as { descriptive_questions: IDescriptiveQuestion[] };
+    if (!Array.isArray(descriptive_questions) || descriptive_questions.length === 0) {
+      res.status(400).json({ error: 'descriptive_questions array is required' });
+      return;
+    }
+    for (const q of descriptive_questions) {
+      if (!q.entity_type || !q.entity_id || !q.question || !q.answer || !q.content) {
+        res.status(400).json({ error: 'Each item must have entity_type, entity_id, question, answer, content' });
+        return;
+      }
+    }
+    const created = await descriptiveQuestionService.bulkCreateDescriptiveQuestions(descriptive_questions);
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const createDescriptiveQuestion = async (
   req: Request,
   res: Response

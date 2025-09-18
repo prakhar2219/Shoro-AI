@@ -14,6 +14,10 @@ import { getLanguages } from "@/lib/api/entities/language";
 
 // Use the imported ILanguage from the API
 import { ILanguage } from "@/lib/api/entities/language";
+import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { useToast } from "@/hooks/use-toast";
+import { downloadCSV } from "@/lib/utils/csv-utils";
+import { bulkCreateMCQs } from "@/lib/api/entities/mcqs";
 
 import {
   getMCQs,
@@ -49,6 +53,8 @@ export default function MCQsPage() {
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   const { isLoading, startLoading, stopLoading } = useLoading();
+  const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const { toast } = useToast();
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchMCQsData = useCallback(async (pageNum: number, size: number, search: string) => {
@@ -349,10 +355,63 @@ export default function MCQsPage() {
     },
   ];
 
+  // CSV schema for MCQs
+  const mcqCsvSchema: CsvSchema = {
+    title: "Upload MCQs CSV",
+    description: "CSV columns: entity_type, entity_id, question, options(JSON array of {key,text}), correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false), content(JSON)",
+    fields: [
+      { name: "entity_type", type: "text", required: true } as FieldSchema,
+      { name: "entity_id", type: "text", required: true } as FieldSchema,
+      { name: "question", type: "text", required: true } as FieldSchema,
+      { name: "options", type: "text", required: true } as FieldSchema,
+      { name: "correct_answer", type: "text", required: true } as FieldSchema,
+      { name: "explanation", type: "text", required: false } as FieldSchema,
+      { name: "difficulty", type: "text", required: false } as FieldSchema,
+      { name: "tags", type: "text", required: false } as FieldSchema,
+      { name: "is_active", type: "boolean", required: false } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
+    ],
+  };
+
+  const handleBulkUpload = async (rows: any[]) => {
+    try {
+      startLoading();
+      const payload = rows.map((r: any) => {
+        let options: any[] = [];
+        let content: any[] = [];
+        if (r.options) { try { options = JSON.parse(r.options); } catch { options = []; } }
+        if (r.content) { try { content = JSON.parse(r.content); } catch { content = []; } }
+        const is_active = String(r.is_active).toLowerCase() === 'true';
+        const tags = typeof r.tags === 'string' && r.tags.trim() ? r.tags.split(',').map((t: string) => t.trim()) : [];
+        return {
+          entity_type: r.entity_type,
+          entity_id: r.entity_id,
+          question: r.question,
+          options,
+          correct_answer: r.correct_answer,
+          explanation: r.explanation || undefined,
+          difficulty: (r.difficulty || 'medium') as any,
+          tags,
+          is_active,
+          content,
+        };
+      });
+      await bulkCreateMCQs(payload);
+      toast({ title: 'Success', description: `${payload.length} MCQs uploaded successfully.` });
+      setOpenCsvUpload(false);
+      fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload MCQs.', variant: 'destructive' });
+    } finally {
+      stopLoading();
+    }
+  };
+
   return (
     <AdminPageLayout
       title="MCQs"
       onAddClick={() => setOpenForm(true)}
+      onImportClick={() => setOpenCsvUpload(true)}
       searchTerm={searchTerm}
       onSearchChange={handleSearchInputChange}
       searchPlaceholder="Search MCQs..."
@@ -419,6 +478,14 @@ export default function MCQsPage() {
         title="Delete Translation"
         description="Are you sure you want to delete this translation? This action cannot be undone."
         onConfirm={confirmDeleteTranslation}
+      />
+
+      {/* CSV Upload Dialog */}
+      <CsvUploadDialog
+        schema={mcqCsvSchema}
+        open={openCsvUpload}
+        onOpenChange={setOpenCsvUpload}
+        onUpload={handleBulkUpload}
       />
     </AdminPageLayout>
   );

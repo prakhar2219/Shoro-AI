@@ -86,6 +86,12 @@ export const deleteMCQ = async (id: string) => {
   return res.data;
 };
 
+// Bulk create MCQs
+export const bulkCreateMCQs = async (mcqs: Omit<IMCQ, '_id' | 'createdAt' | 'updatedAt'>[]) => {
+  const res = await api.post(`${API_ENDPOINTS.mcqs}/bulk`, { mcqs });
+  return res.data;
+};
+
 // MCQ Translation API
 export const getMCQTranslations = async (mcqId: string): Promise<IMCQTranslation[]> => {
   const res = await api.get(`${API_ENDPOINTS.mcqs}/${mcqId}/translations`);

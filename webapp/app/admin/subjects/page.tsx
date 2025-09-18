@@ -29,6 +29,9 @@ import { GlobalContentManagement } from "@/components/shared/GlobalContentManage
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { useAdminPage } from "@/hooks/use-admin-page";
 import { useToast } from "@/hooks/use-toast";
+import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { bulkCreateSubjects } from "@/lib/api/entities/subjects";
+import { downloadCSV } from "@/lib/utils/csv-utils";
 
 export default function SubjectsPage() {
   const [classes, setClasses] = useState<IClass[]>([]);
@@ -40,6 +43,8 @@ export default function SubjectsPage() {
   const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ subject: ISubject; translation: ISubjectTranslation } | null>(null);
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const { toast } = useToast();
 
   // Content modal states
   const [openMCQModal, setOpenMCQModal] = useState(false);
@@ -269,10 +274,52 @@ export default function SubjectsPage() {
     },
   ];
 
+  // CSV schema for subjects
+  const subjectCsvSchema: CsvSchema = {
+    title: "Upload Subjects CSV",
+    description: "Upload a CSV with columns: class_id, code, name, icon (optional), content (JSON optional).",
+    fields: [
+      { name: "class_id", type: "text", required: true } as FieldSchema,
+      { name: "code", type: "text", required: true } as FieldSchema,
+      { name: "name", type: "text", required: true } as FieldSchema,
+      { name: "icon", type: "text", required: false } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
+    ],
+  };
+
+  const handleBulkUpload = async (rows: any[]) => {
+    try {
+      setIsLoading(true);
+      // Transform rows: parse content JSON or default []
+      const subjectsPayload = rows.map((r: any) => {
+        let content: any[] = [];
+        if (r.content) {
+          try { content = JSON.parse(r.content); } catch { content = []; }
+        }
+        return {
+          class_id: r.class_id,
+          code: r.code,
+          name: r.name,
+          icon: r.icon || undefined,
+          content,
+        };
+      });
+      await bulkCreateSubjects(subjectsPayload);
+      toast({ title: "Success", description: `${subjectsPayload.length} subjects uploaded successfully.` });
+      setOpenCsvUpload(false);
+      fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ title: "Error", description: error?.response?.data?.error || "Failed to upload subjects.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <AdminPageLayout
       title="Subjects"
       onAddClick={() => setOpenForm(true)}
+      onImportClick={() => setOpenCsvUpload(true)}
       searchTerm={searchTerm}
       onSearchChange={handleSearchInputChange}
       searchPlaceholder="Search subjects by name..."
@@ -360,6 +407,18 @@ export default function SubjectsPage() {
         entityId=""
         entityName="All Subjects"
       />
+
+      {/* CSV Upload Dialog */}
+      <CsvUploadDialog
+        schema={subjectCsvSchema}
+        open={openCsvUpload}
+        onOpenChange={setOpenCsvUpload}
+        onUpload={handleBulkUpload}
+      />
+
+      {/* Sample CSV Download action (simple example row) */}
+      {/* You can place a button in page header or actions; using utility directly here as reference */}
+      {/* downloadCSV([{ class_id: "<classObjectId>", code: "math", name: "Mathematics", icon: "", content: "[]" }], 'subjects_sample.csv') */}
     </AdminPageLayout>
   );
 } 

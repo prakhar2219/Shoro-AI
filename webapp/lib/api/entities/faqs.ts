@@ -77,6 +77,12 @@ export const deleteFAQ = async (id: string) => {
   return res.data;
 };
 
+// Bulk create FAQs
+export const bulkCreateFAQs = async (faqs: Omit<IFAQ, '_id' | 'createdAt' | 'updatedAt'>[]) => {
+  const res = await api.post(`${API_ENDPOINTS.faqs}/bulk`, { faqs });
+  return res.data;
+};
+
 // FAQ Translation API
 export const getFAQTranslations = async (faqId: string): Promise<IFAQTranslation[]> => {
   const res = await api.get(`${API_ENDPOINTS.faqs}/${faqId}/translations`);

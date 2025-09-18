@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  bulkCreateMCQs,
   createMCQ,
   getMCQs,
   getMCQ,
@@ -17,6 +18,8 @@ const router = Router();
 
 // MCQ endpoints
 router.get('/paginated', getMCQsWithPagination);
+// Bulk operations
+router.post('/bulk', bulkCreateMCQs);
 router.get('/', getMCQs);
 router.post('/', createMCQ);
 router.get('/:id', getMCQ);

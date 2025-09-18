@@ -6,7 +6,7 @@ import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { ChapterForm } from "@/components/entity/ChapterForm";
 import { ChapterCard } from "@/components/entity/ChapterCard";
 import Link from "next/link";
-import { getChapters, createChapter, updateChapter, deleteChapter } from "@/lib/api/entities/chapters";
+import { getChapters, createChapter, updateChapter, deleteChapter, bulkCreateChapters } from "@/lib/api/entities/chapters";
 import { chapterColumns } from '@/components/table/columns/chapterColumns';
 import { getLanguages, ILanguage } from '@/lib/api/entities/language';
 import { ChapterTranslationForm } from '@/components/entity/ChapterTranslationForm';
@@ -18,6 +18,9 @@ import { GlobalContentManagement } from "@/components/shared/GlobalContentManage
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { useAdminPage } from "@/hooks/use-admin-page";
 import { ColumnDef } from "@tanstack/react-table";
+import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { useToast } from "@/hooks/use-toast";
+import { downloadCSV } from "@/lib/utils/csv-utils";
 
 type Chapter = any;
 
@@ -38,6 +41,8 @@ export default function ChapterAdminPage() {
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
+  const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const { toast } = useToast();
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchChaptersData = useCallback(async (pageNum: number, size: number, search: string) => {
@@ -181,6 +186,51 @@ export default function ChapterAdminPage() {
     },
   ];
 
+  // CSV schema for chapters
+  const chapterCsvSchema: CsvSchema = {
+    title: "Upload Chapters CSV",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, title, slug, content(JSON), order, is_published",
+    fields: [
+      { name: "board_id", type: "text", required: true } as FieldSchema,
+      { name: "class_id", type: "text", required: true } as FieldSchema,
+      { name: "subject_id", type: "text", required: true } as FieldSchema,
+      { name: "title", type: "text", required: true } as FieldSchema,
+      { name: "slug", type: "text", required: true } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
+      { name: "order", type: "number", required: false } as FieldSchema,
+      { name: "is_published", type: "boolean", required: false } as FieldSchema,
+    ],
+  };
+
+  const handleBulkUpload = async (rows: any[]) => {
+    try {
+      const payload = rows.map(r => {
+        let content: any[] = [];
+        if (r.content) {
+          try { content = JSON.parse(r.content); } catch { content = []; }
+        }
+        const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
+        const is_published = String(r.is_published).toLowerCase() === 'true';
+        return {
+          board_id: r.board_id,
+          class_id: r.class_id,
+          subject_id: r.subject_id,
+          title: r.title,
+          slug: r.slug,
+          content,
+          order,
+          is_published,
+        };
+      });
+      await bulkCreateChapters(payload);
+      toast({ title: 'Success', description: `${payload.length} chapters uploaded successfully.` });
+      setOpenCsvUpload(false);
+      await fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload chapters.', variant: 'destructive' });
+    }
+  };
+
   return (
     <AdminPageLayout
       title="Chapters"
@@ -188,6 +238,7 @@ export default function ChapterAdminPage() {
         setSelected(null);
         setOpenModal(true);
       }}
+      onImportClick={() => setOpenCsvUpload(true)}
       searchTerm={searchTerm}
       onSearchChange={handleSearchInputChange}
       searchPlaceholder="Search chapters..."
@@ -266,6 +317,17 @@ export default function ChapterAdminPage() {
         entityId=""
         entityName="All Chapters"
       />
+
+      {/* CSV Upload Dialog */}
+      <CsvUploadDialog
+        schema={chapterCsvSchema}
+        open={openCsvUpload}
+        onOpenChange={setOpenCsvUpload}
+        onUpload={handleBulkUpload}
+      />
+
+      {/* Example of triggering sample CSV download */}
+      {/* downloadCSV([{ board_id: "<boardId>", class_id: "<classId>", subject_id: "<subjectId>", title: "Intro", slug: "intro", content: "[]", order: 1, is_published: true }], 'chapters_sample.csv') */}
     </AdminPageLayout>
   );
 } 

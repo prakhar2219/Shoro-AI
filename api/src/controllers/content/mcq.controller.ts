@@ -4,6 +4,34 @@ import { IMCQ } from '@/types/content/mcq.types';
 import MCQTranslation from '../../models/content/mcqTranslation.model';
 import { IMCQTranslation } from '@/types/content/mcqTranslation.types';
 
+// Bulk create MCQs
+export const bulkCreateMCQs = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { mcqs } = req.body as { mcqs: IMCQ[] };
+    if (!Array.isArray(mcqs) || mcqs.length === 0) {
+      res.status(400).json({ error: 'mcqs array is required' });
+      return;
+    }
+    for (const m of mcqs) {
+      if (!m.entity_type || !m.entity_id || !m.question || !m.options || !m.correct_answer || !m.content) {
+        res.status(400).json({ error: 'Each MCQ must have entity_type, entity_id, question, options, correct_answer, content' });
+        return;
+      }
+      if (!Array.isArray((m as any).options) || (m as any).options.length < 2) {
+        res.status(400).json({ error: 'Each MCQ must have at least 2 options' });
+        return;
+      }
+    }
+    const created = await mcqService.bulkCreateMCQs(mcqs);
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const createMCQ = async (
   req: Request,
   res: Response

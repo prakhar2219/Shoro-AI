@@ -72,6 +72,12 @@ export const deleteSubject = async (id: string) => {
   return res.data;
 };
 
+// Bulk create subjects
+export const bulkCreateSubjects = async (subjects: Partial<ISubject>[]) => {
+  const res = await api.post(`${API_ENDPOINTS.subjects}/bulk`, { subjects });
+  return res.data;
+};
+
 // Subject Translation API
 export const getSubjectTranslations = async (id: string): Promise<ISubjectTranslation[]> => {
   const res = await api.get(`${API_ENDPOINTS.subjects}/${id}/translations`);

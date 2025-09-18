@@ -27,6 +27,10 @@ import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
 import { useAdminPage } from "@/hooks/use-admin-page";
 import { ColumnDef } from "@tanstack/react-table";
+import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { useToast } from "@/hooks/use-toast";
+import { downloadCSV } from "@/lib/utils/csv-utils";
+import { bulkCreateDescriptiveQuestions } from "@/lib/api/entities/descriptiveQuestions";
 
 export default function DescriptiveQuestionsPage() {
   const [languages, setLanguages] = useState<ILanguage[]>([]);
@@ -46,6 +50,8 @@ export default function DescriptiveQuestionsPage() {
   const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
 
   const { isLoading, startLoading, stopLoading } = useLoading();
+  const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const { toast } = useToast();
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchDescriptiveQuestionsData = useCallback(async (pageNum: number, size: number, search: string) => {
@@ -323,10 +329,57 @@ export default function DescriptiveQuestionsPage() {
     },
   ];
 
+  // CSV schema for Descriptive Questions
+  const dqCsvSchema: CsvSchema = {
+    title: "Upload Descriptive Questions CSV",
+    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), is_active(optional), content(JSON)",
+    fields: [
+      { name: "entity_type", type: "text", required: true } as FieldSchema,
+      { name: "entity_id", type: "text", required: true } as FieldSchema,
+      { name: "question", type: "text", required: true } as FieldSchema,
+      { name: "answer", type: "text", required: true } as FieldSchema,
+      { name: "difficulty", type: "text", required: false } as FieldSchema,
+      { name: "tags", type: "text", required: false } as FieldSchema,
+      { name: "is_active", type: "boolean", required: false } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
+    ],
+  };
+
+  const handleBulkUpload = async (rows: any[]) => {
+    try {
+      startLoading();
+      const payload = rows.map((r: any) => {
+        let content: any[] = [];
+        if (r.content) { try { content = JSON.parse(r.content); } catch { content = []; } }
+        const is_active = String(r.is_active).toLowerCase() === 'true';
+        const tags = typeof r.tags === 'string' && r.tags.trim() ? r.tags.split(',').map((t: string) => t.trim()) : [];
+        return {
+          entity_type: r.entity_type,
+          entity_id: r.entity_id,
+          question: r.question,
+          answer: r.answer,
+          difficulty: (r.difficulty || 'medium') as any,
+          tags,
+          is_active,
+          content,
+        };
+      });
+      await bulkCreateDescriptiveQuestions(payload);
+      toast({ title: 'Success', description: `${payload.length} questions uploaded successfully.` });
+      setOpenCsvUpload(false);
+      fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload questions.', variant: 'destructive' });
+    } finally {
+      stopLoading();
+    }
+  };
+
   return (
     <AdminPageLayout
       title="Descriptive Questions"
       onAddClick={() => setOpenForm(true)}
+      onImportClick={() => setOpenCsvUpload(true)}
       searchTerm={searchTerm}
       onSearchChange={handleSearchInputChange}
       searchPlaceholder="Search questions..."
@@ -392,6 +445,14 @@ export default function DescriptiveQuestionsPage() {
         title="Delete Translation"
         description="Are you sure you want to delete this translation? This action cannot be undone."
         onConfirm={confirmDeleteTranslation}
+      />
+
+      {/* CSV Upload Dialog */}
+      <CsvUploadDialog
+        schema={dqCsvSchema}
+        open={openCsvUpload}
+        onOpenChange={setOpenCsvUpload}
+        onUpload={handleBulkUpload}
       />
     </AdminPageLayout>
   );

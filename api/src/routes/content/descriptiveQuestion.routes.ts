@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+  bulkCreateDescriptiveQuestions,
   createDescriptiveQuestion,
   getDescriptiveQuestions,
   getDescriptiveQuestion,
@@ -17,6 +18,8 @@ const router = Router();
 
 // Descriptive Question endpoints
 router.get('/paginated', getDescriptiveQuestionsWithPagination);
+// Bulk operations
+router.post('/bulk', bulkCreateDescriptiveQuestions);
 router.get('/', getDescriptiveQuestions);
 router.post('/', createDescriptiveQuestion);
 router.get('/:id', getDescriptiveQuestion);

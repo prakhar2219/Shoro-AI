@@ -4,6 +4,33 @@ import * as chapterService from '../../services/content/chapter.service';
 import { IChapter } from '@/types/content/chapter.types';
 import ChapterTranslation from '../../models/content/chapterTranslation.model';
 
+// Bulk create chapters
+export const bulkCreateChapters = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { chapters } = req.body as { chapters: IChapter[] };
+    if (!Array.isArray(chapters) || chapters.length === 0) {
+      res.status(400).json({ error: 'chapters array is required' });
+      return;
+    }
+    for (const c of chapters) {
+      if (!c.board_id || !c.class_id || !c.subject_id || !c.title || !c.slug || !c.content) {
+        res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, title, slug, content' });
+        return;
+      }
+      // Normalize types
+      (c as any).order = typeof c.order === 'number' ? c.order : Number((c as any).order || 0);
+      (c as any).is_published = !!(c as any).is_published;
+    }
+    const created = await chapterService.bulkCreateChapters(chapters);
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const createChapter = async (
   req: Request,
   res: Response

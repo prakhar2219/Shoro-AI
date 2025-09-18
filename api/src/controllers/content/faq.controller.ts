@@ -4,6 +4,31 @@ import { IFAQ } from '@/types/content/faq.types';
 import FAQTranslation from '../../models/content/faqTranslation.model';
 import { IFAQTranslation } from '@/types/content/faqTranslation.types';
 
+// Bulk create FAQs
+export const bulkCreateFAQs = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { faqs } = req.body as { faqs: IFAQ[] };
+    if (!Array.isArray(faqs) || faqs.length === 0) {
+      res.status(400).json({ error: 'faqs array is required' });
+      return;
+    }
+    for (const f of faqs) {
+      if (!f.entity_type || !f.entity_id || !f.question || !f.answer || !f.content) {
+        res.status(400).json({ error: 'Each FAQ must have entity_type, entity_id, question, answer, content' });
+        return;
+      }
+      (f as any).order = typeof (f as any).order === 'number' ? (f as any).order : Number((f as any).order || 0);
+    }
+    const created = await faqService.bulkCreateFAQs(faqs);
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
 export const createFAQ = async (
   req: Request,
   res: Response

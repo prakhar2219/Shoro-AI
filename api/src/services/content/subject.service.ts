@@ -6,6 +6,19 @@ export const createSubject = async (data: ISubject) => {
   return await SubjectModel.create(data);
 };
 
+// Bulk create subjects (with duplicate handling)
+export const bulkCreateSubjects = async (subjects: ISubject[]) => {
+  try {
+    return await SubjectModel.insertMany(subjects as any[], { ordered: false });
+  } catch (error: any) {
+    // If it's a bulk write error, continue with successful insertions where possible
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};
+
 export const getAllSubjects = async (language_id?: string) => {
   const subjects = await SubjectModel.find().populate('class_id');
   if (!language_id) {

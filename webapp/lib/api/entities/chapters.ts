@@ -52,3 +52,9 @@ export const deleteChapter = async (id: string) => {
     const res = await api.delete(`${API_ENDPOINTS.chapters}/${id}`);
     return res.data;
 };
+
+// Bulk create chapters
+export const bulkCreateChapters = async (chapters: any[]) => {
+    const res = await api.post(`${API_ENDPOINTS.chapters}/bulk`, { chapters });
+    return res.data;
+};

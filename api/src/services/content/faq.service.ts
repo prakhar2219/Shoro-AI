@@ -6,6 +6,18 @@ export const createFAQ = async (data: IFAQ) => {
   return await FAQ.create(data);
 };
 
+// Bulk create FAQs (with duplicate handling)
+export const bulkCreateFAQs = async (faqs: IFAQ[]) => {
+  try {
+    return await FAQ.insertMany(faqs as any[], { ordered: false });
+  } catch (error: any) {
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};
+
 export const getAllFAQs = async (entity_type?: string, entity_id?: string) => {
   const filter: any = {};
   if (entity_type) filter.entity_type = entity_type;

@@ -6,6 +6,18 @@ export const createDescriptiveQuestion = async (data: IDescriptiveQuestion) => {
   return await DescriptiveQuestion.create(data);
 };
 
+// Bulk create descriptive questions (with duplicate handling)
+export const bulkCreateDescriptiveQuestions = async (items: IDescriptiveQuestion[]) => {
+  try {
+    return await DescriptiveQuestion.insertMany(items as any[], { ordered: false });
+  } catch (error: any) {
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};
+
 export const getAllDescriptiveQuestions = async (entity_type?: string, entity_id?: string) => {
   const filter: any = {};
   if (entity_type) filter.entity_type = entity_type;

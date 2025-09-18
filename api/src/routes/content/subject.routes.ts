@@ -1,6 +1,7 @@
 // routes/subject.routes.ts
 import { Router } from 'express';
 import {
+  bulkCreateSubjects,
   createSubject,
   getSubjects,
   getSubject,
@@ -17,6 +18,9 @@ const router = Router();
 
 // Paginated and search endpoints (should come before /:id routes)
 router.get('/paginated', getSubjectsWithPagination);
+
+// Bulk operations
+router.post('/bulk', bulkCreateSubjects);
 
 // Subject translation endpoints
 router.get('/:id/translations', getSubjectTranslations);
