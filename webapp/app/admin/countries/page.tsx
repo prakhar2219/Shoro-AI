@@ -147,7 +147,17 @@ export default function CountriesPage() {
   const handleBulkUpload = async (countriesData: any[]) => {
     try {
       startLoading();
-      await bulkCreateCountries(countriesData);
+      
+      // Process the data before sending to API
+      const processedData = countriesData.map(country => ({
+        ...country,
+        supported_language_codes: country.supported_language_codes 
+          ? country.supported_language_codes.split(',').map((code: string) => code.trim()).filter(Boolean)
+          : [],
+        content: country.content || undefined
+      }));
+      
+      await bulkCreateCountries(processedData);
       toast({
         title: "Success",
         description: `${countriesData.length} countries uploaded successfully.`,
@@ -280,12 +290,13 @@ export default function CountriesPage() {
   // CSV schema for countries
   const countryCsvSchema: CsvSchema = {
     title: "Upload Countries CSV",
-    description: "Upload a CSV file with columns: code, name, default_language_code, supported_language_codes (comma-separated).",
+    description: "Upload a CSV file with columns: code, name, default_language_code, supported_language_codes (comma-separated), content (HTML - optional).",
     fields: [
       { name: "code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "default_language_code", type: "text", required: true } as FieldSchema,
       { name: "supported_language_codes", type: "text", required: false } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
 
@@ -328,7 +339,7 @@ export default function CountriesPage() {
         onOpenChange={setOpenForm}
       >
         <CountryForm
-          initialData={editing || undefined}
+          initialData={editing ? { ...editing, content: typeof editing.content === 'string' ? editing.content : undefined } : undefined}
           onSubmit={handleCreateOrUpdate}
           languages={languages}
           loading={isLoading}

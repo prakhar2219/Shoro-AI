@@ -65,6 +65,11 @@ export const createBoard = async (data: Partial<IBoard>) => {
   return res.data;
 };
 
+export const bulkCreateBoards = async (boards: IBoard[]): Promise<any> => {
+  const res = await api.post(`${API_ENDPOINTS.boards}/bulk`, { boards });
+  return res.data;
+};
+
 export const updateBoard = async (short_code: string, data: Partial<IBoard>) => {
   const res = await api.put(`${API_ENDPOINTS.boards}/${short_code}`, data);
   return res.data;

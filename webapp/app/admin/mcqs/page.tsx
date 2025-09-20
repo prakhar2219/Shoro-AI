@@ -358,7 +358,7 @@ export default function MCQsPage() {
   // CSV schema for MCQs
   const mcqCsvSchema: CsvSchema = {
     title: "Upload MCQs CSV",
-    description: "CSV columns: entity_type, entity_id, question, options(JSON array of {key,text}), correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false), content(JSON)",
+    description: "CSV columns: entity_type, entity_id, question, options(JSON array of {key,text}), correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false), content(HTML - optional)",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -378,9 +378,8 @@ export default function MCQsPage() {
       startLoading();
       const payload = rows.map((r: any) => {
         let options: any[] = [];
-        let content: any[] = [];
         if (r.options) { try { options = JSON.parse(r.options); } catch { options = []; } }
-        if (r.content) { try { content = JSON.parse(r.content); } catch { content = []; } }
+        const content = r.content || undefined
         const is_active = String(r.is_active).toLowerCase() === 'true';
         const tags = typeof r.tags === 'string' && r.tags.trim() ? r.tags.split(',').map((t: string) => t.trim()) : [];
         return {
@@ -398,7 +397,6 @@ export default function MCQsPage() {
       });
       await bulkCreateMCQs(payload);
       toast({ title: 'Success', description: `${payload.length} MCQs uploaded successfully.` });
-      setOpenCsvUpload(false);
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload MCQs.', variant: 'destructive' });

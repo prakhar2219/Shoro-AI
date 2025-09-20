@@ -16,8 +16,8 @@ export const bulkCreateChapters = async (
       return;
     }
     for (const c of chapters) {
-      if (!c.board_id || !c.class_id || !c.subject_id || !c.title || !c.slug || !c.content) {
-        res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, title, slug, content' });
+      if (!c.board_id || !c.class_id || !c.subject_id || !c.title || !c.slug) {
+        res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, title, and slug' });
         return;
       }
       // Normalize types
@@ -38,7 +38,7 @@ export const createChapter = async (
   try {
     const { board_id, class_id, subject_id, order, is_published, created_by, title, slug, content } = req.body;
 
-    if (!board_id || !class_id || !subject_id || !title || !slug || !content) {
+    if (!board_id || !class_id || !subject_id || !title || !slug) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }

@@ -14,6 +14,7 @@ import {
   createBoard,
   updateBoard,
   deleteBoard,
+  bulkCreateBoards,
   getBoardTranslations,
   createBoardTranslation,
   updateBoardTranslation,
@@ -146,6 +147,36 @@ export default function BoardsPage() {
     }
   };
 
+  const handleBulkUpload = async (boardsData: any[]) => {
+    try {
+      setIsLoading(true);
+      
+      // Process the data before sending to API
+      const processedData = boardsData.map(board => ({
+        ...board,
+        supported_language_ids: board.supported_language_ids 
+          ? board.supported_language_ids.split(',').map((id: string) => id.trim()).filter(Boolean)
+          : [],
+        content: board.content || undefined
+      }));
+      
+      await bulkCreateBoards(processedData);
+      toast({
+        title: "Success",
+        description: `${boardsData.length} boards uploaded successfully.`,
+      });
+      fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to upload boards. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Translation management handlers
   const handleAddTranslation = async (board: IBoard) => {
     setOpenTranslationForm({ board });
@@ -262,12 +293,16 @@ export default function BoardsPage() {
   // CSV schema for boards
   const boardCsvSchema: CsvSchema = {
     title: "Upload Boards CSV",
-    description: "Upload a CSV file with columns: short_code, name, country_id, default_language_id.",
+    description: "Upload a CSV file with columns: short_code, name, country_id, default_language_id, supported_language_ids (comma-separated), content (HTML - optional).",
     fields: [
       { name: "short_code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "country_id", type: "text", required: true } as FieldSchema,
       { name: "default_language_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
+      { name: "description", type: "text", required: false } as FieldSchema,
+      { name: "logo_url", type: "text", required: false } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
 
@@ -296,6 +331,7 @@ export default function BoardsPage() {
           )
           .filter((id): id is string => typeof id === 'string')
       : [],
+    content: typeof board.content === 'string' ? board.content : undefined,
   });
 
   return (
@@ -352,9 +388,7 @@ export default function BoardsPage() {
 
       <CsvUploadDialog
         schema={boardCsvSchema}
-        onUpload={() => {
-          toast({ title: "Success", description: "CSV imported (stub)." });
-        }}
+        onUpload={handleBulkUpload}
         open={openCsvUpload}
         onOpenChange={setOpenCsvUpload}
       />

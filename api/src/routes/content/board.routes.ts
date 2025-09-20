@@ -4,6 +4,7 @@ import boardController from '../../controllers/content/board.controller';
 const router = Router();
 
 router.post('/', boardController.createBoard);
+router.post('/bulk', boardController.bulkCreateBoards);
 router.get('/', boardController.getBoards);
 router.get('/paginated', boardController.getBoardsWithPagination);
 

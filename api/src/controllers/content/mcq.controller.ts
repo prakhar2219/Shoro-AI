@@ -16,8 +16,8 @@ export const bulkCreateMCQs = async (
       return;
     }
     for (const m of mcqs) {
-      if (!m.entity_type || !m.entity_id || !m.question || !m.options || !m.correct_answer || !m.content) {
-        res.status(400).json({ error: 'Each MCQ must have entity_type, entity_id, question, options, correct_answer, content' });
+      if (!m.entity_type || !m.entity_id || !m.question || !m.options || !m.correct_answer) {
+        res.status(400).json({ error: 'Each MCQ must have entity_type, entity_id, question, options, and correct_answer' });
         return;
       }
       if (!Array.isArray((m as any).options) || (m as any).options.length < 2) {
@@ -49,7 +49,7 @@ export const createMCQ = async (
       content,
     } = req.body;
 
-    if (!entity_type || !entity_id || !question || !options || !correct_answer || !content) {
+    if (!entity_type || !entity_id || !question || !options || !correct_answer) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }

@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import {
   createClass,
+  bulkCreateClasses,
   getClasses,
   getClass,
   updateClass,
@@ -27,6 +28,7 @@ router.put('/:id/translations/:translationId', updateClassTranslation);
 router.delete('/:id/translations/:translationId', deleteClassTranslation);
 
 router.post('/', createClass);
+router.post('/bulk', bulkCreateClasses);
 router.get('/', getClasses);
 router.get('/:id', getClass);
 router.put('/:id', updateClass);

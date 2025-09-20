@@ -16,8 +16,8 @@ export const bulkCreateFAQs = async (
       return;
     }
     for (const f of faqs) {
-      if (!f.entity_type || !f.entity_id || !f.question || !f.answer || !f.content) {
-        res.status(400).json({ error: 'Each FAQ must have entity_type, entity_id, question, answer, content' });
+      if (!f.entity_type || !f.entity_id || !f.question || !f.answer) {
+        res.status(400).json({ error: 'Each FAQ must have entity_type, entity_id, question, and answer' });
         return;
       }
       (f as any).order = typeof (f as any).order === 'number' ? (f as any).order : Number((f as any).order || 0);
@@ -44,7 +44,7 @@ export const createFAQ = async (
       content,
     } = req.body;
 
-    if (!entity_type || !entity_id || !question || !answer || !content) {
+    if (!entity_type || !entity_id || !question || !answer) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }

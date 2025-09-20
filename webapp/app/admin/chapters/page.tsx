@@ -189,7 +189,7 @@ export default function ChapterAdminPage() {
   // CSV schema for chapters
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
-    description: "Upload a CSV with columns: board_id, class_id, subject_id, title, slug, content(JSON), order, is_published",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, title, slug, content(HTML - optional), order, is_published",
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
@@ -205,10 +205,7 @@ export default function ChapterAdminPage() {
   const handleBulkUpload = async (rows: any[]) => {
     try {
       const payload = rows.map(r => {
-        let content: any[] = [];
-        if (r.content) {
-          try { content = JSON.parse(r.content); } catch { content = []; }
-        }
+        const content = r.content || undefined
         const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
         return {
@@ -224,7 +221,6 @@ export default function ChapterAdminPage() {
       });
       await bulkCreateChapters(payload);
       toast({ title: 'Success', description: `${payload.length} chapters uploaded successfully.` });
-      setOpenCsvUpload(false);
       await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload chapters.', variant: 'destructive' });

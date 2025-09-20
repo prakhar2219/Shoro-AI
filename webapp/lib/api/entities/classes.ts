@@ -55,6 +55,11 @@ export const createClass = async (data: Partial<IClass>) => {
   return res.data;
 };
 
+export const bulkCreateClasses = async (classes: IClass[]): Promise<any> => {
+  const res = await api.post(`${API_ENDPOINTS.classes}/bulk`, { classes });
+  return res.data;
+};
+
 export const updateClass = async (id: string, data: Partial<IClass>) => {
   const res = await api.put(`${API_ENDPOINTS.classes}/${id}`, data);
   return res.data;

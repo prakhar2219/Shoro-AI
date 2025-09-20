@@ -147,7 +147,6 @@ export default function LanguagesPage() {
                 title: "Success",
                 description: `${rows.length} languages uploaded successfully.`,
             });
-            setOpenCsvUpload(false);
             fetchPaginatedData(page, pageSize, searchTerm);
             fetchStats();
         } catch (error: any) {

@@ -9,7 +9,7 @@ export const createClass = async (
   try {
     const { board_id, number, name, grade, content } = req.body;
 
-    if (!board_id || typeof grade !== 'number' || !name || !content) {
+    if (!board_id || typeof grade !== 'number' || !name) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -22,6 +22,32 @@ export const createClass = async (
     } as IClass;
 
     const created = await classService.createClass(classData);
+    res.status(201).json(created);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// Bulk create classes
+export const bulkCreateClasses = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { classes } = req.body as { classes: IClass[] };
+    if (!Array.isArray(classes) || classes.length === 0) {
+      res.status(400).json({ error: 'classes array is required' });
+      return;
+    }
+    for (const c of classes) {
+      if (!c.board_id || !c.name || !c.grade) {
+        res.status(400).json({ error: 'Each class must have board_id, name, and grade' });
+        return;
+      }
+      // Normalize types
+      (c as any).grade = typeof c.grade === 'number' ? c.grade : Number(c.grade);
+    }
+    const created = await classService.bulkCreateClasses(classes);
     res.status(201).json(created);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });

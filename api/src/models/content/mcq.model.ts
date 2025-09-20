@@ -18,7 +18,7 @@ const MCQSchema = new Schema<IMCQ>(
     tags: [{ type: String }],
     is_active: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },
-    content: { type: String, required: true },
+    content: { type: String, required: false },
   },
   { timestamps: true }
 );

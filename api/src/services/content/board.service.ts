@@ -198,6 +198,18 @@ export const deleteBoardTranslation = async (translationId: string) => {
   return await BoardTranslation.findByIdAndDelete(translationId);
 };
 
+// Bulk create boards
+export const bulkCreateBoards = async (boards: IBoard[]) => {
+  try {
+    return await Board.insertMany(boards as any[], { ordered: false });
+  } catch (error: any) {
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};
+
 export default {
   createBoard,
   getAllBoards,
@@ -210,4 +222,5 @@ export default {
   createBoardTranslation,
   updateBoardTranslation,
   deleteBoardTranslation,
+  bulkCreateBoards,
 };

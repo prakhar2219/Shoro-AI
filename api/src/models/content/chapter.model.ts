@@ -13,7 +13,7 @@ const ChapterSchema = new Schema<IChapter>(
     slug: { type: String, required: true },
     seo_title: { type: String },
     seo_description: { type: String },
-    content: { type: String, required: true },
+    content: { type: String, required: false },
     version: { type: Number, default: 1 },
   },
   { timestamps: true }

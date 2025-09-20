@@ -7,7 +7,7 @@ const SubjectSchema = new Schema<ISubject>(
     code: { type: String, required: true },
     icon: { type: String },
     name: { type: String, required: true },
-    content: { type: String, required: true },
+    content: { type: String, required: false },
   },
   { timestamps: true }
 );

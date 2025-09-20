@@ -277,7 +277,7 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, code, name, icon (optional), content (JSON optional).",
+    description: "Upload a CSV with columns: class_id, code, name, icon (optional), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "code", type: "text", required: true } as FieldSchema,
@@ -290,12 +290,9 @@ export default function SubjectsPage() {
   const handleBulkUpload = async (rows: any[]) => {
     try {
       setIsLoading(true);
-      // Transform rows: parse content JSON or default []
+      // Transform rows: handle content as HTML string
       const subjectsPayload = rows.map((r: any) => {
-        let content: any[] = [];
-        if (r.content) {
-          try { content = JSON.parse(r.content); } catch { content = []; }
-        }
+        const content = r.content || undefined
         return {
           class_id: r.class_id,
           code: r.code,
@@ -306,7 +303,6 @@ export default function SubjectsPage() {
       });
       await bulkCreateSubjects(subjectsPayload);
       toast({ title: "Success", description: `${subjectsPayload.length} subjects uploaded successfully.` });
-      setOpenCsvUpload(false);
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: "Error", description: error?.response?.data?.error || "Failed to upload subjects.", variant: "destructive" });

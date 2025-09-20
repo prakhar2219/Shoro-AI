@@ -7,7 +7,7 @@ const CountrySchema = new Schema<ICountry>(
     code: { type: String, required: true, unique: true },
     default_language_code: { type: String, required: true },
     supported_language_codes: [{ type: String }],
-    content: { type: String, required: true },
+    content: { type: String, required: false },
   },
   { timestamps: true }
 );

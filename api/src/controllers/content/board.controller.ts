@@ -18,7 +18,7 @@ export const createBoard = async (
       content,
     } = req.body;
 
-    if (!name || !short_code || !country_id || !default_language_id || !content) {
+    if (!name || !short_code || !country_id || !default_language_id) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
@@ -109,6 +109,30 @@ export const deleteBoard = async (
       return;
     }
     res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// Bulk create boards
+export const bulkCreateBoards = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { boards } = req.body as { boards: IBoard[] };
+    if (!Array.isArray(boards) || boards.length === 0) {
+      res.status(400).json({ error: 'boards array is required' });
+      return;
+    }
+    for (const b of boards) {
+      if (!b.short_code || !b.name || !b.country_id || !b.default_language_id) {
+        res.status(400).json({ error: 'Each board must have short_code, name, country_id, and default_language_id' });
+        return;
+      }
+    }
+    const created = await boardService.bulkCreateBoards(boards);
+    res.status(201).json(created);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -205,6 +229,7 @@ export const deleteBoardTranslation = async (req: Request, res: Response): Promi
 
 export default {
   createBoard,
+  bulkCreateBoards,
   getBoards,
   getBoard,
   updateBoard,

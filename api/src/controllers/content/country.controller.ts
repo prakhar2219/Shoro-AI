@@ -10,7 +10,7 @@ export const createCountry = async (
 ): Promise<void> => {
   try {
     const { name, code, default_language_code, supported_language_codes, content } = req.body;
-    if (!name || !code || !default_language_code || !content) {
+    if (!name || !code || !default_language_code) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }

@@ -13,6 +13,7 @@ import {
   createClass,
   updateClass,
   deleteClass,
+  bulkCreateClasses,
   getClassTranslations,
   createClassTranslation,
   updateClassTranslation,
@@ -139,6 +140,34 @@ export default function ClassesPage() {
       } finally {
         setIsLoading(false);
       }
+    }
+  };
+
+  const handleBulkUpload = async (classesData: any[]) => {
+    try {
+      setIsLoading(true);
+      
+      // Process the data before sending to API
+      const processedData = classesData.map(cls => ({
+        ...cls,
+        grade: typeof cls.grade === 'number' ? cls.grade : Number(cls.grade),
+        content: cls.content || undefined
+      }));
+      
+      await bulkCreateClasses(processedData);
+      toast({
+        title: "Success",
+        description: `${classesData.length} classes uploaded successfully.`,
+      });
+      fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to upload classes. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -284,12 +313,12 @@ export default function ClassesPage() {
   // CSV schema for classes
   const classCsvSchema: CsvSchema = {
     title: "Upload Classes CSV",
-    description: "Upload a CSV file with columns: name, board_id, grade_level, default_language_id.",
+    description: "Upload a CSV file with columns: name, board_id, grade, content (HTML - optional).",
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "board_id", type: "text", required: true } as FieldSchema,
-      { name: "grade_level", type: "text", required: true } as FieldSchema,
-      { name: "default_language_id", type: "text", required: true } as FieldSchema,
+      { name: "grade", type: "number", required: true } as FieldSchema,
+      { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
 
@@ -365,9 +394,7 @@ export default function ClassesPage() {
 
       <CsvUploadDialog
         schema={classCsvSchema}
-        onUpload={() => {
-          toast({ title: "Success", description: "CSV imported (stub)." });
-        }}
+        onUpload={handleBulkUpload}
         open={openCsvUpload}
         onOpenChange={setOpenCsvUpload}
       />

@@ -16,8 +16,8 @@ export const bulkCreateDescriptiveQuestions = async (
       return;
     }
     for (const q of descriptive_questions) {
-      if (!q.entity_type || !q.entity_id || !q.question || !q.answer || !q.content) {
-        res.status(400).json({ error: 'Each item must have entity_type, entity_id, question, answer, content' });
+      if (!q.entity_type || !q.entity_id || !q.question || !q.answer) {
+        res.status(400).json({ error: 'Each item must have entity_type, entity_id, question, and answer' });
         return;
       }
     }
@@ -43,7 +43,7 @@ export const createDescriptiveQuestion = async (
       content,
     } = req.body;
 
-    if (!entity_type || !entity_id || !question || !answer || !content) {
+    if (!entity_type || !entity_id || !question || !answer) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }

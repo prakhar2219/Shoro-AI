@@ -329,7 +329,7 @@ export default function FAQsPage() {
   // CSV schema for FAQs
   const faqCsvSchema: CsvSchema = {
     title: "Upload FAQs CSV",
-    description: "CSV columns: entity_type, entity_id, question, answer, category(optional), order(optional), is_active(optional true/false), content(JSON)",
+    description: "CSV columns: entity_type, entity_id, question, answer, category(optional), order(optional), is_active(optional true/false), content(HTML - optional)",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -346,8 +346,7 @@ export default function FAQsPage() {
     try {
       startLoading();
       const payload = rows.map((r: any) => {
-        let content: any[] = [];
-        if (r.content) { try { content = JSON.parse(r.content); } catch { content = []; } }
+        const content = r.content || undefined
         const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
         const is_active = String(r.is_active).toLowerCase() === 'true';
         return {
@@ -363,7 +362,6 @@ export default function FAQsPage() {
       });
       await bulkCreateFAQs(payload);
       toast({ title: 'Success', description: `${payload.length} FAQs uploaded successfully.` });
-      setOpenCsvUpload(false);
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload FAQs.', variant: 'destructive' });

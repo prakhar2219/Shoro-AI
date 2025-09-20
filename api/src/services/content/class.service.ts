@@ -180,3 +180,15 @@ export const getClassesByBoardShortCode = async (board_short_code: string, langu
   );
   return classesWithTranslations;
 };
+
+// Bulk create classes
+export const bulkCreateClasses = async (classes: IClass[]) => {
+  try {
+    return await ClassModel.insertMany(classes as any[], { ordered: false });
+  } catch (error: any) {
+    if (error?.writeErrors && error?.insertedIds) {
+      return error.insertedIds;
+    }
+    throw error;
+  }
+};

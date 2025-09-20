@@ -332,7 +332,7 @@ export default function DescriptiveQuestionsPage() {
   // CSV schema for Descriptive Questions
   const dqCsvSchema: CsvSchema = {
     title: "Upload Descriptive Questions CSV",
-    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), is_active(optional), content(JSON)",
+    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), is_active(optional), content(HTML - optional)",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -349,8 +349,7 @@ export default function DescriptiveQuestionsPage() {
     try {
       startLoading();
       const payload = rows.map((r: any) => {
-        let content: any[] = [];
-        if (r.content) { try { content = JSON.parse(r.content); } catch { content = []; } }
+        const content = r.content || undefined
         const is_active = String(r.is_active).toLowerCase() === 'true';
         const tags = typeof r.tags === 'string' && r.tags.trim() ? r.tags.split(',').map((t: string) => t.trim()) : [];
         return {
@@ -366,7 +365,6 @@ export default function DescriptiveQuestionsPage() {
       });
       await bulkCreateDescriptiveQuestions(payload);
       toast({ title: 'Success', description: `${payload.length} questions uploaded successfully.` });
-      setOpenCsvUpload(false);
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload questions.', variant: 'destructive' });

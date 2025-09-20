@@ -14,8 +14,8 @@ export const bulkCreateSubjects = async (
       return;
     }
     for (const s of subjects) {
-      if (!s.class_id || !s.code || !s.name || !s.content) {
-        res.status(400).json({ error: 'Each subject must have class_id, code, name, and content' });
+      if (!s.class_id || !s.code || !s.name) {
+        res.status(400).json({ error: 'Each subject must have class_id, code, and name' });
         return;
       }
     }
@@ -33,7 +33,7 @@ export const createSubject = async (
   try {
     const { class_id, code, icon, name, content } = req.body;
 
-    if (!class_id || !code || !name || !content) {
+    if (!class_id || !code || !name) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }

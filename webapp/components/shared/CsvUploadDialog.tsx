@@ -53,7 +53,7 @@ type CsvUploadDialogProps = {
     trigger?: React.ReactNode
     title?: string
     schema: CsvSchema
-    onUpload: (rows: ParsedRow[]) => void
+    onUpload: (rows: ParsedRow[]) => Promise<void> | void
     onOpenChange?: (open: boolean) => void
 }
 
@@ -248,13 +248,32 @@ export function CsvUploadDialog({
         setParsedRows(updatedRows)
     }
 
-    const handleUpload = () => {
+    const handleUpload = async () => {
         const validRows = parsedRows.filter(row => row._isValid)
         if (validRows.length === 0) {
             setError("No valid rows to upload.")
             return
         }
-        onUpload(validRows)
+        
+        // Clean the data by removing validation metadata
+        const cleanData = validRows.map(row => {
+            const cleanRow: any = {}
+            schema.fields.forEach(field => {
+                cleanRow[field.name] = row[field.name]
+            })
+            return cleanRow
+        })
+        
+        try {
+            await onUpload(cleanData)
+            // Close the modal after successful upload
+            if (onOpenChange) {
+                onOpenChange(false)
+            }
+        } catch (error) {
+            // Error handling is done in the parent component
+            console.error('Upload failed:', error)
+        }
     }
 
     const getValidRowsCount = () => parsedRows.filter(row => row._isValid).length
