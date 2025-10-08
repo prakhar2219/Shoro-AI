@@ -1,0 +1,69 @@
+"use client";
+
+import React from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Edit, Trash2, Plus, FileText, HelpCircle, MessageSquare } from "lucide-react";
+
+interface EntityActionDropdownProps {
+  entity: any;
+  entityType: string;
+  onEdit: () => void;
+  onDelete: () => void;
+  onAddMCQ: (entityId: string) => void;
+  onAddFAQ: (entityId: string) => void;
+  onAddDescriptiveQuestion: (entityId: string) => void;
+}
+
+export function EntityActionDropdown({
+  entity,
+  entityType,
+  onEdit,
+  onDelete,
+  onAddMCQ,
+  onAddFAQ,
+  onAddDescriptiveQuestion,
+}: EntityActionDropdownProps) {
+  const entityId = entity._id || entity.id;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Open menu</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onEdit}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onAddMCQ(entityId)}>
+          <Plus className="mr-2 h-4 w-4" />
+          Add MCQ
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAddFAQ(entityId)}>
+          <HelpCircle className="mr-2 h-4 w-4" />
+          Add FAQ
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAddDescriptiveQuestion(entityId)}>
+          <MessageSquare className="mr-2 h-4 w-4" />
+          Add Descriptive Question
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={onDelete} className="text-red-600">
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+} 
