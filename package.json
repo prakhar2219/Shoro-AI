@@ -1,0 +1,29 @@
+{
+  "name": "kridhax",
+  "version": "1.0.0",
+  "description": "Kridhax AI FE + BE",
+  "main": "index.js",
+  "scripts": {
+    "start:api": "cd api && npm start",
+    "start:webapp": "cd webapp && pnpm start",
+    "dev:api": "cd api && npm run dev",
+    "dev:webapp": "cd webapp && pnpm run dev",
+    "build:api": "cd api && npm run build",
+    "build:webapp": "cd webapp && pnpm run build",
+    "install:all": "npm install && cd api && npm install && cd ../webapp && pnpm install",
+    "test:api": "cd api && npm test",
+    "test:webapp": "cd webapp && npm test",
+    "lint:api": "cd api && npm run lint",
+    "lint:webapp": "cd webapp && npm run lint",
+    "start:all": "concurrently \"npm run start:api\" \"npm run start:webapp\"",
+    "dev:all": "concurrently \"npm run dev:api\" \"pnpm run dev:webapp\""
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "author": "Pankaj Tulshyan",
+  "license": "ISC",
+  "dependencies": {
+    "@tanstack/react-table": "^8.21.3"
+  }
+}
