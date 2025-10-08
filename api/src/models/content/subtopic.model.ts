@@ -1,0 +1,25 @@
+import mongoose, { Schema } from 'mongoose';
+import { ISubtopic } from '@/types/content/subtopic.types';
+
+const SubtopicSchema = new Schema<ISubtopic>(
+  {
+    topic_id: { type: Schema.Types.ObjectId, ref: 'Topic', required: true },
+    title: { type: String, required: true },
+    slug: { type: String, required: true },
+    order: { type: Number, required: true },
+    is_published: { type: Boolean, default: false },
+    created_by: { type: Schema.Types.ObjectId, ref: 'User' },
+    content: { type: String, required: false },
+  },
+  { timestamps: true }
+);
+
+SubtopicSchema.virtual('translation');
+SubtopicSchema.virtual('translations');
+
+// Compound unique index: order must be unique within each topic
+SubtopicSchema.index({ topic_id: 1, order: 1 }, { unique: true });
+
+export default mongoose.model<ISubtopic>('Subtopic', SubtopicSchema);
+
+
