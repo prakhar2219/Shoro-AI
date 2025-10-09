@@ -1,6 +1,19 @@
 import SubjectModel from '../../models/content/subject.model';
 import SubjectTranslation from '../../models/content/subjectTranslation.model';
+import ClassModel from '../../models/content/class.model';
 import { ISubject } from '@/types/content/subject.types';
+
+// Helper function to validate if class IDs exist
+export const validateClassIds = async (classIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueClassIds = [...new Set(classIds)]; // Remove duplicates
+  const existingClasses = await ClassModel.find({ _id: { $in: uniqueClassIds } }).select('_id');
+  const existingClassIds = existingClasses.map(c => c._id.toString());
+  
+  const valid = uniqueClassIds.filter(id => existingClassIds.includes(id));
+  const invalid = uniqueClassIds.filter(id => !existingClassIds.includes(id));
+  
+  return { valid, invalid };
+};
 
 export const createSubject = async (data: ISubject) => {
   return await SubjectModel.create(data);

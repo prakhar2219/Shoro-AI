@@ -1,5 +1,18 @@
 import Topic from '../../models/content/topic.model';
+import ChapterModel from '../../models/content/chapter.model';
 import { ITopic } from '@/types/content/topic.types';
+
+// Helper function to validate if chapter IDs exist
+export const validateChapterIds = async (chapterIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueChapterIds = [...new Set(chapterIds)]; // Remove duplicates
+  const existingChapters = await ChapterModel.find({ _id: { $in: uniqueChapterIds } }).select('_id');
+  const existingChapterIds = existingChapters.map(c => c._id.toString());
+  
+  const valid = uniqueChapterIds.filter(id => existingChapterIds.includes(id));
+  const invalid = uniqueChapterIds.filter(id => !existingChapterIds.includes(id));
+  
+  return { valid, invalid };
+};
 
 export const createTopic = async (data: ITopic) => Topic.create(data);
 

@@ -13,12 +13,25 @@ export const bulkCreateSubjects = async (
       res.status(400).json({ error: 'subjects array is required' });
       return;
     }
+    // Basic field validation
     for (const s of subjects) {
       if (!s.class_id || !s.code || !s.name) {
         res.status(400).json({ error: 'Each subject must have class_id, code, and name' });
         return;
       }
     }
+    
+    // Validate all class IDs exist
+    const classIds = subjects.map(s => s.class_id.toString());
+    const { valid, invalid } = await subjectService.validateClassIds(classIds);
+    
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid class_id(s) found: ${invalid.join(', ')}. Please ensure all class IDs exist in the database.` 
+      });
+      return;
+    }
+    
     const created = await subjectService.bulkCreateSubjects(subjects);
     res.status(201).json(created);
   } catch (error) {
@@ -35,6 +48,15 @@ export const createSubject = async (
 
     if (!class_id || !code || !name) {
       res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    // Validate class ID exists
+    const { invalid } = await subjectService.validateClassIds([class_id.toString()]);
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid class_id: ${class_id}. Please ensure the class ID exists in the database.` 
+      });
       return;
     }
 

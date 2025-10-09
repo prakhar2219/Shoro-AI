@@ -1,5 +1,18 @@
 import Subtopic from '../../models/content/subtopic.model';
+import TopicModel from '../../models/content/topic.model';
 import { ISubtopic } from '@/types/content/subtopic.types';
+
+// Helper function to validate if topic IDs exist
+export const validateTopicIds = async (topicIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueTopicIds = [...new Set(topicIds)]; // Remove duplicates
+  const existingTopics = await TopicModel.find({ _id: { $in: uniqueTopicIds } }).select('_id');
+  const existingTopicIds = existingTopics.map(t => t._id.toString());
+  
+  const valid = uniqueTopicIds.filter(id => existingTopicIds.includes(id));
+  const invalid = uniqueTopicIds.filter(id => !existingTopicIds.includes(id));
+  
+  return { valid, invalid };
+};
 
 export const createSubtopic = async (data: ISubtopic) => Subtopic.create(data);
 

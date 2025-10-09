@@ -14,6 +14,15 @@ export const createClass = async (
       return;
     }
 
+    // Validate board ID exists
+    const { invalid } = await classService.validateBoardIds([board_id.toString()]);
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid board_id: ${board_id}. Please ensure the board ID exists in the database.` 
+      });
+      return;
+    }
+
     const classData: IClass = {
       board_id,
       name,
@@ -39,6 +48,8 @@ export const bulkCreateClasses = async (
       res.status(400).json({ error: 'classes array is required' });
       return;
     }
+    
+    // Basic field validation
     for (const c of classes) {
       if (!c.board_id || !c.name || !c.grade) {
         res.status(400).json({ error: 'Each class must have board_id, name, and grade' });
@@ -47,6 +58,18 @@ export const bulkCreateClasses = async (
       // Normalize types
       (c as any).grade = typeof c.grade === 'number' ? c.grade : Number(c.grade);
     }
+    
+    // Validate all board IDs exist
+    const boardIds = classes.map(c => c.board_id.toString());
+    const { valid, invalid } = await classService.validateBoardIds(boardIds);
+    
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid board_id(s) found: ${invalid.join(', ')}. Please ensure all board IDs exist in the database.` 
+      });
+      return;
+    }
+    
     const created = await classService.bulkCreateClasses(classes);
     res.status(201).json(created);
   } catch (error) {

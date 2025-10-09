@@ -13,6 +13,7 @@ import authRoutes from './routes/auth.routes';
 import blogRoutes from './routes/blog.routes';
 import uploadRoutes from './routes/upload.routes';
 import contentRoutes from './routes/content/index.routes';
+import ratingRoutes from './routes/rating.routes';
 
 const corsConfig = {
   origin: '*',
@@ -43,6 +44,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/blogs', blogRoutes);
 app.use('/api/v1/upload', uploadRoutes);
 app.use('/api/v1/content', contentRoutes);
+app.use('/api/v1/ratings', ratingRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'API is running' });

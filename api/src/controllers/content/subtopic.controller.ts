@@ -12,6 +12,15 @@ export const createSubtopic = async (req: Request, res: Response) => {
   const finalOrder = typeof order === 'number' ? order : Number(order || 0);
   
   try {
+    // Validate topic ID exists
+    const { invalid } = await subtopicService.validateTopicIds([topic_id.toString()]);
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid topic_id: ${topic_id}. Please ensure the topic ID exists in the database.` 
+      });
+      return;
+    }
+    
     const subtopic = {
       topic_id,
       title,
@@ -49,6 +58,17 @@ export const bulkCreateSubtopics = async (req: Request, res: Response) => {
       }
       s.order = typeof s.order === 'number' ? s.order : Number(s.order || 0);
       s.is_published = !!s.is_published;
+    }
+    
+    // Validate all topic IDs exist
+    const topicIds = subtopics.map(s => s.topic_id.toString());
+    const { valid, invalid } = await subtopicService.validateTopicIds(topicIds);
+    
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid topic_id(s) found: ${invalid.join(', ')}. Please ensure all topic IDs exist in the database.` 
+      });
+      return;
     }
     
     const created = await subtopicService.bulkCreateSubtopics(subtopics);

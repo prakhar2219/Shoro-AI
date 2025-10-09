@@ -2,7 +2,20 @@
 
 import Chapter from '../../models/content/chapter.model';
 import ChapterTranslation from '../../models/content/chapterTranslation.model';
+import SubjectModel from '../../models/content/subject.model';
 import { IChapter } from '../../types/content/chapter.types';
+
+// Helper function to validate if subject IDs exist
+export const validateSubjectIds = async (subjectIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueSubjectIds = [...new Set(subjectIds)]; // Remove duplicates
+  const existingSubjects = await SubjectModel.find({ _id: { $in: uniqueSubjectIds } }).select('_id');
+  const existingSubjectIds = existingSubjects.map(s => s._id.toString());
+  
+  const valid = uniqueSubjectIds.filter(id => existingSubjectIds.includes(id));
+  const invalid = uniqueSubjectIds.filter(id => !existingSubjectIds.includes(id));
+  
+  return { valid, invalid };
+};
 
 export const createChapter = async (data: IChapter) => {
   return await Chapter.create(data);

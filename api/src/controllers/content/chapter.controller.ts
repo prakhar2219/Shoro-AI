@@ -15,6 +15,8 @@ export const bulkCreateChapters = async (
       res.status(400).json({ error: 'chapters array is required' });
       return;
     }
+    
+    // Basic field validation
     for (const c of chapters) {
       if (!c.board_id || !c.class_id || !c.subject_id || !c.title || !c.slug) {
         res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, title, and slug' });
@@ -24,6 +26,18 @@ export const bulkCreateChapters = async (
       (c as any).order = typeof c.order === 'number' ? c.order : Number((c as any).order || 0);
       (c as any).is_published = !!(c as any).is_published;
     }
+    
+    // Validate all subject IDs exist
+    const subjectIds = chapters.map(c => c.subject_id.toString());
+    const { valid, invalid } = await chapterService.validateSubjectIds(subjectIds);
+    
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid subject_id(s) found: ${invalid.join(', ')}. Please ensure all subject IDs exist in the database.` 
+      });
+      return;
+    }
+    
     const created = await chapterService.bulkCreateChapters(chapters);
     res.status(201).json(created);
   } catch (error) {
@@ -40,6 +54,15 @@ export const createChapter = async (
 
     if (!board_id || !class_id || !subject_id || !title || !slug) {
       res.status(400).json({ error: 'Missing required fields' });
+      return;
+    }
+
+    // Validate subject ID exists
+    const { invalid } = await chapterService.validateSubjectIds([subject_id.toString()]);
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid subject_id: ${subject_id}. Please ensure the subject ID exists in the database.` 
+      });
       return;
     }
 

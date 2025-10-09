@@ -1,6 +1,19 @@
 import ClassModel from '../../models/content/class.model';
 import ClassTranslation from '../../models/content/classTranslation.model';
+import BoardModel from '../../models/content/board.model';
 import { IClass } from '@/types/content/class.types';
+
+// Helper function to validate if board IDs exist
+export const validateBoardIds = async (boardIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueBoardIds = [...new Set(boardIds)]; // Remove duplicates
+  const existingBoards = await BoardModel.find({ _id: { $in: uniqueBoardIds } }).select('_id');
+  const existingBoardIds = existingBoards.map(b => b._id.toString());
+  
+  const valid = uniqueBoardIds.filter(id => existingBoardIds.includes(id));
+  const invalid = uniqueBoardIds.filter(id => !existingBoardIds.includes(id));
+  
+  return { valid, invalid };
+};
 
 export const createClass = async (data: IClass) => {
   return await ClassModel.create(data);

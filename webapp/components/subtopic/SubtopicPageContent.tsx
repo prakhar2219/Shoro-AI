@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, GraduationCap, Calendar, Users, ArrowRight, Building2, Brain, HelpCircle, FileText, Globe, Award } from 'lucide-react';
+import { FileText, BookOpen, Calendar, Users, ArrowLeft, Building2, GraduationCap, Brain, Clock, Eye, HelpCircle, Target, Zap } from 'lucide-react';
 import { PageLayout } from '@/components/layout/page-layout';
 import { ContentCard } from '@/components/layout/content-card';
 import { GridItemCard } from '@/components/layout/grid-item-card';
@@ -11,23 +11,34 @@ import { ServerFAQSection } from '../country/ServerFAQSection';
 import { ServerDescriptiveQuestionSection } from '../country/ServerDescriptiveQuestionSection';
 import { RatingSystem } from '../shared/RatingSystem';
 
+interface Subtopic {
+  _id: string;
+  title: string;
+  slug: string;
+  order: number;
+  content?: any[];
+  is_published?: boolean;
+  createdAt?: string;
+}
+
+interface Topic {
+  _id: string;
+  title: string;
+  slug: string;
+  order: number;
+}
+
 interface Chapter {
   _id: string;
   title: string;
   slug: string;
   order: number;
-  seo_description?: string;
-  content?: any[];
-  createdAt?: string;
 }
 
 interface Subject {
   _id: string;
   code: string;
   name?: string;
-  description?: string;
-  content?: any[];
-  createdAt?: string;
 }
 
 interface Board {
@@ -70,11 +81,13 @@ interface DescriptiveQuestion {
   topic?: string;
 }
 
-interface SubjectPageContentProps {
+interface SubtopicPageContentProps {
   country: Country;
   board: Board;
   subject: Subject;
-  chapters: Chapter[];
+  chapter: Chapter;
+  topic: Topic;
+  subtopic: Subtopic;
   mcqs: MCQ[];
   faqs: FAQ[];
   descriptiveQuestions: DescriptiveQuestion[];
@@ -82,73 +95,70 @@ interface SubjectPageContentProps {
   boardCode: string;
   grade: string;
   subjectCode: string;
+  chapterSlug: string;
+  topicSlug: string;
 }
 
-export function SubjectPageContent({
+export function SubtopicPageContent({
   country,
   board,
   subject,
-  chapters,
+  chapter,
+  topic,
+  subtopic,
   mcqs,
   faqs,
   descriptiveQuestions,
   countryCode,
   boardCode,
   grade,
-  subjectCode
-}: SubjectPageContentProps) {
+  subjectCode,
+  chapterSlug,
+  topicSlug
+}: SubtopicPageContentProps) {
   const gradeNumber = parseInt(grade) || 0;
   
   const breadcrumbs = [
     { label: country.name, href: `/${countryCode}` },
     { label: board.name, href: `/${countryCode}/${boardCode}` },
     { label: `Grade ${gradeNumber}`, href: `/${countryCode}/${boardCode}/${gradeNumber}` },
-    { label: subject.code }
+    { label: subject.code, href: `/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}` },
+    { label: chapter.title, href: `/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapterSlug}` },
+    { label: topic.title, href: `/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapterSlug}/${topicSlug}` },
+    { label: subtopic.title }
   ];
 
   const stats = [
-    { icon: FileText, label: `${chapters.length} Chapters` },
-    { icon: Users, label: `Grade ${gradeNumber}` },
-    { icon: Calendar, label: `Est. ${new Date(subject.createdAt || '').getFullYear()}` }
+    { icon: Zap, label: `Subtopic ${subtopic.order}` },
+    { icon: Target, label: topic.title },
+    { icon: Calendar, label: `Est. ${new Date(subtopic.createdAt || '').getFullYear()}` }
   ];
 
   return (
     <PageLayout
       breadcrumbs={breadcrumbs}
-      icon={Brain}
-      badge={subject.code}
-      title={subject.code}
-      description={`${board.name} • Grade ${gradeNumber} • Comprehensive learning journey`}
+      icon={Zap}
+      badge={`Subtopic ${subtopic.order}`}
+      title={subtopic.title}
+      description={`${topic.title} • ${chapter.title} • ${subject.code} • Grade ${gradeNumber}`}
       stats={stats}
       sidebar={
         <>
           <SidebarCard
-            icon={FileText}
-            title="All Available Chapters"
-            description="Choose your chapter"
-            iconColor="purple"
+            icon={Target}
+            title="Parent Topic"
+            description="Back to topic overview"
+            iconColor="green"
           >
-            <div className="space-y-4">
-              {chapters.map((chapter) => (
-                <GridItemCard
-                  key={chapter._id}
-                  href={`/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapter.slug}`}
-                  title={chapter.title}
-                  badge={`Chapter ${chapter.order}`}
-                  description={chapter.seo_description || 'Comprehensive learning module with detailed content'}
-                  metadata={subject.code}
-                  actionText="View"
-                  icon={chapter.order.toString()}
-                />
-              ))}
-            </div>
-
-            {chapters.length === 0 && (
-              <EmptyState
-                icon={FileText}
-                title="No chapters available for this subject."
-              />
-            )}
+            <GridItemCard
+              href={`/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapterSlug}/${topicSlug}`}
+              title={topic.title}
+              badge={`Topic ${topic.order}`}
+              description="View complete topic"
+              metadata={chapter.title}
+              actionText="View Topic"
+              icon={topic.order.toString()}
+            />
           </SidebarCard>
 
           <SidebarCard
@@ -166,62 +176,32 @@ export function SubjectPageContent({
 
           <SidebarCard
             icon={Brain}
-            title="Other Subjects"
-            description="Explore different subjects"
-            iconColor="indigo"
+            title="Learning Progress"
+            description="Track your understanding"
+            iconColor="purple"
           >
             <EmptyState
               icon={Brain}
-              title="More subjects coming soon"
-              description="Explore educational content from other subjects"
+              title="Progress tracking coming soon"
+              description="Monitor your learning journey"
             />
           </SidebarCard>
         </>
       }
     >
-      {/* Subject Content */}
-      {subject.content && subject.content.length > 0 && (
+      {/* Subtopic Content */}
+      {subtopic.content && subtopic.content.length > 0 && (
         <ContentCard
-          icon={BookOpen}
-          title={`About ${subject.code}`}
-          description="Subject overview and learning objectives"
-          iconColor="indigo"
+          title={`Subtopic ${subtopic.order}: ${subtopic.title}`}
+          description="Detailed learning content"
+          icon={Zap}
+          iconColor="yellow"
         >
           <div className="prose prose-lg max-w-none">
-            <ServerTipTapRenderer content={subject.content} />
+            <ServerTipTapRenderer content={subtopic.content} />
           </div>
         </ContentCard>
       )}
-
-      {/* Top Chapters Section */}
-      <ContentCard
-        icon={Award}
-        iconColor="purple"
-        title="Popular Chapters"
-        description="Most accessed learning modules"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {chapters.slice(0, 4).map((chapter) => (
-            <GridItemCard
-              key={chapter._id}
-              href={`/${countryCode}/${boardCode}/${gradeNumber}/${subjectCode}/${chapter.slug}`}
-              title={chapter.title}
-              badge={`Chapter ${chapter.order}`}
-              description={chapter.seo_description || 'Comprehensive learning module with detailed content'}
-              metadata={subject.code}
-              actionText="Explore"
-              icon={chapter.order.toString()}
-            />
-          ))}
-        </div>
-        
-        {chapters.length === 0 && (
-          <EmptyState
-            icon={Award}
-            title="No chapters available for this subject."
-          />
-        )}
-      </ContentCard>
 
       {/* MCQs Section */}
       <ServerMCQSection 
@@ -246,9 +226,9 @@ export function SubjectPageContent({
 
       {/* Rating System */}
       <RatingSystem
-        entityType="subject"
-        entityId={subject._id}
-        entityTitle={subject.code}
+        entityType="subtopic"
+        entityId={subtopic._id}
+        entityTitle={subtopic.title}
       />
     </PageLayout>
   );

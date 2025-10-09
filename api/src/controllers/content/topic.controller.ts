@@ -12,6 +12,14 @@ export const createTopic = async (req: Request, res: Response) => {
   const finalOrder = typeof order === 'number' ? order : Number(order || 0);
   
   try {
+    // Validate chapter ID exists
+    const { invalid } = await topicService.validateChapterIds([chapter_id.toString()]);
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid chapter_id: ${chapter_id}. Please ensure the chapter ID exists in the database.` 
+      });
+      return;
+    }
     
     const topic = {
       chapter_id,
@@ -50,6 +58,17 @@ export const bulkCreateTopics = async (req: Request, res: Response) => {
       }
       t.order = typeof t.order === 'number' ? t.order : Number(t.order || 0);
       t.is_published = !!t.is_published;
+    }
+    
+    // Validate all chapter IDs exist
+    const chapterIds = topics.map(t => t.chapter_id.toString());
+    const { valid, invalid } = await topicService.validateChapterIds(chapterIds);
+    
+    if (invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid chapter_id(s) found: ${invalid.join(', ')}. Please ensure all chapter IDs exist in the database.` 
+      });
+      return;
     }
     
     const created = await topicService.bulkCreateTopics(topics);
