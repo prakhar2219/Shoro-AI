@@ -10,6 +10,10 @@ import descriptiveQuestionRoutes from './descriptiveQuestion.routes';
 import faqRoutes from './faq.routes';
 import topicRoutes from './topic.routes';
 import subtopicRoutes from './subtopic.routes';
+import gbCategoryRoutes from './gbCategory.routes';
+import gbTopicRoutes from './gbTopic.routes';
+import gbSubtopicRoutes from './gbSubtopic.routes';
+import gbQuestionRoutes from './gbQuestion.routes';
 
 const router = Router();
 
@@ -24,5 +28,9 @@ router.use('/subtopics', subtopicRoutes);
 router.use('/mcqs', mcqRoutes);
 router.use('/descriptive-questions', descriptiveQuestionRoutes);
 router.use('/faqs', faqRoutes);
+router.use('/gb-categories', gbCategoryRoutes);
+router.use('/gb-topics', gbTopicRoutes);
+router.use('/gb-subtopics', gbSubtopicRoutes);
+router.use('/gb-questions', gbQuestionRoutes);
 
 export default router;

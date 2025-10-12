@@ -4,7 +4,10 @@ import {
   getRatingsByEntity,
   getRatingStats,
   updateRating,
-  deleteRating
+  deleteRating,
+  getAllRatings,
+  approveRating,
+  rejectRating
 } from '../controllers/rating.controller';
 
 const router = Router();
@@ -23,5 +26,10 @@ router.put('/:id', updateRating);
 
 // Delete a rating
 router.delete('/:id', deleteRating);
+
+// Admin routes
+router.get('/admin/all', getAllRatings);
+router.patch('/admin/:id/approve', approveRating);
+router.patch('/admin/:id/reject', rejectRating);
 
 export default router;

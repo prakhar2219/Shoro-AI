@@ -96,3 +96,52 @@ export const deleteRating = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({ error: error.message });
   }
 };
+
+// Admin-specific endpoints
+export const getAllRatings = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { page = 1, limit = 10, search, entityType, isApproved } = req.query;
+    const ratings = await ratingService.getAllRatings({
+      page: Number(page),
+      limit: Number(limit),
+      search: search as string,
+      entityType: entityType === 'all' ? undefined : entityType as string,
+      isApproved: isApproved === 'true' ? true : isApproved === 'false' ? false : undefined
+    });
+    res.status(200).json(ratings);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const approveRating = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updated = await ratingService.updateRating(id, { isApproved: true });
+    
+    if (!updated) {
+      res.status(404).json({ error: 'Rating not found' });
+      return;
+    }
+
+    res.status(200).json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const rejectRating = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const updated = await ratingService.updateRating(id, { isApproved: false });
+    
+    if (!updated) {
+      res.status(404).json({ error: 'Rating not found' });
+      return;
+    }
+
+    res.status(200).json(updated);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+};

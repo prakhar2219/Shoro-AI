@@ -37,13 +37,13 @@ export function EntityFormModal({
                 <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50" />
                 <Dialog.Content
                     className={cn(
-                        "fixed z-50 left-1/2 top-1/2 w-[90vw] max-w-lg -translate-x-1/2 -translate-y-1/2",
+                        "fixed z-50 left-1/2 top-1/2 w-[90vw] max-w-2xl max-h-[85vh] -translate-x-1/2 -translate-y-1/2",
                         "rounded-2xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900",
-                        "p-6 shadow-lg focus:outline-none"
+                        "shadow-lg focus:outline-none flex flex-col"
                     )}
                 >
-                    {/* Title + Close Icon */}
-                    <div className="flex justify-between items-start">
+                    {/* Fixed Header */}
+                    <div className="flex justify-between items-start p-6 pb-4 border-b border-zinc-200 dark:border-zinc-700">
                         <Dialog.Title className="text-lg font-semibold dark:text-white">
                             {title}
                         </Dialog.Title>
@@ -60,17 +60,21 @@ export function EntityFormModal({
 
                     {/* Description */}
                     {description && (
-                        <Dialog.Description className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                            {description}
-                        </Dialog.Description>
+                        <div className="px-6 pt-2">
+                            <Dialog.Description className="text-sm text-zinc-500 dark:text-zinc-400">
+                                {description}
+                            </Dialog.Description>
+                        </div>
                     )}
 
-                    {/* Form content */}
-                    <div className="mt-4 space-y-4">{children}</div>
+                    {/* Scrollable Form content */}
+                    <div className="flex-1 overflow-y-auto px-6 py-4">
+                        <div className="space-y-4">{children}</div>
+                    </div>
 
-                    {/* Submit button */}
+                    {/* Fixed Footer */}
                     {onSubmit && (
-                        <div className="mt-6 flex justify-end">
+                        <div className="p-6 pt-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-end">
                             <button
                                 onClick={onSubmit}
                                 disabled={isSubmitting}

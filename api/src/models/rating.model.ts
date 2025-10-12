@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IRating extends Document {
-  entityType: 'blog' | 'subject' | 'chapter' | 'topic';
+  entityType: 'blog' | 'subject' | 'chapter' | 'topic' | 'gb_category' | 'gb_topic' | 'gb_subtopic' | 'gb_question';
   entityId: mongoose.Types.ObjectId;
   userId?: mongoose.Types.ObjectId;
   userName: string;
@@ -19,7 +19,7 @@ const ratingSchema = new Schema<IRating>(
     entityType: {
       type: String,
       required: true,
-      enum: ['blog', 'subject', 'chapter', 'topic']
+      enum: ['blog', 'subject', 'chapter', 'topic', 'gb_category', 'gb_topic', 'gb_subtopic', 'gb_question']
     },
     entityId: {
       type: Schema.Types.ObjectId,

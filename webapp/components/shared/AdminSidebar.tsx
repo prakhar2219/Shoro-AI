@@ -15,7 +15,12 @@ import {
     Languages,
     HelpCircle,
     MessageSquare,
-    CheckSquare
+    CheckSquare,
+    Folder,
+    FolderOpen,
+    FileQuestion,
+    Bookmark,
+    Star
 } from "lucide-react"
 import clsx from "clsx"
 
@@ -32,6 +37,11 @@ const navItems = [
     { name: "MCQs", href: "/admin/mcqs", icon: CheckSquare },
     { name: "Descriptive Questions", href: "/admin/descriptive-questions", icon: MessageSquare },
     { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
+    { name: "GB Categories", href: "/admin/gb-categories", icon: Folder },
+    { name: "GB Topics", href: "/admin/gb-topics", icon: FolderOpen },
+    { name: "GB Subtopics", href: "/admin/gb-subtopics", icon: Bookmark },
+    { name: "GB Questions", href: "/admin/gb-questions", icon: FileQuestion },
+    { name: "Ratings & Reviews", href: "/admin/ratings", icon: Star },
 ]
 
 export function AdminSidebar() {

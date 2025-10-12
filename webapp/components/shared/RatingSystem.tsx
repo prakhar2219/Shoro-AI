@@ -26,7 +26,7 @@ interface RatingStats {
 }
 
 interface RatingSystemProps {
-  entityType: 'blog' | 'subject' | 'chapter' | 'topic';
+  entityType: 'blog' | 'subject' | 'chapter' | 'topic' | 'gb_category' | 'gb_topic' | 'gb_subtopic' | 'gb_question';
   entityId: string;
   entityTitle: string;
 }

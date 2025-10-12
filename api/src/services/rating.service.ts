@@ -62,3 +62,44 @@ export const getUserRating = async (entityType: string, entityId: string, userEm
     userEmail
   });
 };
+
+// Admin functions
+export const getAllRatings = async (params: {
+  page: number;
+  limit: number;
+  search?: string;
+  entityType?: string;
+  isApproved?: boolean;
+}) => {
+  const { page, limit, search, entityType, isApproved } = params;
+  const skip = (page - 1) * limit;
+  
+  // Build filter
+  const filter: any = {};
+  if (entityType && entityType !== 'all') filter.entityType = entityType;
+  if (isApproved !== undefined) filter.isApproved = isApproved;
+  if (search) {
+    filter.$or = [
+      { userName: { $regex: search, $options: 'i' } },
+      { review: { $regex: search, $options: 'i' } },
+      { userEmail: { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const [ratings, total] = await Promise.all([
+    RatingModel.find(filter)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    RatingModel.countDocuments(filter)
+  ]);
+
+  return {
+    data: ratings,
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit)
+  };
+};

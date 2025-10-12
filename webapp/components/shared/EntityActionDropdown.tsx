@@ -30,6 +30,11 @@ export function EntityActionDropdown({
   onAddFAQ,
   onAddDescriptiveQuestion,
 }: EntityActionDropdownProps) {
+  // Safety check to prevent undefined entity errors
+  if (!entity) {
+    return null;
+  }
+  
   const entityId = entity._id || entity.id;
 
   return (
