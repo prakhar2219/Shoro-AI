@@ -25,6 +25,11 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     class_id: initialData?.class_id || '',
     content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
+  
+  // Check if we're adding from a parent class
+  const isAddingFromParent = Boolean(initialData?.classItem);
+  const parentClass = initialData?.classItem;
+  const parentBoard = parentClass?.board_id;
 
   useEffect(() => {
     getBoards().then(setBoards);
@@ -42,7 +47,14 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     if (initialData) {
       let boardId = '';
       let classId = '';
-      if (initialData.class_id && typeof initialData.class_id === 'object') {
+      
+      // If adding from parent, extract board and class info
+      if (initialData.classItem) {
+        classId = initialData.classItem._id || '';
+        boardId = typeof initialData.classItem.board_id === 'object'
+          ? initialData.classItem.board_id._id || ''
+          : initialData.classItem.board_id || '';
+      } else if (initialData.class_id && typeof initialData.class_id === 'object') {
         classId = initialData.class_id._id || '';
         if (initialData.class_id.board_id) {
           boardId = typeof initialData.class_id.board_id === 'object'
@@ -89,32 +101,55 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
       </CardHeader>
       <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="board_id">Board</Label>
-            <Select value={form.board_id} onValueChange={handleBoardChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Board" />
-              </SelectTrigger>
-              <SelectContent>
-                {boards.map((b) => (
-                  <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="class_id">Class</Label>
-            <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Class" />
-              </SelectTrigger>
-              <SelectContent>
-                {classes.map((cls) => (
-                  <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {isAddingFromParent ? (
+            <>
+              <div className="space-y-2">
+                <Label>Board</Label>
+                <Input
+                  value={typeof parentBoard === 'object' ? parentBoard?.name : boards.find(b => b._id === form.board_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Input
+                  value={parentClass?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="board_id">Board</Label>
+                <Select value={form.board_id} onValueChange={handleBoardChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Board" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boards.map((b) => (
+                      <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class_id">Class</Label>
+                <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label htmlFor="name">Subject Name</Label>
             <Input

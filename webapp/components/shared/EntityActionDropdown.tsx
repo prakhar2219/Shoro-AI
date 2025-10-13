@@ -19,6 +19,9 @@ interface EntityActionDropdownProps {
   onAddMCQ: (entityId: string) => void;
   onAddFAQ: (entityId: string) => void;
   onAddDescriptiveQuestion: (entityId: string) => void;
+  onAddClass?: (entityId: string) => void;
+  onAddSubject?: (entityId: string) => void;
+  onAddChapter?: (entityId: string) => void;
   onAddTopic?: (entityId: string) => void;
   onAddSubtopic?: (entityId: string) => void;
   onAddGBTopic?: (entityId: string) => void;
@@ -33,6 +36,9 @@ export function EntityActionDropdown({
   onAddMCQ,
   onAddFAQ,
   onAddDescriptiveQuestion,
+  onAddClass,
+  onAddSubject,
+  onAddChapter,
   onAddTopic,
   onAddSubtopic,
   onAddGBTopic,
@@ -44,6 +50,9 @@ export function EntityActionDropdown({
   }
   
   const entityId = entity._id || entity.id;
+  
+  // Check if any child entity options are available
+  const hasChildEntityOptions = !!(onAddClass || onAddSubject || onAddChapter || onAddTopic || onAddSubtopic || onAddGBTopic || onAddGBSubtopic);
 
   return (
     <DropdownMenu>
@@ -58,6 +67,24 @@ export function EntityActionDropdown({
           <Edit className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
+        {onAddClass && (
+          <DropdownMenuItem onClick={() => onAddClass(entityId)}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Add Class
+          </DropdownMenuItem>
+        )}
+        {onAddSubject && (
+          <DropdownMenuItem onClick={() => onAddSubject(entityId)}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Add Subject
+          </DropdownMenuItem>
+        )}
+        {onAddChapter && (
+          <DropdownMenuItem onClick={() => onAddChapter(entityId)}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Add Chapter
+          </DropdownMenuItem>
+        )}
         {onAddTopic && (
           <DropdownMenuItem onClick={() => onAddTopic(entityId)}>
             <BookOpen className="mr-2 h-4 w-4" />
@@ -82,7 +109,6 @@ export function EntityActionDropdown({
             Add GB Subtopic
           </DropdownMenuItem>
         )}
-        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onAddMCQ(entityId)}>
           <Plus className="mr-2 h-4 w-4" />
           Add MCQ

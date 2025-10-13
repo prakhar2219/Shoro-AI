@@ -395,7 +395,10 @@ export default function GBCategoriesPage() {
         }}
       >
         <GBTopicForm
-          initialData={{ gb_category_id: selectedCategoryForGBTopic?._id }}
+          initialData={{ 
+            gb_category_id: selectedCategoryForGBTopic?._id,
+            gb_category: selectedCategoryForGBTopic 
+          }}
           onSubmit={handleGBTopicSubmit}
           loading={isDataLoading}
         />

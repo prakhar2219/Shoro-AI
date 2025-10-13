@@ -32,6 +32,10 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
   });
 
   const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+
+  // Check if we're in "add from parent" mode (when gb_category is passed)
+  const isAddingFromParent = Boolean(initialData?.gb_category);
 
   useEffect(() => {
     // Fetch GB Categories for dropdown
@@ -51,6 +55,11 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
 
   useEffect(() => {
     if (initialData) {
+      // If gb_category is passed, we're adding from parent
+      if (initialData.gb_category) {
+        setSelectedCategory(initialData.gb_category);
+      }
+      
       setFormData({
         gb_category_id: typeof initialData.gb_category_id === 'object' ? initialData.gb_category_id?._id || '' : initialData.gb_category_id || '',
         name: initialData.name || '',
@@ -103,21 +112,32 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="gb_category_id">GB Category *</Label>
-        <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select GB Category" />
-          </SelectTrigger>
-          <SelectContent>
-            {categories.map((category) => (
-              <SelectItem key={category._id} value={category._id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {isAddingFromParent && selectedCategory ? (
+        <div>
+          <Label>GB Category</Label>
+          <Input
+            value={selectedCategory.name}
+            disabled
+            className="bg-gray-100"
+          />
+        </div>
+      ) : (
+        <div>
+          <Label htmlFor="gb_category_id">GB Category *</Label>
+          <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select GB Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map((category) => (
+                <SelectItem key={category._id} value={category._id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div>
         <Label htmlFor="description">Description</Label>

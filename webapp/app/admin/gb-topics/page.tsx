@@ -469,7 +469,10 @@ export default function GBTopicsPage() {
         }}
       >
         <GBSubtopicForm
-          initialData={{ gb_topic_id: selectedTopicForGBSubtopic?._id }}
+          initialData={{ 
+            gb_topic_id: selectedTopicForGBSubtopic?._id,
+            gb_topic: selectedTopicForGBSubtopic 
+          }}
           onSubmit={handleGBSubtopicSubmit}
           loading={isDataLoading}
         />

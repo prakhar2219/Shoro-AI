@@ -34,8 +34,11 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
 
   const [categories, setCategories] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
+  const [selectedTopic, setSelectedTopic] = useState<any>(null);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
 
-  const isEditMode = Boolean(initialData && initialData.gb_topic_id);
+  const isEditMode = Boolean(initialData && initialData.gb_topic_id && !initialData.gb_topic);
+  const isAddingFromParent = Boolean(initialData?.gb_topic);
 
   // Load categories on mount
   useEffect(() => {
@@ -109,21 +112,40 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
 
   useEffect(() => {
     if (initialData) {
-      setFormData({
-        gb_category_id: initialData.gb_category_id || '',
-        gb_topic_id: typeof initialData.gb_topic_id === 'object' ? initialData.gb_topic_id?._id || '' : initialData.gb_topic_id || '',
-        name: initialData.name || '',
-        slug: initialData.slug || '',
-        description: initialData.description || '',
-        content: initialData.content || '',
-        language_id: typeof initialData.language_id === 'object' ? initialData.language_id?._id || '' : initialData.language_id || '',
-        order: initialData.order || 0,
-        image: initialData.image || '',
-        tag: initialData.tag?.join(', ') || '',
-        source: initialData.source || '',
-        author: initialData.author || '',
-        is_published: initialData.is_published || false,
-      });
+      // If gb_topic is passed, we're adding from parent
+      if (initialData.gb_topic) {
+        setSelectedTopic(initialData.gb_topic);
+        const categoryId = typeof initialData.gb_topic.gb_category_id === 'object' 
+          ? initialData.gb_topic.gb_category_id._id 
+          : initialData.gb_topic.gb_category_id;
+        const category = typeof initialData.gb_topic.gb_category_id === 'object'
+          ? initialData.gb_topic.gb_category_id
+          : null;
+        if (category) {
+          setSelectedCategory(category);
+        }
+        setFormData(prev => ({
+          ...prev,
+          gb_category_id: categoryId || '',
+          gb_topic_id: initialData.gb_topic._id || '',
+        }));
+      } else {
+        setFormData({
+          gb_category_id: initialData.gb_category_id || '',
+          gb_topic_id: typeof initialData.gb_topic_id === 'object' ? initialData.gb_topic_id?._id || '' : initialData.gb_topic_id || '',
+          name: initialData.name || '',
+          slug: initialData.slug || '',
+          description: initialData.description || '',
+          content: initialData.content || '',
+          language_id: typeof initialData.language_id === 'object' ? initialData.language_id?._id || '' : initialData.language_id || '',
+          order: initialData.order || 0,
+          image: initialData.image || '',
+          tag: initialData.tag?.join(', ') || '',
+          source: initialData.source || '',
+          author: initialData.author || '',
+          is_published: initialData.is_published || false,
+        });
+      }
     }
   }, [initialData]);
 
@@ -172,43 +194,66 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
         </div>
       </div>
 
-      <div>
-        <Label htmlFor="gb_category_id">GB Category</Label>
-        {isEditMode ? (
-          <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-            {categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
+      {isAddingFromParent ? (
+        <>
+          <div>
+            <Label>GB Category</Label>
+            <Input
+              value={selectedCategory?.name || (typeof selectedTopic?.gb_category_id === 'object' ? selectedTopic.gb_category_id.name : '-')}
+              disabled
+              className="bg-gray-100"
+            />
           </div>
-        ) : (
-          <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select GB Category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category._id} value={category._id}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-      </div>
+          <div>
+            <Label>GB Topic</Label>
+            <Input
+              value={selectedTopic?.name || '-'}
+              disabled
+              className="bg-gray-100"
+            />
+          </div>
+        </>
+      ) : (
+        <>
+          <div>
+            <Label htmlFor="gb_category_id">GB Category</Label>
+            {isEditMode ? (
+              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                {categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
+              </div>
+            ) : (
+              <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select GB Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((category) => (
+                    <SelectItem key={category._id} value={category._id}>
+                      {category.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
 
-      <div>
-        <Label htmlFor="gb_topic_id">GB Topic *</Label>
-        <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select GB Topic" />
-          </SelectTrigger>
-          <SelectContent>
-            {topics.map((topic) => (
-              <SelectItem key={topic._id} value={topic._id}>
-                {topic.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+          <div>
+            <Label htmlFor="gb_topic_id">GB Topic *</Label>
+            <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select GB Topic" />
+              </SelectTrigger>
+              <SelectContent>
+                {topics.map((topic) => (
+                  <SelectItem key={topic._id} value={topic._id}>
+                    {topic.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </>
+      )}
 
       <div>
         <Label htmlFor="description">Description</Label>

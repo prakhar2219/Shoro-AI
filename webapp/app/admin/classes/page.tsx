@@ -25,7 +25,9 @@ import { getBoards, IBoard } from "@/lib/api/entities/boards";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
 import { ClassForm } from "@/components/entity/ClassForm";
 import { ClassTranslationForm } from "@/components/entity/ClassTranslationForm";
+import { SubjectForm } from "@/components/entity/SubjectForm";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { createSubject } from "@/lib/api/entities/subjects";
 import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
 import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
@@ -50,6 +52,10 @@ export default function ClassesPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+
+  // Subject modal states
+  const [openSubjectModal, setOpenSubjectModal] = useState(false);
+  const [selectedClassForSubject, setSelectedClassForSubject] = useState<IClass | null>(null);
 
   // Use the custom hook for common admin page functionality
   const {
@@ -233,6 +239,33 @@ export default function ClassesPage() {
     }
   };
 
+  // Subject handler
+  const handleAddSubject = (classItem: IClass) => {
+    setSelectedClassForSubject(classItem);
+    setOpenSubjectModal(true);
+  };
+
+  const handleSubjectSubmit = async (data: any) => {
+    try {
+      // Add class_id to the subject data
+      const subjectData = {
+        ...data,
+        class_id: selectedClassForSubject?._id
+      };
+      
+      await createSubject(subjectData);
+      toast({ title: 'Success', description: 'Subject created successfully' });
+      setOpenSubjectModal(false);
+      setSelectedClassForSubject(null);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create subject', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
   // Normalize class data for form
   const getClassFormInitialData = (classItem: IClass) => {
     const result = {
@@ -302,6 +335,9 @@ export default function ClassesPage() {
           onAddDescriptiveQuestion={(entityId) => {
             setSelectedEntity({ id: entityId, name: row.original.name });
             setOpenDescriptiveQuestionModal(true);
+          }}
+          onAddSubject={(entityId) => {
+            handleAddSubject(row.original);
           }}
         />
       ),
@@ -422,6 +458,27 @@ export default function ClassesPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Subject Form Modal */}
+      <EntityFormModal
+        title={`Add Subject to Class: ${selectedClassForSubject?.name || ''}`}
+        open={openSubjectModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenSubjectModal(false);
+            setSelectedClassForSubject(null);
+          }
+        }}
+      >
+        <SubjectForm
+          initialData={{ 
+            class_id: selectedClassForSubject?._id,
+            classItem: selectedClassForSubject 
+          }}
+          onSubmit={handleSubjectSubmit}
+          loading={isLoading}
+        />
+      </EntityFormModal>
 
       {/* Content Form Modals */}
       <ContentFormModals

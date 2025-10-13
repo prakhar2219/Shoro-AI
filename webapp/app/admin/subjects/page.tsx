@@ -5,6 +5,9 @@ import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { SubjectForm } from "@/components/entity/SubjectForm";
 import { SubjectTranslationForm } from "@/components/entity/SubjectTranslationForm";
+import { ChapterForm } from "@/components/entity/ChapterForm";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { createChapter } from "@/lib/api/entities/chapters";
 import { DataTable } from "@/components/ui/DataTable";
 import { subjectColumns } from "@/components/table/columns/subjectColumns";
 import { ColumnDef } from "@tanstack/react-table";
@@ -22,7 +25,6 @@ import {
 } from "@/lib/api/entities/subjects";
 import { getClasses, IClass } from "@/lib/api/entities/classes";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
-import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
 import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
@@ -51,6 +53,10 @@ export default function SubjectsPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+
+  // Chapter modal states
+  const [openChapterModal, setOpenChapterModal] = useState(false);
+  const [selectedSubjectForChapter, setSelectedSubjectForChapter] = useState<ISubject | null>(null);
 
   // Use the custom hook for common admin page functionality
   const {
@@ -204,6 +210,33 @@ export default function SubjectsPage() {
     }
   };
 
+  // Chapter handler
+  const handleAddChapter = (subject: ISubject) => {
+    setSelectedSubjectForChapter(subject);
+    setOpenChapterModal(true);
+  };
+
+  const handleChapterSubmit = async (data: any) => {
+    try {
+      // Add subject_id to the chapter data
+      const chapterData = {
+        ...data,
+        subject_id: selectedSubjectForChapter?._id
+      };
+      
+      await createChapter(chapterData);
+      // toast({ title: 'Success', description: 'Chapter created successfully' });
+      setOpenChapterModal(false);
+      setSelectedSubjectForChapter(null);
+    } catch (error: any) {
+      // toast({ 
+      //   title: 'Error', 
+      //   description: error?.response?.data?.error || 'Failed to create chapter', 
+      //   variant: 'destructive' 
+      // });
+    }
+  };
+
   // Normalize subject data for form
   const getSubjectFormInitialData = (subject: ISubject) => ({
     ...subject,
@@ -266,6 +299,9 @@ export default function SubjectsPage() {
           onAddDescriptiveQuestion={(entityId) => {
             setSelectedEntity({ id: entityId, name: row.original.name });
             setOpenDescriptiveQuestionModal(true);
+          }}
+          onAddChapter={(entityId) => {
+            handleAddChapter(row.original);
           }}
         />
       ),
@@ -384,6 +420,27 @@ export default function SubjectsPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Chapter Form Modal */}
+      <EntityFormModal
+        title={`Add Chapter to Subject: ${selectedSubjectForChapter?.name || ''}`}
+        open={openChapterModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenChapterModal(false);
+            setSelectedSubjectForChapter(null);
+          }
+        }}
+      >
+        <ChapterForm
+          initialData={{ 
+            subject_id: selectedSubjectForChapter?._id,
+            subject: selectedSubjectForChapter 
+          }}
+          onSubmit={handleChapterSubmit}
+          loading={isLoading}
+        />
+      </EntityFormModal>
 
       {/* Content Form Modals */}
       <ContentFormModals

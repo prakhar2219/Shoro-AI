@@ -33,6 +33,12 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     is_published: initialData?.is_published || false,
   });
 
+  // Check if we're adding from a parent subject
+  const isAddingFromParent = Boolean(initialData?.subject);
+  const parentSubject = initialData?.subject;
+  const parentClass = parentSubject?.class_id;
+  const parentBoard = parentClass?.board_id;
+
   const isEditMode = Boolean(initialData && initialData._id);
 
   useEffect(() => {
@@ -71,7 +77,19 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       let boardId = '';
       let classId = '';
       let subjectId = '';
-      if (initialData.class_id && typeof initialData.class_id === 'object') {
+      
+      // If adding from parent, extract full hierarchy
+      if (initialData.subject) {
+        subjectId = initialData.subject._id || '';
+        const subjectClassId = initialData.subject.class_id;
+        if (subjectClassId) {
+          classId = typeof subjectClassId === 'object' ? subjectClassId._id : subjectClassId;
+          const classBoardId = typeof subjectClassId === 'object' ? subjectClassId.board_id : '';
+          if (classBoardId) {
+            boardId = typeof classBoardId === 'object' ? classBoardId._id : classBoardId;
+          }
+        }
+      } else if (initialData.class_id && typeof initialData.class_id === 'object') {
         classId = initialData.class_id._id || '';
         if (initialData.class_id.board_id) {
           boardId = typeof initialData.class_id.board_id === 'object'
@@ -139,63 +157,94 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       </CardHeader>
       <CardContent className="max-h-[80vh] overflow-y-auto pt-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="board_id">Board</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {boards.find((b) => b._id === form.board_id)?.name || (typeof form.board_id === 'object' ? form.board_id.name : form.board_id) || '-'}
+          {isAddingFromParent ? (
+            <>
+              <div className="space-y-2">
+                <Label>Board</Label>
+                <Input
+                  value={typeof parentBoard === 'object' ? parentBoard?.name : boards.find(b => b._id === form.board_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={form.board_id} onValueChange={handleBoardChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Board" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boards.map((b) => (
-                    <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="class_id">Class</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {classes.find((cls) => cls._id === form.class_id)?.name || (typeof form.class_id === 'object' ? form.class_id.name : form.class_id) || '-'}
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Input
+                  value={typeof parentClass === 'object' ? parentClass?.name : classes.find(c => c._id === form.class_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="subject_id">Subject</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {subjects.find((s) => s._id === form.subject_id)?.name || (typeof form.subject_id === 'object' ? form.subject_id.name : form.subject_id) || '-'}
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input
+                  value={parentSubject?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={form.subject_id} onValueChange={handleSubjectChange} disabled={!form.class_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((s) => (
-                    <SelectItem key={s._id} value={s._id as string}>{s.name} ({s.code})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="board_id">Board</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {boards.find((b) => b._id === form.board_id)?.name || (typeof form.board_id === 'object' ? form.board_id.name : form.board_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.board_id} onValueChange={handleBoardChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Board" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class_id">Class</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {classes.find((cls) => cls._id === form.class_id)?.name || (typeof form.class_id === 'object' ? form.class_id.name : form.class_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject_id">Subject</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {subjects.find((s) => s._id === form.subject_id)?.name || (typeof form.subject_id === 'object' ? form.subject_id.name : form.subject_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.subject_id} onValueChange={handleSubjectChange} disabled={!form.class_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((s) => (
+                        <SelectItem key={s._id} value={s._id as string}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </>
+          )}
           <div className="space-y-2">
             <Label htmlFor="title">Chapter Title</Label>
             <Input

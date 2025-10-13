@@ -19,7 +19,7 @@ const classSchema = z.object({
 type ClassFormValues = z.infer<typeof classSchema>
 
 type ClassFormProps = {
-    defaultValues?: Partial<ClassFormValues> & { content?: string }
+    defaultValues?: Partial<ClassFormValues> & { content?: string; board?: any }
     onSubmit: (data: ClassFormValues & { content: string }) => void
     boards: { id: string; name: string }[]
     loading?: boolean
@@ -29,6 +29,10 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
     const [content, setContent] = useState(
         (typeof defaultValues?.content === 'string' ? defaultValues.content : '')
     )
+    
+    // Check if we're adding from a parent board
+    const isAddingFromParent = Boolean(defaultValues?.board);
+    const parentBoard = defaultValues?.board;
 
     const {
         register,
@@ -190,7 +194,13 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
 
             <div>
                 <Label className="block text-sm font-medium mb-1">Board</Label>
-                {boards.length === 0 ? (
+                {isAddingFromParent && parentBoard ? (
+                    <Input
+                        value={parentBoard.name}
+                        disabled
+                        className="bg-gray-100"
+                    />
+                ) : boards.length === 0 ? (
                     <div className="text-sm text-red-500">No boards available. Please add boards first.</div>
                 ) : (
                     <Select
