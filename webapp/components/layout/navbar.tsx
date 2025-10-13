@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useTheme } from "next-themes"
 import { useRouter } from "next/navigation"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import {
   Menu,
   X,
@@ -62,9 +62,15 @@ const NAV_ITEMS = [
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [mounted, setMounted] = useState(false)
   const leaveTimeout = useRef<NodeJS.Timeout | null>(null)
   const { theme, setTheme } = useTheme()
   const router = useRouter()
+
+  // Prevent hydration mismatch by waiting for client-side mount
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleMouseEnter = (label: string) => {
     if (leaveTimeout.current) clearTimeout(leaveTimeout.current)
@@ -139,11 +145,16 @@ export function Navbar() {
           <button
             onClick={() => setTheme(theme === "light" ? "dark" : "light")}
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700"
+            suppressHydrationWarning
           >
-            {theme === "light" ? (
-              <Moon className="w-4 h-4" />
+            {mounted ? (
+              theme === "light" ? (
+                <Moon className="w-4 h-4" />
+              ) : (
+                <Sun className="w-4 h-4" />
+              )
             ) : (
-              <Sun className="w-4 h-4" />
+              <div className="w-4 h-4" />
             )}
           </button>
 
