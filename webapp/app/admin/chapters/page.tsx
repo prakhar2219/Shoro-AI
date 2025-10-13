@@ -5,8 +5,10 @@ import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { ChapterForm } from "@/components/entity/ChapterForm";
 import { ChapterCard } from "@/components/entity/ChapterCard";
+import { TopicForm } from "@/components/entity/TopicForm";
 import Link from "next/link";
 import { getChapters, createChapter, updateChapter, deleteChapter, bulkCreateChapters } from "@/lib/api/entities/chapters";
+import { createTopic } from "@/lib/api/entities/topics";
 import { chapterColumns } from '@/components/table/columns/chapterColumns';
 import { getLanguages, ILanguage } from '@/lib/api/entities/language';
 import { ChapterTranslationForm } from '@/components/entity/ChapterTranslationForm';
@@ -39,6 +41,10 @@ export default function ChapterAdminPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+  
+  // Topic modal states
+  const [openTopicModal, setOpenTopicModal] = useState(false);
+  const [selectedChapterForTopic, setSelectedChapterForTopic] = useState<Chapter | null>(null);
   const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
   const [openCsvUpload, setOpenCsvUpload] = useState(false);
@@ -138,6 +144,34 @@ export default function ChapterAdminPage() {
     }
   };
 
+  // Topic handler
+  const handleAddTopic = (chapter: Chapter) => {
+    setSelectedChapterForTopic(chapter);
+    setOpenTopicModal(true);
+  };
+
+  const handleTopicSubmit = async (data: any) => {
+    try {
+      // Add chapter_id to the topic data
+      const topicData = {
+        ...data,
+        chapter_id: selectedChapterForTopic?._id
+      };
+      
+      await createTopic(topicData);
+      toast({ title: 'Success', description: 'Topic created successfully' });
+      setOpenTopicModal(false);
+      setSelectedChapterForTopic(null);
+      // Optionally refresh the page or show success message
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create topic', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
   const renderExpandedRow = (chapter: any) => {
     const translations = chapter.translations || [];
     return (
@@ -180,6 +214,9 @@ export default function ChapterAdminPage() {
           onAddDescriptiveQuestion={(entityId) => {
             setSelectedEntity({ id: entityId, name: row.original.title });
             setOpenDescriptiveQuestionModal(true);
+          }}
+          onAddTopic={(entityId) => {
+            handleAddTopic(row.original);
           }}
         />
       ),
@@ -294,6 +331,24 @@ export default function ChapterAdminPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Topic Form Modal */}
+      <EntityFormModal
+        title={`Add Topic to Chapter: ${selectedChapterForTopic?.title || ''}`}
+        open={openTopicModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenTopicModal(false);
+            setSelectedChapterForTopic(null);
+          }
+        }}
+      >
+        <TopicForm
+          initialData={{ chapter_id: selectedChapterForTopic?._id }}
+          onSubmit={handleTopicSubmit}
+          loading={isDataLoading}
+        />
+      </EntityFormModal>
 
       {/* Content Form Modals */}
       <ContentFormModals

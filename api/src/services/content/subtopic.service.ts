@@ -35,7 +35,21 @@ export const getSubtopicsWithPagination = async (
   if (topic_id) filter.topic_id = topic_id;
   const [rows, total] = await Promise.all([
     Subtopic.find(filter)
-      .populate('topic_id')
+      .populate({
+        path: 'topic_id',
+        populate: {
+          path: 'chapter_id',
+          populate: {
+            path: 'subject_id',
+            populate: {
+              path: 'class_id',
+              populate: {
+                path: 'board_id'
+              }
+            }
+          }
+        }
+      })
       .sort({ order: 1 })
       .skip(skip)
       .limit(limit),
@@ -47,10 +61,41 @@ export const getSubtopicsWithPagination = async (
 export const getSubtopics = async (topic_id?: string) => {
   const filter: any = {};
   if (topic_id) filter.topic_id = topic_id;
-  return Subtopic.find(filter).populate('topic_id').sort({ order: 1 });
+  return Subtopic.find(filter)
+    .populate({
+      path: 'topic_id',
+      populate: {
+        path: 'chapter_id',
+        populate: {
+          path: 'subject_id',
+          populate: {
+            path: 'class_id',
+            populate: {
+              path: 'board_id'
+            }
+          }
+        }
+      }
+    })
+    .sort({ order: 1 });
 };
 
-export const getSubtopicById = async (id: string) => Subtopic.findById(id).populate('topic_id');
+export const getSubtopicById = async (id: string) => Subtopic.findById(id)
+  .populate({
+    path: 'topic_id',
+    populate: {
+      path: 'chapter_id',
+      populate: {
+        path: 'subject_id',
+        populate: {
+          path: 'class_id',
+          populate: {
+            path: 'board_id'
+          }
+        }
+      }
+    }
+  });
 
 export const updateSubtopic = async (id: string, data: Partial<ISubtopic>) => Subtopic.findByIdAndUpdate(id, data, { new: true });
 

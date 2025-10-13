@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 interface GBCategoryFormProps {
   initialData?: any;
@@ -151,11 +151,9 @@ export function GBCategoryForm({ initialData = {}, onSubmit, loading = false }: 
 
       <div>
         <Label htmlFor="content">Content</Label>
-        <Textarea
-          id="content"
+        <RichTextEditor
           value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          rows={4}
+          onChange={(html) => setFormData({ ...formData, content: html })}
         />
       </div>
 

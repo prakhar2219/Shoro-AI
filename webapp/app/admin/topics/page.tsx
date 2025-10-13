@@ -13,17 +13,38 @@ import { ColumnDef } from "@tanstack/react-table";
 import { useAdminPage } from "@/hooks/use-admin-page";
 import { useToast } from "@/hooks/use-toast";
 import { TopicForm } from "@/components/entity/TopicForm";
+import { SubtopicForm } from "@/components/entity/SubtopicForm";
 import { ITopic, getTopicsWithPagination, getTopics, createTopic, updateTopic, deleteTopic, bulkCreateTopics } from "@/lib/api/entities/topics";
+import { createSubtopic } from "@/lib/api/entities/subtopics";
 import { getChapters } from "@/lib/api/entities/chapters";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { downloadCSV } from "@/lib/utils/csv-utils";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { getLanguages, ILanguage } from '@/lib/api/entities/language';
+import { api } from '@/lib/api/axios';
+import { TopicTranslationForm } from "@/components/entity/TopicTranslationForm";
 
 export default function TopicsPage() {
-  const [chapters, setChapters] = useState<{ id: string; title: string }[]>([]);
   const [selected, setSelected] = useState<ITopic | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ITopic | null>(null);
   const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const [openTranslationForm, setOpenTranslationForm] = useState<{ topic: any; translation?: any } | null>(null);
+  const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ topic: ITopic; translation: any } | null>(null);
+  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
+  
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+  
+  // Subtopic modal states
+  const [openSubtopicModal, setOpenSubtopicModal] = useState(false);
+  const [selectedTopicForSubtopic, setSelectedTopicForSubtopic] = useState<ITopic | null>(null);
+  const [languages, setLanguages] = useState<ILanguage[]>([]);
+  const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
+  
   const { toast } = useToast();
 
   const fetchTopicsData = useCallback(async (pageNum: number, size: number, _search: string) => {
@@ -68,12 +89,12 @@ export default function TopicsPage() {
   } = useAdminPage<ITopic>({ fetchData: fetchTopicsData, pageSize: 10 });
 
   useEffect(() => {
-    (async () => {
-      const res = await getChapters({ page: 1, limit: 100 });
-      const rows = res.data || res || [];
-      setChapters(rows.map((c: any) => ({ id: c._id, title: c.title })));
-    })();
+    getLanguages().then((langs) => {
+      setLanguages(langs || []);
+      setLanguageIdMap(Object.fromEntries((langs || []).map(l => [l._id || l.code, l.name])));
+    });
   }, []);
+
 
   const handleCreateOrUpdate = async (data: Partial<ITopic>) => {
     if (selected?._id) await updateTopic(selected._id, data);
@@ -90,31 +111,132 @@ export default function TopicsPage() {
     await fetchPaginatedData(page, pageSize, searchTerm);
   };
 
+  const handleAddTranslation = (topic: any) => {
+    setOpenTranslationForm({ topic });
+  };
+  
+  const handleEditTranslation = (topic: any, translation: any) => {
+    setOpenTranslationForm({ topic, translation });
+  };
+  
+  const handleDeleteTranslation = (topic: any, translation: any) => {
+    setDeleteTranslationTarget({ topic, translation });
+  };
+  
+  const confirmDeleteTranslation = async () => {
+    if (deleteTranslationTarget) {
+      setActiveTranslationAction(deleteTranslationTarget.translation._id);
+      await api.delete(`/content/topics/${deleteTranslationTarget.topic._id}/translations/${deleteTranslationTarget.translation._id}`);
+      await fetchPaginatedData(page, pageSize, searchTerm);
+      setDeleteTranslationTarget(null);
+      setActiveTranslationAction(null);
+    }
+  };
+
+  const handleTranslationSubmit = async (data: any) => {
+    try {
+      if (openTranslationForm?.translation && openTranslationForm.translation._id) {
+        // Edit
+        await api.put(`/content/topics/${openTranslationForm.topic._id}/translations/${openTranslationForm.translation._id}`, data);
+      } else {
+        // Add
+        await api.post(`/content/topics/${openTranslationForm?.topic?._id}/translations`, data);
+      }
+      await fetchPaginatedData(page, pageSize, searchTerm);
+      setOpenTranslationForm(null);
+    } catch (e) {
+      // Optionally show error toast
+    }
+  };
+
+  // Subtopic handler
+  const handleAddSubtopic = (topic: ITopic) => {
+    setSelectedTopicForSubtopic(topic);
+    setOpenSubtopicModal(true);
+  };
+
+  const handleSubtopicSubmit = async (data: any) => {
+    try {
+      // Add topic_id to the subtopic data
+      const subtopicData = {
+        ...data,
+        topic_id: selectedTopicForSubtopic?._id
+      };
+      
+      await createSubtopic(subtopicData);
+      toast({ title: 'Success', description: 'Subtopic created successfully' });
+      setOpenSubtopicModal(false);
+      setSelectedTopicForSubtopic(null);
+      // Optionally refresh the page or show success message
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create subtopic', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const renderExpandedRow = (topic: any) => {
+    const translations = topic.translations || [];
+    return (
+      <TranslationManagementSection
+        translations={translations}
+        languageMap={languageIdMap}
+        onAddTranslation={() => handleAddTranslation(topic)}
+        onEditTranslation={(translation) => handleEditTranslation(topic, translation)}
+        onDeleteTranslation={(translation) => handleDeleteTranslation(topic, translation)}
+        activeTranslationAction={activeTranslationAction}
+        isLoading={isDataLoading}
+        entityName="Topic"
+      />
+    );
+  };
+
   const columns: ColumnDef<ITopic>[] = [
     ...topicColumns,
     {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: any) => {
-        const t = row.original as ITopic;
-        return (
-          <div className="flex gap-2">
-            <button className="text-blue-600" onClick={() => { setSelected(t); setOpenForm(true); }}>Edit</button>
-            <button className="text-red-600" onClick={() => setDeleteTarget(t)}>Delete</button>
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    }
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Topic"
+          onEdit={() => {
+            setSelected(row.original);
+            setOpenForm(true);
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+          onAddSubtopic={(entityId) => {
+            handleAddSubtopic(row.original);
+          }}
+        />
+      ),
+    },
   ];
 
   // CSV schema for topics
   const topicCsvSchema: CsvSchema = {
     title: "Upload Topics CSV",
-    description: "Upload a CSV with columns: chapter_id, title, slug, content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: chapter_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Topics belong to Chapters in the educational hierarchy (Board → Class → Subject → Chapter → Topic). Make sure your chapter_id corresponds to an existing chapter in the system. You can find chapter IDs in the Chapters admin section.",
     fields: [
       { name: "chapter_id", type: "text", required: true } as FieldSchema,
+      { name: "chapter_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the chapter
+      { name: "subject_name", type: "text", required: false } as FieldSchema, // For reference only - shows subject context
+      { name: "class_name", type: "text", required: false } as FieldSchema, // For reference only - shows class context
+      { name: "board_name", type: "text", required: false } as FieldSchema, // For reference only - shows board context
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
@@ -129,6 +251,7 @@ export default function TopicsPage() {
         const content = r.content || undefined;
         const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
+        // Note: Reference columns (chapter_name, subject_name, etc.) are ignored during upload
         return {
           chapter_id: r.chapter_id,
           title: r.title,
@@ -162,6 +285,7 @@ export default function TopicsPage() {
       isLoading={isDataLoading}
       data={topics}
       columns={columns}
+      renderExpandedRow={renderExpandedRow}
       emptyStateTitle="No topics found"
       emptyStateMessage="There are no topics yet. Try adding one."
     >
@@ -180,7 +304,6 @@ export default function TopicsPage() {
             content: typeof selected.content === 'string' ? selected.content : ''
           } : undefined}
           onSubmit={handleCreateOrUpdate}
-          chapters={chapters}
           loading={isDataLoading}
         />
       </EntityFormModal>
@@ -199,6 +322,61 @@ export default function TopicsPage() {
         open={openCsvUpload}
         onOpenChange={setOpenCsvUpload}
         onUpload={handleBulkUpload}
+      />
+
+      {/* Subtopic Form Modal */}
+      <EntityFormModal
+        title={`Add Subtopic to Topic: ${selectedTopicForSubtopic?.title || ''}`}
+        open={openSubtopicModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenSubtopicModal(false);
+            setSelectedTopicForSubtopic(null);
+          }
+        }}
+      >
+        <SubtopicForm
+          initialData={{ topic_id: selectedTopicForSubtopic?._id }}
+          onSubmit={handleSubtopicSubmit}
+          loading={isDataLoading}
+        />
+      </EntityFormModal>
+
+      {/* Translation Form Modal */}
+      {openTranslationForm && (
+        <EntityFormModal
+          title={openTranslationForm.translation ? "Edit Topic Translation" : "Add Topic Translation"}
+          open={!!openTranslationForm}
+          onOpenChange={(open) => !open && setOpenTranslationForm(null)}
+        >
+          <TopicTranslationForm
+            initialData={openTranslationForm.translation}
+            onSubmit={handleTranslationSubmit}
+            loading={isDataLoading}
+            languages={languages.filter(lang => lang._id) as Array<{ _id: string; name: string; code: string }>}
+          />
+        </EntityFormModal>
+      )}
+
+      {/* Delete Translation Confirmation */}
+      <ConfirmationDialog
+        open={!!deleteTranslationTarget}
+        title="Delete Translation"
+        description="Are you sure you want to delete this translation? This action cannot be undone."
+        onConfirm={confirmDeleteTranslation}
+        onCancel={() => setDeleteTranslationTarget(null)}
+      />
+
+      {/* Content Form Modals */}
+      <ContentFormModals
+        entityType="Topic"
+        openMCQModal={openMCQModal}
+        setOpenMCQModal={setOpenMCQModal}
+        openFAQModal={openFAQModal}
+        setOpenFAQModal={setOpenFAQModal}
+        openDescriptiveQuestionModal={openDescriptiveQuestionModal}
+        setOpenDescriptiveQuestionModal={setOpenDescriptiveQuestionModal}
+        selectedEntity={selectedEntity}
       />
 
       {/* Global Content Management for All Topics */}

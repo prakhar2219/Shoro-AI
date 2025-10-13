@@ -1,40 +1,74 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { GBTopicForm } from "@/components/entity/GBTopicForm";
-import { getGBTopics, createGBTopic, updateGBTopic, deleteGBTopic, bulkCreateGBTopics, IGBTopic } from "@/lib/api/entities/gbTopics";
-import { gbTopicColumns } from '@/components/table/columns/gbTopicColumns';
-import { getLanguages, ILanguage } from '@/lib/api/entities/language';
-import { getGBCategories, IGBCategory } from '@/lib/api/entities/gbCategories';
-import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
-import { useAdminPage } from "@/hooks/use-admin-page";
+import { GBSubtopicForm } from "@/components/entity/GBSubtopicForm";
+import { DataTable } from "@/components/ui/DataTable";
 import { ColumnDef } from "@tanstack/react-table";
-import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { useAdminPage } from "@/hooks/use-admin-page";
 import { useToast } from "@/hooks/use-toast";
+import { IGBTopic, getGBTopics, createGBTopic, updateGBTopic, deleteGBTopic, bulkCreateGBTopics } from "@/lib/api/entities/gbTopics";
+import { createGBSubtopic } from "@/lib/api/entities/gbSubtopics";
+import { getGBCategories } from "@/lib/api/entities/gbCategories";
+import { getLanguages, ILanguage } from "@/lib/api/entities/language";
+import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { ContentFormModals } from "@/components/shared/ContentFormModals";
+import { api } from '@/lib/api/axios';
+import { GBTopicTranslationForm } from "@/components/entity/GBTopicTranslationForm";
 
 type GBTopic = IGBTopic;
 type GBTopicInput = Omit<IGBTopic, '_id' | 'createdAt' | 'updatedAt'>;
 
 export default function GBTopicsPage() {
-  const [selected, setSelected] = useState<GBTopic | null>(null);
+  const [selected, setSelected] = useState<IGBTopic | null>(null);
   const [openModal, setOpenModal] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState<GBTopic | null>(null);
-  const [languages, setLanguages] = useState<ILanguage[]>([]);
-  const [categories, setCategories] = useState<IGBCategory[]>([]);
+  const [deleteTarget, setDeleteTarget] = useState<IGBTopic | null>(null);
   const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<ILanguage[]>([]);
+  const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
+  
+  // Translation states
+  const [openTranslationForm, setOpenTranslationForm] = useState<{ gbTopic: any; translation?: any } | null>(null);
+  const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ gbTopic: IGBTopic; translation: any } | null>(null);
+  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
+  
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+  
+  // GB Subtopic modal states
+  const [openGBSubtopicModal, setOpenGBSubtopicModal] = useState(false);
+  const [selectedTopicForGBSubtopic, setSelectedTopicForGBSubtopic] = useState<GBTopic | null>(null);
+  
   const { toast } = useToast();
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchGBTopicsData = useCallback(async (pageNum: number, size: number, search: string) => {
-    const result = await getGBTopics({ page: pageNum, limit: size, search });
+    const result = await getGBTopics();
+    // Handle different response formats
+    const resultArray = Array.isArray(result) ? result : result?.data || [];
+    const filteredData = search ? resultArray.filter((item: any) => 
+      item.name?.toLowerCase().includes(search.toLowerCase()) ||
+      item.description?.toLowerCase().includes(search.toLowerCase())
+    ) : resultArray;
+    
+    const startIndex = (pageNum - 1) * size;
+    const endIndex = startIndex + size;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
+    
     return {
-      data: result.data || [],
-      totalPages: result.totalPages || 1,
-      total: result.total || 0,
+      data: paginatedData || [],
+      totalPages: Math.ceil(filteredData.length / size) || 1,
+      total: filteredData.length || 0,
     };
   }, []);
 
@@ -56,11 +90,10 @@ export default function GBTopicsPage() {
   });
 
   useEffect(() => {
+    getGBCategories().then((cats) => setCategories(Array.isArray(cats) ? cats : cats?.data || []));
     getLanguages().then((langs) => {
       setLanguages(langs || []);
-    });
-    getGBCategories().then((cats) => {
-      setCategories(cats.data || []);
+      setLanguageIdMap(Object.fromEntries((langs || []).map(l => [l._id || l.code, l.name])));
     });
   }, []);
 
@@ -104,9 +137,116 @@ export default function GBTopicsPage() {
     }
   };
 
+  // Translation management functions
+  const handleAddTranslation = (gbTopic: any) => {
+    setOpenTranslationForm({ gbTopic });
+  };
+  
+  const handleEditTranslation = (gbTopic: any, translation: any) => {
+    setOpenTranslationForm({ gbTopic, translation });
+  };
+  
+  const handleDeleteTranslation = (gbTopic: any, translation: any) => {
+    setDeleteTranslationTarget({ gbTopic, translation });
+  };
+  
+  const confirmDeleteTranslation = async () => {
+    if (deleteTranslationTarget) {
+      setActiveTranslationAction(deleteTranslationTarget.translation._id);
+      await api.delete(`/content/gb-topics/${deleteTranslationTarget.gbTopic._id}/translations/${deleteTranslationTarget.translation._id}`);
+      await fetchPaginatedData(page, pageSize, searchTerm);
+      setDeleteTranslationTarget(null);
+      setActiveTranslationAction(null);
+    }
+  };
+
+  const handleTranslationSubmit = async (data: any) => {
+    try {
+      if (openTranslationForm?.translation && openTranslationForm.translation._id) {
+        // Edit
+        await api.put(`/content/gb-topics/${openTranslationForm.gbTopic._id}/translations/${openTranslationForm.translation._id}`, data);
+      } else {
+        // Add
+        await api.post(`/content/gb-topics/${openTranslationForm?.gbTopic?._id}/translations`, data);
+      }
+      await fetchPaginatedData(page, pageSize, searchTerm);
+      setOpenTranslationForm(null);
+    } catch (e) {
+      // Optionally show error toast
+    }
+  };
+
+  // GB Subtopic handler
+  const handleAddGBSubtopic = (gbTopic: GBTopic) => {
+    setSelectedTopicForGBSubtopic(gbTopic);
+    setOpenGBSubtopicModal(true);
+  };
+
+  const handleGBSubtopicSubmit = async (data: any) => {
+    try {
+      // Add gb_topic_id to the GB subtopic data
+      const gbSubtopicData = {
+        ...data,
+        gb_topic_id: selectedTopicForGBSubtopic?._id
+      };
+      
+      await createGBSubtopic(gbSubtopicData);
+      toast({ title: 'Success', description: 'GB Subtopic created successfully' });
+      setOpenGBSubtopicModal(false);
+      setSelectedTopicForGBSubtopic(null);
+      // Optionally refresh the page or show success message
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create GB subtopic', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  const renderExpandedRow = (gbTopic: any) => {
+    const translations = gbTopic.translations || [];
+    return (
+      <TranslationManagementSection
+        translations={translations}
+        languageMap={languageIdMap}
+        onAddTranslation={() => handleAddTranslation(gbTopic)}
+        onEditTranslation={(translation) => handleEditTranslation(gbTopic, translation)}
+        onDeleteTranslation={(translation) => handleDeleteTranslation(gbTopic, translation)}
+        activeTranslationAction={activeTranslationAction}
+        isLoading={isDataLoading}
+        entityName="GB Topic"
+      />
+    );
+  };
+
+  // Basic columns for GB Topics
+  const baseColumns: ColumnDef<GBTopic>[] = [
+    { accessorKey: "_id", header: "ID" },
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "slug", header: "Slug" },
+    { 
+      accessorKey: "gb_category_id", 
+      header: "Category",
+      cell: ({ row }) => {
+        const cat = row.original.gb_category_id as any;
+        return cat && typeof cat === 'object' && 'name' in cat ? cat.name : '—';
+      }
+    },
+    { 
+      accessorKey: "language_id", 
+      header: "Language",
+      cell: ({ row }) => {
+        const lang = row.original.language_id as any;
+        return lang && typeof lang === 'object' && 'name' in lang ? lang.name : '—';
+      }
+    },
+    { accessorKey: "is_published", header: "Published", cell: i => (i.getValue() ? 'Yes' : 'No') },
+  ];
+
   // Add action column to the columns
   const columns: ColumnDef<GBTopic>[] = [
-    ...(gbTopicColumns as ColumnDef<GBTopic>[]),
+    ...baseColumns,
     {
       id: "actions",
       header: "Actions",
@@ -115,15 +255,27 @@ export default function GBTopicsPage() {
         return (
           <EntityActionDropdown
             entity={topic}
-            entityType="gb-topic"
+            entityType="GB Topic"
             onEdit={() => {
               setSelected(topic);
               setOpenModal(true);
             }}
             onDelete={() => setDeleteTarget(topic)}
-            onAddMCQ={() => {}}
-            onAddFAQ={() => {}}
-            onAddDescriptiveQuestion={() => {}}
+            onAddMCQ={(entityId) => {
+              setSelectedEntity({ id: entityId, name: topic.name });
+              setOpenMCQModal(true);
+            }}
+            onAddFAQ={(entityId) => {
+              setSelectedEntity({ id: entityId, name: topic.name });
+              setOpenFAQModal(true);
+            }}
+            onAddDescriptiveQuestion={(entityId) => {
+              setSelectedEntity({ id: entityId, name: topic.name });
+              setOpenDescriptiveQuestionModal(true);
+            }}
+            onAddGBSubtopic={(entityId) => {
+              handleAddGBSubtopic(topic);
+            }}
           />
         );
       },
@@ -133,7 +285,7 @@ export default function GBTopicsPage() {
   // CSV schema for GB topics - memoized to handle dependencies
   const gbTopicCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Topics CSV",
-    description: "Upload a CSV with columns: gb_category_id, name, slug, description, content, language_id, order, image, tag, source, author, is_published",
+    description: "Upload a CSV with columns: gb_category_id, name, slug, description, content, language_id, order, image, tag, source, author, is_published. IMPORTANT: GB Topics belong to GB Categories in the General Blogging hierarchy (GB Category → GB Topic). Make sure your gb_category_id corresponds to an existing GB category. You can find GB category IDs in the GB Categories admin section.",
     fields: [
       { 
         name: "gb_category_id", 
@@ -146,7 +298,7 @@ export default function GBTopicsPage() {
             </SelectTrigger>
             <SelectContent>
               {categories.map((cat) => (
-                <SelectItem key={cat._id} value={cat._id}>
+                <SelectItem key={cat._id} value={cat._id || ''}>
                   {cat.name}
                 </SelectItem>
               ))}
@@ -159,6 +311,7 @@ export default function GBTopicsPage() {
           return isValid ? null : "Invalid GB Category selected";
         }
       } as FieldSchema,
+      { name: "gb_category_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the GB category
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { 
@@ -172,7 +325,7 @@ export default function GBTopicsPage() {
             </SelectTrigger>
             <SelectContent>
               {languages.map((lang) => (
-                <SelectItem key={lang._id} value={lang._id}>
+                <SelectItem key={lang._id} value={lang._id || ''}>
                   {lang.name} ({lang.code})
                 </SelectItem>
               ))}
@@ -200,6 +353,7 @@ export default function GBTopicsPage() {
     try {
       const payload = rows.map(r => ({
         gb_category_id: r.gb_category_id,
+        // Note: Reference column (gb_category_name) is ignored during upload
         name: r.name,
         slug: r.slug,
         description: r.description || undefined,
@@ -244,6 +398,7 @@ export default function GBTopicsPage() {
       isLoading={isDataLoading}
       data={topics}
       columns={columns}
+      renderExpandedRow={renderExpandedRow}
       emptyStateTitle="No GB topics found"
       emptyStateMessage="There are no GB topics yet. Try adding one."
       emptyStateAction={
@@ -275,6 +430,61 @@ export default function GBTopicsPage() {
         open={openCsvUpload}
         onOpenChange={setOpenCsvUpload}
         onUpload={handleBulkUpload}
+      />
+
+      {/* Translation Form Modal */}
+      {openTranslationForm && (
+        <EntityFormModal
+          title={openTranslationForm.translation ? "Edit GB Topic Translation" : "Add GB Topic Translation"}
+          open={!!openTranslationForm}
+          onOpenChange={(open) => !open && setOpenTranslationForm(null)}
+        >
+          <GBTopicTranslationForm
+            initialData={openTranslationForm.translation}
+            onSubmit={handleTranslationSubmit}
+            loading={isDataLoading}
+            languages={languages.filter(lang => lang._id) as Array<{ _id: string; name: string; code: string }>}
+          />
+        </EntityFormModal>
+      )}
+
+      {/* Delete Translation Confirmation */}
+      <ConfirmationDialog
+        open={!!deleteTranslationTarget}
+        title="Delete Translation"
+        description="Are you sure you want to delete this translation? This action cannot be undone."
+        onConfirm={confirmDeleteTranslation}
+        onCancel={() => setDeleteTranslationTarget(null)}
+      />
+
+      {/* GB Subtopic Form Modal */}
+      <EntityFormModal
+        title={`Add GB Subtopic to Topic: ${selectedTopicForGBSubtopic?.name || ''}`}
+        open={openGBSubtopicModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenGBSubtopicModal(false);
+            setSelectedTopicForGBSubtopic(null);
+          }
+        }}
+      >
+        <GBSubtopicForm
+          initialData={{ gb_topic_id: selectedTopicForGBSubtopic?._id }}
+          onSubmit={handleGBSubtopicSubmit}
+          loading={isDataLoading}
+        />
+      </EntityFormModal>
+
+      {/* Content Form Modals */}
+      <ContentFormModals
+        entityType="GB Topic"
+        openMCQModal={openMCQModal}
+        setOpenMCQModal={setOpenMCQModal}
+        openFAQModal={openFAQModal}
+        setOpenFAQModal={setOpenFAQModal}
+        openDescriptiveQuestionModal={openDescriptiveQuestionModal}
+        setOpenDescriptiveQuestionModal={setOpenDescriptiveQuestionModal}
+        selectedEntity={selectedEntity}
       />
     </AdminPageLayout>
   );

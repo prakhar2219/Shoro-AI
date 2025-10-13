@@ -14,13 +14,30 @@ import { ISubtopic, getSubtopicsWithPagination, getSubtopics, createSubtopic, up
 import { getTopicsWithPagination } from "@/lib/api/entities/topics";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { downloadCSV } from "@/lib/utils/csv-utils";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { getLanguages, ILanguage } from '@/lib/api/entities/language';
+import { api } from '@/lib/api/axios';
+import { ContentFormModals } from "@/components/shared/ContentFormModals";
+import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { SubtopicTranslationForm } from "@/components/entity/SubtopicTranslationForm";
 
 export default function SubtopicsPage() {
-  const [topics, setTopics] = useState<{ id: string; title: string }[]>([]);
   const [selected, setSelected] = useState<ISubtopic | null>(null);
   const [openForm, setOpenForm] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ISubtopic | null>(null);
   const [openCsvUpload, setOpenCsvUpload] = useState(false);
+  const [openTranslationForm, setOpenTranslationForm] = useState<{ subtopic: any; translation?: any } | null>(null);
+  const [deleteTranslationTarget, setDeleteTranslationTarget] = useState<{ subtopic: ISubtopic; translation: any } | null>(null);
+  const [activeTranslationAction, setActiveTranslationAction] = useState<string | null>(null);
+  
+  // Content modal states
+  const [openMCQModal, setOpenMCQModal] = useState(false);
+  const [openFAQModal, setOpenFAQModal] = useState(false);
+  const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
+  const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+  const [languages, setLanguages] = useState<ILanguage[]>([]);
+  const [languageIdMap, setLanguageIdMap] = useState<Record<string, string>>({});
+  
   const { toast } = useToast();
 
   const fetchSubtopicsData = useCallback(async (pageNum: number, size: number, _search: string) => {
@@ -65,12 +82,12 @@ export default function SubtopicsPage() {
   } = useAdminPage<ISubtopic>({ fetchData: fetchSubtopicsData, pageSize: 10 });
 
   useEffect(() => {
-    (async () => {
-      const res = await getTopicsWithPagination(1, 100);
-      const rows = res.data || res || [];
-      setTopics(rows.map((t: any) => ({ id: t._id, title: t.title })));
-    })();
+    getLanguages().then((langs) => {
+      setLanguages(langs || []);
+      setLanguageIdMap(Object.fromEntries((langs || []).map(l => [l._id || l.code, l.name])));
+    });
   }, []);
+
 
   const handleCreateOrUpdate = async (data: Partial<ISubtopic>) => {
     if (selected?._id) await updateSubtopic(selected._id, data);
@@ -87,31 +104,102 @@ export default function SubtopicsPage() {
     await fetchPaginatedData(page, pageSize, searchTerm);
   };
 
+  const handleAddTranslation = (subtopic: any) => {
+    setOpenTranslationForm({ subtopic });
+  };
+  
+  const handleEditTranslation = (subtopic: any, translation: any) => {
+    setOpenTranslationForm({ subtopic, translation });
+  };
+  
+  const handleDeleteTranslation = (subtopic: any, translation: any) => {
+    setDeleteTranslationTarget({ subtopic, translation });
+  };
+  
+  const confirmDeleteTranslation = async () => {
+    if (deleteTranslationTarget) {
+      setActiveTranslationAction(deleteTranslationTarget.translation._id);
+      await api.delete(`/content/subtopics/${deleteTranslationTarget.subtopic._id}/translations/${deleteTranslationTarget.translation._id}`);
+      await fetchPaginatedData(page, pageSize, searchTerm);
+      setDeleteTranslationTarget(null);
+      setActiveTranslationAction(null);
+    }
+  };
+
+  const handleTranslationSubmit = async (data: any) => {
+    try {
+      if (openTranslationForm?.translation && openTranslationForm.translation._id) {
+        // Edit
+        await api.put(`/content/subtopics/${openTranslationForm.subtopic._id}/translations/${openTranslationForm.translation._id}`, data);
+      } else {
+        // Add
+        await api.post(`/content/subtopics/${openTranslationForm?.subtopic?._id}/translations`, data);
+      }
+      await fetchPaginatedData(page, pageSize, searchTerm);
+      setOpenTranslationForm(null);
+    } catch (e) {
+      // Optionally show error toast
+    }
+  };
+
+  const renderExpandedRow = (subtopic: any) => {
+    const translations = subtopic.translations || [];
+    return (
+      <TranslationManagementSection
+        translations={translations}
+        languageMap={languageIdMap}
+        onAddTranslation={() => handleAddTranslation(subtopic)}
+        onEditTranslation={(translation) => handleEditTranslation(subtopic, translation)}
+        onDeleteTranslation={(translation) => handleDeleteTranslation(subtopic, translation)}
+        activeTranslationAction={activeTranslationAction}
+        isLoading={isDataLoading}
+        entityName="Subtopic"
+      />
+    );
+  };
+
   const columns: ColumnDef<ISubtopic>[] = [
     ...subtopicColumns,
     {
-      id: "actions",
-      header: "Actions",
-      cell: ({ row }: any) => {
-        const s = row.original as ISubtopic;
-        return (
-          <div className="flex gap-2">
-            <button className="text-blue-600" onClick={() => { setSelected(s); setOpenForm(true); }}>Edit</button>
-            <button className="text-red-600" onClick={() => setDeleteTarget(s)}>Delete</button>
-          </div>
-        );
-      },
-      enableSorting: false,
-      enableHiding: false,
-    }
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }: any) => (
+        <EntityActionDropdown
+          entity={row.original}
+          entityType="Subtopic"
+          onEdit={() => {
+            setSelected(row.original);
+            setOpenForm(true);
+          }}
+          onDelete={() => setDeleteTarget(row.original)}
+          onAddMCQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenMCQModal(true);
+          }}
+          onAddFAQ={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenFAQModal(true);
+          }}
+          onAddDescriptiveQuestion={(entityId) => {
+            setSelectedEntity({ id: entityId, name: row.original.title });
+            setOpenDescriptiveQuestionModal(true);
+          }}
+        />
+      ),
+    },
   ];
 
   // CSV schema for subtopics
   const subtopicCsvSchema: CsvSchema = {
     title: "Upload Subtopics CSV",
-    description: "Upload a CSV with columns: topic_id, title, slug, content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: topic_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id corresponds to an existing topic in the system. You can find topic IDs in the Topics admin section.",
     fields: [
       { name: "topic_id", type: "text", required: true } as FieldSchema,
+      { name: "topic_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the topic
+      { name: "chapter_name", type: "text", required: false } as FieldSchema, // For reference only - shows chapter context
+      { name: "subject_name", type: "text", required: false } as FieldSchema, // For reference only - shows subject context
+      { name: "class_name", type: "text", required: false } as FieldSchema, // For reference only - shows class context
+      { name: "board_name", type: "text", required: false } as FieldSchema, // For reference only - shows board context
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
@@ -126,6 +214,7 @@ export default function SubtopicsPage() {
         const content = r.content || undefined;
         const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
+        // Note: Reference columns (topic_name, chapter_name, etc.) are ignored during upload
         return {
           topic_id: r.topic_id,
           title: r.title,
@@ -159,6 +248,7 @@ export default function SubtopicsPage() {
       isLoading={isDataLoading}
       data={subtopics}
       columns={columns}
+      renderExpandedRow={renderExpandedRow}
       emptyStateTitle="No subtopics found"
       emptyStateMessage="There are no subtopics yet. Try adding one."
     >
@@ -177,7 +267,6 @@ export default function SubtopicsPage() {
             content: typeof selected.content === 'string' ? selected.content : ''
           } : undefined}
           onSubmit={handleCreateOrUpdate}
-          topics={topics}
           loading={isDataLoading}
         />
       </EntityFormModal>
@@ -196,6 +285,43 @@ export default function SubtopicsPage() {
         open={openCsvUpload}
         onOpenChange={setOpenCsvUpload}
         onUpload={handleBulkUpload}
+      />
+
+      {/* Translation Form Modal */}
+      {openTranslationForm && (
+        <EntityFormModal
+          title={openTranslationForm.translation ? "Edit Subtopic Translation" : "Add Subtopic Translation"}
+          open={!!openTranslationForm}
+          onOpenChange={(open) => !open && setOpenTranslationForm(null)}
+        >
+          <SubtopicTranslationForm
+            initialData={openTranslationForm.translation}
+            onSubmit={handleTranslationSubmit}
+            loading={isDataLoading}
+            languages={languages.filter(lang => lang._id) as Array<{ _id: string; name: string; code: string }>}
+          />
+        </EntityFormModal>
+      )}
+
+      {/* Delete Translation Confirmation */}
+      <ConfirmationDialog
+        open={!!deleteTranslationTarget}
+        title="Delete Translation"
+        description="Are you sure you want to delete this translation? This action cannot be undone."
+        onConfirm={confirmDeleteTranslation}
+        onCancel={() => setDeleteTranslationTarget(null)}
+      />
+
+      {/* Content Form Modals */}
+      <ContentFormModals
+        entityType="Subtopic"
+        openMCQModal={openMCQModal}
+        setOpenMCQModal={setOpenMCQModal}
+        openFAQModal={openFAQModal}
+        setOpenFAQModal={setOpenFAQModal}
+        openDescriptiveQuestionModal={openDescriptiveQuestionModal}
+        setOpenDescriptiveQuestionModal={setOpenDescriptiveQuestionModal}
+        selectedEntity={selectedEntity}
       />
 
       {/* Global Content Management for All Subtopics */}

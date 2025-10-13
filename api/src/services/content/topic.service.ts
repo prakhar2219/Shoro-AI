@@ -35,7 +35,18 @@ export const getTopicsWithPagination = async (
   if (chapter_id) filter.chapter_id = chapter_id;
   const [rows, total] = await Promise.all([
     Topic.find(filter)
-      .populate('chapter_id')
+      .populate({
+        path: 'chapter_id',
+        populate: {
+          path: 'subject_id',
+          populate: {
+            path: 'class_id',
+            populate: {
+              path: 'board_id'
+            }
+          }
+        }
+      })
       .sort({ order: 1 })
       .skip(skip)
       .limit(limit),
@@ -47,10 +58,35 @@ export const getTopicsWithPagination = async (
 export const getTopics = async (chapter_id?: string) => {
   const filter: any = {};
   if (chapter_id) filter.chapter_id = chapter_id;
-  return Topic.find(filter).populate('chapter_id').sort({ order: 1 });
+  return Topic.find(filter)
+    .populate({
+      path: 'chapter_id',
+      populate: {
+        path: 'subject_id',
+        populate: {
+          path: 'class_id',
+          populate: {
+            path: 'board_id'
+          }
+        }
+      }
+    })
+    .sort({ order: 1 });
 };
 
-export const getTopicById = async (id: string) => Topic.findById(id).populate('chapter_id');
+export const getTopicById = async (id: string) => Topic.findById(id)
+  .populate({
+    path: 'chapter_id',
+    populate: {
+      path: 'subject_id',
+      populate: {
+        path: 'class_id',
+        populate: {
+          path: 'board_id'
+        }
+      }
+    }
+  });
 
 export const updateTopic = async (id: string, data: Partial<ITopic>) => Topic.findByIdAndUpdate(id, data, { new: true });
 

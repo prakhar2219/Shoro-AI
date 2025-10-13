@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Plus, FileText, HelpCircle, MessageSquare } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus, FileText, HelpCircle, MessageSquare, BookOpen, FileStack } from "lucide-react";
 
 interface EntityActionDropdownProps {
   entity: any;
@@ -19,6 +19,10 @@ interface EntityActionDropdownProps {
   onAddMCQ: (entityId: string) => void;
   onAddFAQ: (entityId: string) => void;
   onAddDescriptiveQuestion: (entityId: string) => void;
+  onAddTopic?: (entityId: string) => void;
+  onAddSubtopic?: (entityId: string) => void;
+  onAddGBTopic?: (entityId: string) => void;
+  onAddGBSubtopic?: (entityId: string) => void;
 }
 
 export function EntityActionDropdown({
@@ -29,6 +33,10 @@ export function EntityActionDropdown({
   onAddMCQ,
   onAddFAQ,
   onAddDescriptiveQuestion,
+  onAddTopic,
+  onAddSubtopic,
+  onAddGBTopic,
+  onAddGBSubtopic,
 }: EntityActionDropdownProps) {
   // Safety check to prevent undefined entity errors
   if (!entity) {
@@ -50,6 +58,30 @@ export function EntityActionDropdown({
           <Edit className="mr-2 h-4 w-4" />
           Edit
         </DropdownMenuItem>
+        {onAddTopic && (
+          <DropdownMenuItem onClick={() => onAddTopic(entityId)}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Add Topic
+          </DropdownMenuItem>
+        )}
+        {onAddSubtopic && (
+          <DropdownMenuItem onClick={() => onAddSubtopic(entityId)}>
+            <FileStack className="mr-2 h-4 w-4" />
+            Add Subtopic
+          </DropdownMenuItem>
+        )}
+        {onAddGBTopic && (
+          <DropdownMenuItem onClick={() => onAddGBTopic(entityId)}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Add GB Topic
+          </DropdownMenuItem>
+        )}
+        {onAddGBSubtopic && (
+          <DropdownMenuItem onClick={() => onAddGBSubtopic(entityId)}>
+            <FileStack className="mr-2 h-4 w-4" />
+            Add GB Subtopic
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onAddMCQ(entityId)}>
           <Plus className="mr-2 h-4 w-4" />

@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RichTextEditor } from '@/components/rich-text-editor';
 
 interface GBTopicFormProps {
   initialData?: any;
@@ -188,11 +188,9 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
 
       <div>
         <Label htmlFor="content">Content</Label>
-        <Textarea
-          id="content"
+        <RichTextEditor
           value={formData.content}
-          onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-          rows={4}
+          onChange={(html) => setFormData({ ...formData, content: html })}
         />
       </div>
 
