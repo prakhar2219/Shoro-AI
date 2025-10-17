@@ -1,6 +1,7 @@
 import ClassModel from '../../models/content/class.model';
 import ClassTranslation from '../../models/content/classTranslation.model';
 import BoardModel from '../../models/content/board.model';
+import LanguageModel from '../../models/content/language.model';
 import { IClass } from '@/types/content/class.types';
 
 // Helper function to validate if board IDs exist
@@ -15,6 +16,18 @@ export const validateBoardIds = async (boardIds: string[]): Promise<{ valid: str
   return { valid, invalid };
 };
 
+// Helper function to validate if language IDs exist
+export const validateLanguageIds = async (languageIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueLanguageIds = [...new Set(languageIds)]; // Remove duplicates
+  const existingLanguages = await LanguageModel.find({ _id: { $in: uniqueLanguageIds } }).select('_id');
+  const existingLanguageIds = existingLanguages.map(l => l._id.toString());
+  
+  const valid = uniqueLanguageIds.filter(id => existingLanguageIds.includes(id));
+  const invalid = uniqueLanguageIds.filter(id => !existingLanguageIds.includes(id));
+  
+  return { valid, invalid };
+};
+
 export const createClass = async (data: IClass) => {
   return await ClassModel.create(data);
 };
@@ -22,6 +35,7 @@ export const createClass = async (data: IClass) => {
 export const getAllClasses = async (language_id?: string) => {
   const classes = await ClassModel.find()
     .populate('board_id')
+    .populate('language_id')
     .sort({ number: 1 });
   const classesWithTranslations = await Promise.all(
     classes.map(async (cls: any) => {
@@ -47,7 +61,7 @@ export const getAllClasses = async (language_id?: string) => {
 };
 
 export const getClassById = async (id: string, language_id?: string) => {
-  const cls = await ClassModel.findById(id).populate('board_id');
+  const cls = await ClassModel.findById(id).populate('board_id').populate('language_id');
   if (!cls) return null;
   let translation = null;
   if (language_id) {
@@ -93,6 +107,7 @@ export const getClassesWithPagination = async (
   const [classes, total] = await Promise.all([
     ClassModel.find(filter)
       .populate('board_id')
+      .populate('language_id')
       .sort({ grade: 1 })
       .skip(skip)
       .limit(limit),

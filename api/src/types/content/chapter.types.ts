@@ -4,6 +4,7 @@ export interface IChapter extends Document {
   board_id: mongoose.Types.ObjectId;
   class_id: mongoose.Types.ObjectId;
   subject_id: mongoose.Types.ObjectId;
+  language_id: mongoose.Types.ObjectId;
   order: number;
   is_published: boolean;
   created_by: mongoose.Types.ObjectId;

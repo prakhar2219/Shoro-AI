@@ -2,6 +2,7 @@ import mongoose, { Document } from 'mongoose';
 
 export interface ITopic extends Document {
   chapter_id: mongoose.Types.ObjectId;
+  language_id: mongoose.Types.ObjectId;
   title: string;
   slug: string;
   order: number;

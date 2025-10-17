@@ -47,12 +47,12 @@ export default function TopicsPage() {
   
   const { toast } = useToast();
 
-  const fetchTopicsData = useCallback(async (pageNum: number, size: number, _search: string) => {
+  const fetchTopicsData = useCallback(async (pageNum: number, size: number, search: string) => {
     try {
       // Try paginated endpoint first, fallback to regular endpoint
       let result;
       try {
-        result = await getTopicsWithPagination(pageNum, size);
+        result = await getTopicsWithPagination(pageNum, size, undefined, search);
       } catch (paginationError) {
         console.warn('Paginated endpoint failed, using regular endpoint:', paginationError);
         const allTopics = await getTopics();
@@ -97,11 +97,25 @@ export default function TopicsPage() {
 
 
   const handleCreateOrUpdate = async (data: Partial<ITopic>) => {
-    if (selected?._id) await updateTopic(selected._id, data);
-    else await createTopic(data);
-    setOpenForm(false);
-    setSelected(null);
-    await fetchPaginatedData(page, pageSize, searchTerm);
+    try {
+      if (selected?._id) {
+        await updateTopic(selected._id, data);
+        toast({ title: 'Success', description: 'Topic updated successfully' });
+      } else {
+        await createTopic(data);
+        toast({ title: 'Success', description: 'Topic created successfully' });
+      }
+      setOpenForm(false);
+      setSelected(null);
+      await fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to save topic', 
+        variant: 'destructive' 
+      });
+      console.error('Error saving topic:', error);
+    }
   };
 
   const handleDelete = async () => {
@@ -230,9 +244,10 @@ export default function TopicsPage() {
   // CSV schema for topics
   const topicCsvSchema: CsvSchema = {
     title: "Upload Topics CSV",
-    description: "Upload a CSV with columns: chapter_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Topics belong to Chapters in the educational hierarchy (Board → Class → Subject → Chapter → Topic). Make sure your chapter_id corresponds to an existing chapter in the system. You can find chapter IDs in the Chapters admin section.",
+    description: "Upload a CSV with columns: chapter_id, language_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Topics belong to Chapters in the educational hierarchy (Board → Class → Subject → Chapter → Topic). Make sure your chapter_id and language_id correspond to existing entities in the system.",
     fields: [
       { name: "chapter_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "chapter_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the chapter
       { name: "subject_name", type: "text", required: false } as FieldSchema, // For reference only - shows subject context
       { name: "class_name", type: "text", required: false } as FieldSchema, // For reference only - shows class context
@@ -254,6 +269,7 @@ export default function TopicsPage() {
         // Note: Reference columns (chapter_name, subject_name, etc.) are ignored during upload
         return {
           chapter_id: r.chapter_id,
+          language_id: r.language_id,
           title: r.title,
           slug: r.slug,
           content,

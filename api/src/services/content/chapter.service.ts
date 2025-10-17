@@ -3,6 +3,7 @@
 import Chapter from '../../models/content/chapter.model';
 import ChapterTranslation from '../../models/content/chapterTranslation.model';
 import SubjectModel from '../../models/content/subject.model';
+import LanguageModel from '../../models/content/language.model';
 import { IChapter } from '../../types/content/chapter.types';
 
 // Helper function to validate if subject IDs exist
@@ -13,6 +14,18 @@ export const validateSubjectIds = async (subjectIds: string[]): Promise<{ valid:
   
   const valid = uniqueSubjectIds.filter(id => existingSubjectIds.includes(id));
   const invalid = uniqueSubjectIds.filter(id => !existingSubjectIds.includes(id));
+  
+  return { valid, invalid };
+};
+
+// Helper function to validate if language IDs exist
+export const validateLanguageIds = async (languageIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueLanguageIds = [...new Set(languageIds)]; // Remove duplicates
+  const existingLanguages = await LanguageModel.find({ _id: { $in: uniqueLanguageIds } }).select('_id');
+  const existingLanguageIds = existingLanguages.map(l => l._id.toString());
+  
+  const valid = uniqueLanguageIds.filter(id => existingLanguageIds.includes(id));
+  const invalid = uniqueLanguageIds.filter(id => !existingLanguageIds.includes(id));
   
   return { valid, invalid };
 };
@@ -41,6 +54,7 @@ export const getAllChapters = async () => {
     })
     .populate('class_id')
     .populate('board_id')
+    .populate('language_id')
     .populate('created_by')
     .sort({ order: 1 });
 };
@@ -53,6 +67,7 @@ export const getChapterById = async (id: string, language_id?: string) => {
     })
     .populate('class_id')
     .populate('board_id')
+    .populate('language_id')
     .populate('created_by');
   if (!chapter) return null;
 
@@ -91,13 +106,21 @@ export const getChaptersWithPagination = async (
   board_id?: string,
   class_id?: string,
   subject_id?: string,
-  language_id?: string
+  language_id?: string,
+  search?: string
 ) => {
   const skip = (page - 1) * limit;
   const filter: any = {};
   if (board_id) filter.board_id = board_id;
   if (class_id) filter.class_id = class_id;
   if (subject_id) filter.subject_id = subject_id;
+  if (search) {
+    const searchRegex = new RegExp(search, 'i');
+    filter.$or = [
+      { title: searchRegex },
+      { slug: searchRegex },
+    ];
+  }
 
   const [chapters, total] = await Promise.all([
     Chapter.find(filter)
@@ -107,6 +130,7 @@ export const getChaptersWithPagination = async (
       })
       .populate('class_id')
       .populate('board_id')
+      .populate('language_id')
       .populate('created_by')
       .sort({ order: 1 })
       .skip(skip)
@@ -165,6 +189,7 @@ export const getChaptersByBoardClassAndSubject = async (
       path: 'subject_id',
       match: { code: subject_code }
     })
+    .populate('language_id')
     .populate('created_by')
     .sort({ order: 1 });
 
@@ -220,6 +245,7 @@ export const getChapterBySlug = async (
       path: 'subject_id',
       match: { code: subject_code }
     })
+    .populate('language_id')
     .populate('created_by')
     .where('slug', chapter_slug);
 

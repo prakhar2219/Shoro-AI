@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { RichTextEditor } from "@/components/rich-text-editor";
+import { LanguageSelector } from "@/components/shared/LanguageSelector";
 import { getBoards } from "@/lib/api/entities/boards";
 import { getClassesByBoard } from "@/lib/api/entities/classes";
 import { getSubjects } from "@/lib/api/entities/subjects";
@@ -16,10 +17,12 @@ interface TopicFormProps {
   onSubmit: (data: any) => void;
   loading?: boolean;
   initialData?: {
+    _id?: string;
     board_id?: string;
     class_id?: string;
     subject_id?: string;
     chapter_id?: string;
+    language_id?: string;
     title?: string;
     slug?: string;
     order?: number;
@@ -39,6 +42,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     class_id: initialData?.class_id || "",
     subject_id: initialData?.subject_id || "",
     chapter_id: initialData?.chapter_id || "",
+    language_id: initialData?.language_id || "",
     title: initialData?.title || "",
     slug: initialData?.slug || "",
     order: initialData?.order ?? 0,
@@ -46,7 +50,8 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
 
-  const isEditMode = Boolean(initialData && initialData.chapter_id);
+  // Check if we're editing existing topic (has _id) vs adding new topic (no _id)
+  const isEditMode = Boolean(initialData && initialData._id);
 
   // Load boards on mount
   useEffect(() => {
@@ -88,12 +93,12 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
   // Load chapters when subject changes
   useEffect(() => {
     if (formData.subject_id) {
-      getChapters({ page: 1, limit: 100 }).then((result) => {
+      getChapters({ page: 1, limit: 1000, subject_id: formData.subject_id }).then((result) => {
         const allChapters = result.data || result || [];
-        setChapters(allChapters.filter((c: any) => {
-          const cSubjectId = typeof c.subject_id === 'object' ? c.subject_id._id : c.subject_id;
-          return cSubjectId === formData.subject_id;
-        }));
+        setChapters(allChapters);
+      }).catch(error => {
+        console.error('Error fetching chapters:', error);
+        setChapters([]);
       });
     } else {
       setChapters([]);
@@ -132,9 +137,45 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Only send chapter_id to the API, but maintain hierarchy for UX
+    
+    // Validate required fields
+    if (!formData.board_id) {
+      alert('Please select a Board');
+      return;
+    }
+    if (!formData.class_id) {
+      alert('Please select a Class');
+      return;
+    }
+    if (!formData.subject_id) {
+      alert('Please select a Subject');
+      return;
+    }
+    if (!formData.chapter_id) {
+      alert('Please select a Chapter');
+      return;
+    }
+    if (!formData.language_id) {
+      alert('Please select a Language');
+      return;
+    }
+    if (!formData.title.trim()) {
+      alert('Please enter a title');
+      return;
+    }
+    if (!formData.slug.trim()) {
+      alert('Please enter a slug');
+      return;
+    }
+    if (!formData.order) {
+      alert('Please enter an order number');
+      return;
+    }
+    
+    // Only send chapter_id and language_id to the API, but maintain hierarchy for UX
     onSubmit({ 
       chapter_id: formData.chapter_id,
+      language_id: formData.language_id,
       title: formData.title,
       slug: formData.slug,
       order: Number(formData.order),
@@ -222,6 +263,16 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
                 ))}
               </SelectContent>
             </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="language_id">Language</Label>
+            <LanguageSelector
+              value={formData.language_id}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, language_id: value }))}
+              placeholder="Select Language"
+              required
+            />
           </div>
 
           <div className="space-y-2">

@@ -40,12 +40,12 @@ export default function SubtopicsPage() {
   
   const { toast } = useToast();
 
-  const fetchSubtopicsData = useCallback(async (pageNum: number, size: number, _search: string) => {
+  const fetchSubtopicsData = useCallback(async (pageNum: number, size: number, search: string) => {
     try {
       // Try paginated endpoint first, fallback to regular endpoint
       let result;
       try {
-        result = await getSubtopicsWithPagination(pageNum, size);
+        result = await getSubtopicsWithPagination(pageNum, size, undefined, search);
       } catch (paginationError) {
         console.warn('Paginated endpoint failed, using regular endpoint:', paginationError);
         const allSubtopics = await getSubtopics();
@@ -90,11 +90,25 @@ export default function SubtopicsPage() {
 
 
   const handleCreateOrUpdate = async (data: Partial<ISubtopic>) => {
-    if (selected?._id) await updateSubtopic(selected._id, data);
-    else await createSubtopic(data);
-    setOpenForm(false);
-    setSelected(null);
-    await fetchPaginatedData(page, pageSize, searchTerm);
+    try {
+      if (selected?._id) {
+        await updateSubtopic(selected._id, data);
+        toast({ title: 'Success', description: 'Subtopic updated successfully' });
+      } else {
+        await createSubtopic(data);
+        toast({ title: 'Success', description: 'Subtopic created successfully' });
+      }
+      setOpenForm(false);
+      setSelected(null);
+      await fetchPaginatedData(page, pageSize, searchTerm);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to save subtopic', 
+        variant: 'destructive' 
+      });
+      console.error('Error saving subtopic:', error);
+    }
   };
 
   const handleDelete = async () => {
@@ -192,9 +206,10 @@ export default function SubtopicsPage() {
   // CSV schema for subtopics
   const subtopicCsvSchema: CsvSchema = {
     title: "Upload Subtopics CSV",
-    description: "Upload a CSV with columns: topic_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id corresponds to an existing topic in the system. You can find topic IDs in the Topics admin section.",
+    description: "Upload a CSV with columns: topic_id, language_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id and language_id correspond to existing entities in the system.",
     fields: [
       { name: "topic_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "topic_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the topic
       { name: "chapter_name", type: "text", required: false } as FieldSchema, // For reference only - shows chapter context
       { name: "subject_name", type: "text", required: false } as FieldSchema, // For reference only - shows subject context
@@ -217,6 +232,7 @@ export default function SubtopicsPage() {
         // Note: Reference columns (topic_name, chapter_name, etc.) are ignored during upload
         return {
           topic_id: r.topic_id,
+          language_id: r.language_id,
           title: r.title,
           slug: r.slug,
           content,

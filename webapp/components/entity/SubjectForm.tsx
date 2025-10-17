@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getBoards, IBoard } from '@/lib/api/entities/boards';
 import { getClassesByBoard, IClass } from '@/lib/api/entities/classes';
+import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,6 +24,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     icon: initialData?.icon || '',
     board_id: initialData?.board_id || '',
     class_id: initialData?.class_id || '',
+    language_id: initialData?.language_id || '',
     content: typeof initialData?.content === 'string' ? initialData.content : '',
   });
   
@@ -83,6 +85,10 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
 
   const handleClassChange = (value: string) => {
     setForm(f => ({ ...f, class_id: value }));
+  };
+
+  const handleLanguageChange = (value: string) => {
+    setForm(f => ({ ...f, language_id: value }));
   };
 
   const handleContentChange = (html: string) => {
@@ -150,6 +156,15 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
               </div>
             </>
           )}
+          <div className="space-y-2">
+            <Label htmlFor="language_id">Language</Label>
+            <LanguageSelector
+              value={form.language_id}
+              onValueChange={handleLanguageChange}
+              placeholder="Select Language"
+              required
+            />
+          </div>
           <div className="space-y-2">
             <Label htmlFor="name">Subject Name</Label>
             <Input

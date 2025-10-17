@@ -6,6 +6,11 @@ type UserModel = Model<IUser, {}, IUserMethods>;
 
 const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
   {
+    clerkId: {
+      type: String,
+      unique: true,
+      sparse: true, // Allow null for existing users
+    },
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -14,7 +19,10 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function() {
+        // Password required only if no clerkId (legacy users)
+        return !this.clerkId;
+      },
       minlength: 8,
       select: false,
     },
@@ -24,12 +32,28 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['super_admin', 'admin', 'editor', 'user'],
       default: 'user',
     },
     active: {
       type: Boolean,
       default: true,
+    },
+    lastLogin: {
+      type: Date,
+    },
+    profileImage: {
+      type: String,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    department: {
+      type: String,
+    },
+    permissions: {
+      type: [String],
+      default: [],
     },
   },
   {
@@ -38,7 +62,8 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
 );
 
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+  // Only hash password if it's modified and exists
+  if (!this.isModified('password') || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
@@ -48,6 +73,11 @@ userSchema.methods.comparePassword = async function (
 ) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
+
+// Indexes for better performance
+// Note: clerkId index is auto-created by unique: true
+userSchema.index({ role: 1 });
+userSchema.index({ active: 1 });
 
 const User = mongoose.model<IUser, UserModel>('User', userSchema);
 

@@ -6,6 +6,7 @@ const ChapterSchema = new Schema<IChapter>(
     board_id: { type: Schema.Types.ObjectId, ref: 'Board', required: true },
     class_id: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
     subject_id: { type: Schema.Types.ObjectId, ref: 'Subject', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
     order: { type: Number, required: true },
     is_published: { type: Boolean, default: false },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },

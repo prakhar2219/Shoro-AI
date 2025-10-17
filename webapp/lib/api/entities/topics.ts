@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from '../endpoints';
 export interface ITopic {
   _id?: string;
   chapter_id: string | { _id: string; title: string };
+  language_id: string | { _id: string; name: string; code: string; [key: string]: any };
   title: string;
   slug: string;
   order?: number;
@@ -18,10 +19,12 @@ export interface ITopic {
 export const getTopicsWithPagination = async (
   page = 1,
   limit = 10,
-  chapter_id?: string
+  chapter_id?: string,
+  search?: string
 ) => {
   const params: any = { page, limit };
   if (chapter_id) params.chapter_id = chapter_id;
+  if (search) params.search = search;
   const res = await api.get(`${API_ENDPOINTS.topics}/paginated`, { params });
   return res.data;
 };

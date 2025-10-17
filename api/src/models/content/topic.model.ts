@@ -4,6 +4,7 @@ import { ITopic } from '@/types/content/topic.types';
 const TopicSchema = new Schema<ITopic>(
   {
     chapter_id: { type: Schema.Types.ObjectId, ref: 'Chapter', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
     title: { type: String, required: true },
     slug: { type: String, required: true },
     order: { type: Number, required: true },

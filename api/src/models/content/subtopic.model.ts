@@ -4,6 +4,7 @@ import { ISubtopic } from '@/types/content/subtopic.types';
 const SubtopicSchema = new Schema<ISubtopic>(
   {
     topic_id: { type: Schema.Types.ObjectId, ref: 'Topic', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
     title: { type: String, required: true },
     slug: { type: String, required: true },
     order: { type: Number, required: true },

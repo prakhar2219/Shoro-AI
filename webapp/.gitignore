@@ -17,7 +17,9 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files
-.env*
+.env
+.env*.local
+!.env.example
 
 # vercel
 .vercel
@@ -25,3 +27,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+# clerk configuration (can include secrets)
+/.clerk/

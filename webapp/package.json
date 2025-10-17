@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@chakra-ui/react": "latest",
+    "@clerk/nextjs": "^6.33.6",
     "@emotion/react": "latest",
     "@hookform/resolvers": "^3.9.1",
     "@radix-ui/react-accordion": "1.2.2",
@@ -69,6 +70,7 @@
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.0",
     "sonner": "^1.7.1",
+    "svix": "^1.77.0",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.6",

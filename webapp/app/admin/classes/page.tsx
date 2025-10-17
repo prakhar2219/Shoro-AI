@@ -157,7 +157,8 @@ export default function ClassesPage() {
       const processedData = classesData.map(cls => ({
         ...cls,
         grade: typeof cls.grade === 'number' ? cls.grade : Number(cls.grade),
-        content: cls.content || undefined
+        content: cls.content || undefined,
+        language_id: cls.language_id
       }));
       
       await bulkCreateClasses(processedData);
@@ -276,6 +277,12 @@ export default function ClassesPage() {
           : typeof classItem.board_id === 'string'
             ? classItem.board_id
             : '',
+      language_id:
+        typeof classItem.language_id === 'object' && classItem.language_id !== null && '_id' in classItem.language_id && typeof classItem.language_id._id === 'string'
+          ? classItem.language_id._id
+          : typeof classItem.language_id === 'string'
+            ? classItem.language_id
+            : '',
     };
     console.log('getClassFormInitialData input:', classItem);
     console.log('getClassFormInitialData output:', result);
@@ -349,10 +356,11 @@ export default function ClassesPage() {
   // CSV schema for classes
   const classCsvSchema: CsvSchema = {
     title: "Upload Classes CSV",
-    description: "Upload a CSV file with columns: name, board_id, grade, content (HTML - optional).",
+    description: "Upload a CSV file with columns: name, board_id, language_id, grade, content (HTML - optional).",
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "board_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "grade", type: "number", required: true } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
@@ -405,6 +413,7 @@ export default function ClassesPage() {
               name: editing.name,
               grade: editing.grade,
               board_id: getClassFormInitialData(editing).board_id,
+              language_id: getClassFormInitialData(editing).language_id,
               content: typeof editing.content === 'string' ? editing.content : undefined
             };
             console.log('ClassForm defaultValues:', defaultVals);

@@ -109,20 +109,21 @@ export default function SubjectsPage() {
       setIsLoading(true);
       if (editing?._id) {
         await updateSubject(editing._id, data);
-        // toast({ title: "Success", description: "Subject updated successfully." });
+        toast({ title: "Success", description: "Subject updated successfully." });
       } else {
         await createSubject(data);
-        // toast({ title: "Success", description: "Subject created successfully." });
+        toast({ title: "Success", description: "Subject created successfully." });
       }
       setOpenForm(false);
       setEditing(null);
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      // toast({
-      //   title: "Error",
-      //   description: error.response?.data?.error || "Failed to save subject. Please try again.",
-      //   variant: "destructive",
-      // });
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to save subject. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error saving subject:', error);
     } finally {
       setIsLoading(false);
     }
@@ -313,9 +314,10 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, code, name, icon (optional), content (HTML - optional).",
+    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "icon", type: "text", required: false } as FieldSchema,
@@ -331,6 +333,7 @@ export default function SubjectsPage() {
         const content = r.content || undefined
         return {
           class_id: r.class_id,
+          language_id: r.language_id,
           code: r.code,
           name: r.name,
           icon: r.icon || undefined,

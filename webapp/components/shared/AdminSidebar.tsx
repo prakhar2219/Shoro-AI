@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import {
     Home,
+    Users,
     Globe,
     Layers,
     Book,
@@ -26,6 +27,7 @@ import clsx from "clsx"
 
 const navItems = [
     { name: "Dashboard", href: "/admin", icon: Home },
+    { name: "Users", href: "/admin/users", icon: Users },
     { name: "Languages", href: "/admin/languages", icon: Languages },
     { name: "Countries", href: "/admin/countries", icon: Globe },
     { name: "Boards", href: "/admin/boards", icon: Layers },

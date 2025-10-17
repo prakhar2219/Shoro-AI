@@ -41,30 +41,30 @@ export const getGBTopics = async (params?: {
   if (params?.gb_category_id) searchParams.append('gb_category_id', params.gb_category_id);
   if (params?.language_id) searchParams.append('language_id', params.language_id);
 
-  const response = await api.get(`/content/gb-topics?${searchParams.toString()}`);
+  const response = await api.get(`/api/v1/content/gb-topics?${searchParams.toString()}`);
   return response.data;
 };
 
 export const getGBTopicById = async (id: string): Promise<IGBTopic> => {
-  const response = await api.get(`/content/gb-topics/${id}`);
+  const response = await api.get(`/api/v1/content/gb-topics/${id}`);
   return response.data;
 };
 
 export const createGBTopic = async (data: Omit<IGBTopic, '_id' | 'createdAt' | 'updatedAt'>): Promise<IGBTopic> => {
-  const response = await api.post('/content/gb-topics', data);
+  const response = await api.post('/api/v1/content/gb-topics', data);
   return response.data;
 };
 
 export const updateGBTopic = async (id: string, data: Partial<IGBTopic>): Promise<IGBTopic> => {
-  const response = await api.put(`/content/gb-topics/${id}`, data);
+  const response = await api.put(`/api/v1/content/gb-topics/${id}`, data);
   return response.data;
 };
 
 export const deleteGBTopic = async (id: string): Promise<void> => {
-  await api.delete(`/content/gb-topics/${id}`);
+  await api.delete(`/api/v1/content/gb-topics/${id}`);
 };
 
 export const bulkCreateGBTopics = async (topics: Omit<IGBTopic, '_id' | 'createdAt' | 'updatedAt'>[]): Promise<IGBTopic[]> => {
-  const response = await api.post('/content/gb-topics/bulk', { topics });
+  const response = await api.post('/api/v1/content/gb-topics/bulk', { topics });
   return response.data;
 };

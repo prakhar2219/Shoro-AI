@@ -80,6 +80,28 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate required fields
+    if (!formData.gb_category_id) {
+      alert('Please select a GB Category');
+      return;
+    }
+    if (!formData.name.trim()) {
+      alert('Please enter a name');
+      return;
+    }
+    if (!formData.slug.trim()) {
+      alert('Please enter a slug');
+      return;
+    }
+    if (!formData.language_id) {
+      alert('Please select a language');
+      return;
+    }
+    if (!formData.order || formData.order < 0) {
+      alert('Please enter a valid order number');
+      return;
+    }
+    
     const payload = {
       ...formData,
       tag: formData.tag ? formData.tag.split(',').map(t => t.trim()) : [],

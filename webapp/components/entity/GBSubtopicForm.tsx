@@ -37,7 +37,8 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
 
-  const isEditMode = Boolean(initialData && initialData.gb_topic_id && !initialData.gb_topic);
+  // Check if we're editing existing subtopic (has _id) vs adding new subtopic (no _id)
+  const isEditMode = Boolean(initialData && initialData._id);
   const isAddingFromParent = Boolean(initialData?.gb_topic);
 
   // Load categories on mount
@@ -151,6 +152,32 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!formData.gb_category_id) {
+      alert('Please select a GB Category');
+      return;
+    }
+    if (!formData.gb_topic_id) {
+      alert('Please select a GB Topic');
+      return;
+    }
+    if (!formData.name.trim()) {
+      alert('Please enter a name');
+      return;
+    }
+    if (!formData.slug.trim()) {
+      alert('Please enter a slug');
+      return;
+    }
+    if (!formData.language_id) {
+      alert('Please select a language');
+      return;
+    }
+    if (!formData.order || formData.order < 0) {
+      alert('Please enter a valid order number');
+      return;
+    }
     
     // Only send gb_topic_id to the API, but maintain hierarchy for UX
     const payload = {

@@ -1,0 +1,30 @@
+DEBUGGING CLERK USERS NOT SHOWING
+
+Step 1: Open Browser Console
+- Press F12 in your browser
+- Click "Console" tab
+- Look for RED errors
+- Copy and share any errors you see
+
+Step 2: Check Network Tab
+- In F12, click "Network" tab
+- Refresh the page
+- Look for request to "/api/v1/users/clerk/list"
+- Click on it
+- Check "Response" tab
+- What does it say?
+
+Step 3: Check API Terminal
+- Look at your API terminal (where npm run dev is running)
+- Are there any error messages?
+- Share the full error if you see one
+
+Step 4: Check if API has Clerk keys
+- Does api/.env have CLERK_SECRET_KEY?
+- It should be: CLERK_SECRET_KEY=sk_test_...
+
+MOST COMMON ISSUES:
+1. Missing CLERK_SECRET_KEY in api/.env
+2. accessToken is null (not logged in properly)
+3. User is not super_admin
+4. Clerk SDK not installed in API

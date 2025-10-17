@@ -48,21 +48,16 @@ export default function GBQuestionsPage() {
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchGBQuestionsData = useCallback(async (pageNum: number, size: number, search: string) => {
-    const result = await getGBQuestions();
-    const resultArray = Array.isArray(result) ? result : result?.data || [];
-    const filteredData = search ? resultArray.filter((item: any) => 
-      item.question?.toLowerCase().includes(search.toLowerCase()) ||
-      item.answer?.toLowerCase().includes(search.toLowerCase())
-    ) : resultArray;
-    
-    const startIndex = (pageNum - 1) * size;
-    const endIndex = startIndex + size;
-    const paginatedData = filteredData.slice(startIndex, endIndex);
+    const result = await getGBQuestions({
+      page: pageNum,
+      limit: size,
+      search: search || undefined
+    });
     
     return {
-      data: paginatedData || [],
-      totalPages: Math.ceil(filteredData.length / size) || 1,
-      total: filteredData.length || 0,
+      data: result.data || [],
+      totalPages: result.totalPages || 1,
+      total: result.total || 0,
     };
   }, []);
 
@@ -408,7 +403,7 @@ export default function GBQuestionsPage() {
         open={openModal}
         onOpenChange={setOpenModal}
       >
-        <GBQuestionForm initialData={selected || {}} onSubmit={handleSave} loading={isDataLoading} />
+        <GBQuestionForm initialData={selected || undefined} onSubmit={handleSave} loading={isDataLoading} />
       </EntityFormModal>
       
       <ConfirmationDialog

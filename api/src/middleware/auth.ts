@@ -34,10 +34,10 @@ export const protect = catchAsync(
       );
     }
 
-    //token
+    // Verify token
     const decoded = jwt.verify(token, CONFIG.JWT_SECRET) as JwtPayload;
 
-    //verificar si el usuario existe
+    // Check if user exists and is active
     const user = await User.findById(decoded.id);
     if (!user) {
       return next(
@@ -45,7 +45,13 @@ export const protect = catchAsync(
       );
     }
 
-    //Guardar usuario en req
+    if (!user.active) {
+      return next(
+        new AppError('Tu cuenta ha sido desactivada. Por favor contacta al administrador.', 401)
+      );
+    }
+
+    // Save user to request
     req.user = user;
     next();
   }

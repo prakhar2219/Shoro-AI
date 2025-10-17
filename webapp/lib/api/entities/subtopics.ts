@@ -3,7 +3,8 @@ import { API_ENDPOINTS } from '../endpoints';
 
 export interface ISubtopic {
   _id?: string;
-  topic_id: string | { _id: string; title: string };
+  topic_id: string | { _id: string; title: string; [key: string]: any };
+  language_id: string | { _id: string; name: string; code: string; [key: string]: any };
   title: string;
   slug: string;
   order?: number;
@@ -18,10 +19,12 @@ export interface ISubtopic {
 export const getSubtopicsWithPagination = async (
   page = 1,
   limit = 10,
-  topic_id?: string
+  topic_id?: string,
+  search?: string
 ) => {
   const params: any = { page, limit };
   if (topic_id) params.topic_id = topic_id;
+  if (search) params.search = search;
   const res = await api.get(`${API_ENDPOINTS.subtopics}/paginated`, { params });
   return res.data;
 };

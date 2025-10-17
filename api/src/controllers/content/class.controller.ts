@@ -7,24 +7,34 @@ export const createClass = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { board_id, number, name, grade, content } = req.body;
+    const { board_id, language_id, number, name, grade, content } = req.body;
 
-    if (!board_id || typeof grade !== 'number' || !name) {
-      res.status(400).json({ error: 'Missing required fields' });
+    if (!board_id || !language_id || typeof grade !== 'number' || !name) {
+      res.status(400).json({ error: 'Missing required fields: board_id, language_id, name, grade' });
       return;
     }
 
     // Validate board ID exists
-    const { invalid } = await classService.validateBoardIds([board_id.toString()]);
-    if (invalid.length > 0) {
+    const boardValidation = await classService.validateBoardIds([board_id.toString()]);
+    if (boardValidation.invalid.length > 0) {
       res.status(400).json({ 
         error: `Invalid board_id: ${board_id}. Please ensure the board ID exists in the database.` 
       });
       return;
     }
 
+    // Validate language ID exists
+    const languageValidation = await classService.validateLanguageIds([language_id.toString()]);
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id: ${language_id}. Please ensure the language ID exists in the database.` 
+      });
+      return;
+    }
+
     const classData: IClass = {
       board_id,
+      language_id,
       name,
       grade,
       content,
@@ -51,8 +61,8 @@ export const bulkCreateClasses = async (
     
     // Basic field validation
     for (const c of classes) {
-      if (!c.board_id || !c.name || !c.grade) {
-        res.status(400).json({ error: 'Each class must have board_id, name, and grade' });
+      if (!c.board_id || !c.language_id || !c.name || !c.grade) {
+        res.status(400).json({ error: 'Each class must have board_id, language_id, name, and grade' });
         return;
       }
       // Normalize types
@@ -61,11 +71,22 @@ export const bulkCreateClasses = async (
     
     // Validate all board IDs exist
     const boardIds = classes.map(c => c.board_id.toString());
-    const { valid, invalid } = await classService.validateBoardIds(boardIds);
+    const boardValidation = await classService.validateBoardIds(boardIds);
     
-    if (invalid.length > 0) {
+    if (boardValidation.invalid.length > 0) {
       res.status(400).json({ 
-        error: `Invalid board_id(s) found: ${invalid.join(', ')}. Please ensure all board IDs exist in the database.` 
+        error: `Invalid board_id(s) found: ${boardValidation.invalid.join(', ')}. Please ensure all board IDs exist in the database.` 
+      });
+      return;
+    }
+    
+    // Validate all language IDs exist
+    const languageIds = classes.map(c => c.language_id.toString());
+    const languageValidation = await classService.validateLanguageIds(languageIds);
+    
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id(s) found: ${languageValidation.invalid.join(', ')}. Please ensure all language IDs exist in the database.` 
       });
       return;
     }

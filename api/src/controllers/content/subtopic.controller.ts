@@ -2,10 +2,10 @@ import { Request, Response } from 'express';
 import * as subtopicService from '../../services/content/subtopic.service';
 
 export const createSubtopic = async (req: Request, res: Response) => {
-  const { topic_id, title, slug, order, is_published, created_by, content } = req.body;
+  const { topic_id, language_id, title, slug, order, is_published, created_by, content } = req.body;
 
-  if (!topic_id || !title || !slug) {
-    res.status(400).json({ error: 'Missing required fields: topic_id, title, slug' });
+  if (!topic_id || !language_id || !title || !slug) {
+    res.status(400).json({ error: 'Missing required fields: topic_id, language_id, title, slug' });
     return;
   }
 
@@ -13,16 +13,26 @@ export const createSubtopic = async (req: Request, res: Response) => {
   
   try {
     // Validate topic ID exists
-    const { invalid } = await subtopicService.validateTopicIds([topic_id.toString()]);
-    if (invalid.length > 0) {
+    const topicValidation = await subtopicService.validateTopicIds([topic_id.toString()]);
+    if (topicValidation.invalid.length > 0) {
       res.status(400).json({ 
         error: `Invalid topic_id: ${topic_id}. Please ensure the topic ID exists in the database.` 
+      });
+      return;
+    }
+
+    // Validate language ID exists
+    const languageValidation = await subtopicService.validateLanguageIds([language_id.toString()]);
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id: ${language_id}. Please ensure the language ID exists in the database.` 
       });
       return;
     }
     
     const subtopic = {
       topic_id,
+      language_id,
       title,
       slug,
       content,
@@ -52,8 +62,8 @@ export const bulkCreateSubtopics = async (req: Request, res: Response) => {
     
     // Validate and normalize each subtopic
     for (const s of subtopics) {
-      if (!s.topic_id || !s.title || !s.slug) {
-        res.status(400).json({ error: 'Each subtopic must have topic_id, title, and slug' });
+      if (!s.topic_id || !s.language_id || !s.title || !s.slug) {
+        res.status(400).json({ error: 'Each subtopic must have topic_id, language_id, title, and slug' });
         return;
       }
       s.order = typeof s.order === 'number' ? s.order : Number(s.order || 0);
@@ -62,11 +72,22 @@ export const bulkCreateSubtopics = async (req: Request, res: Response) => {
     
     // Validate all topic IDs exist
     const topicIds = subtopics.map(s => s.topic_id.toString());
-    const { valid, invalid } = await subtopicService.validateTopicIds(topicIds);
+    const topicValidation = await subtopicService.validateTopicIds(topicIds);
     
-    if (invalid.length > 0) {
+    if (topicValidation.invalid.length > 0) {
       res.status(400).json({ 
-        error: `Invalid topic_id(s) found: ${invalid.join(', ')}. Please ensure all topic IDs exist in the database.` 
+        error: `Invalid topic_id(s) found: ${topicValidation.invalid.join(', ')}. Please ensure all topic IDs exist in the database.` 
+      });
+      return;
+    }
+    
+    // Validate all language IDs exist
+    const languageIds = subtopics.map(s => s.language_id.toString());
+    const languageValidation = await subtopicService.validateLanguageIds(languageIds);
+    
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id(s) found: ${languageValidation.invalid.join(', ')}. Please ensure all language IDs exist in the database.` 
       });
       return;
     }
@@ -92,7 +113,8 @@ export const getSubtopicsWithPagination = async (req: Request, res: Response) =>
     const page = Number(req.query.page || 1);
     const limit = Number(req.query.limit || 10);
     const topic_id = req.query.topic_id as string | undefined;
-    const result = await subtopicService.getSubtopicsWithPagination(page, limit, topic_id);
+    const search = req.query.search as string | undefined;
+    const result = await subtopicService.getSubtopicsWithPagination(page, limit, topic_id, search);
     res.status(200).json(result);
   } catch (e: any) {
     res.status(500).json({ error: e.message });

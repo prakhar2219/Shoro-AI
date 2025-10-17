@@ -52,7 +52,7 @@ export default function ChapterAdminPage() {
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchChaptersData = useCallback(async (pageNum: number, size: number, search: string) => {
-    const result = await getChapters({ page: pageNum, limit: size });
+    const result = await getChapters({ page: pageNum, limit: size, search });
     return {
       data: result.data || [],
       totalPages: result.totalPages || 1,
@@ -86,12 +86,23 @@ export default function ChapterAdminPage() {
 
   const handleSave = async (data: ChapterInput) => {
     try {
-      if (selected && selected._id) await updateChapter(selected._id, data);
-      else await createChapter(data);
+      if (selected && selected._id) {
+        await updateChapter(selected._id, data);
+        toast({ title: 'Success', description: 'Chapter updated successfully' });
+      } else {
+        await createChapter(data);
+        toast({ title: 'Success', description: 'Chapter created successfully' });
+      }
       await fetchPaginatedData(page, pageSize, searchTerm);
-    } finally {
       setOpenModal(false);
       setSelected(null);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to save chapter', 
+        variant: 'destructive' 
+      });
+      console.error('Error saving chapter:', error);
     }
   };
 
@@ -226,11 +237,12 @@ export default function ChapterAdminPage() {
   // CSV schema for chapters
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
-    description: "Upload a CSV with columns: board_id, class_id, subject_id, title, slug, content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, content(HTML - optional), order, is_published",
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "subject_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
@@ -249,6 +261,7 @@ export default function ChapterAdminPage() {
           board_id: r.board_id,
           class_id: r.class_id,
           subject_id: r.subject_id,
+          language_id: r.language_id,
           title: r.title,
           slug: r.slug,
           content,
@@ -298,7 +311,7 @@ export default function ChapterAdminPage() {
         open={openModal}
         onOpenChange={setOpenModal}
       >
-        <ChapterForm initialData={selected || {}} onSubmit={handleSave} loading={isDataLoading} />
+        <ChapterForm initialData={selected || undefined} onSubmit={handleSave} loading={isDataLoading} />
       </EntityFormModal>
       
       <ConfirmationDialog

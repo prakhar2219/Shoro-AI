@@ -364,7 +364,7 @@ export default function GBCategoriesPage() {
         open={openModal}
         onOpenChange={setOpenModal}
       >
-        <GBCategoryForm initialData={selected || {}} onSubmit={handleSave} loading={isDataLoading} />
+        <GBCategoryForm initialData={selected || undefined} onSubmit={handleSave} loading={isDataLoading} />
       </EntityFormModal>
       
       <ConfirmationDialog

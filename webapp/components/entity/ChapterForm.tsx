@@ -3,6 +3,7 @@ import { RichTextEditor } from '@/components/rich-text-editor';
 import { getBoards } from '@/lib/api/entities/boards';
 import { getClassesByBoard } from '@/lib/api/entities/classes';
 import { getSubjects } from '@/lib/api/entities/subjects';
+import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     board_id: typeof initialData?.board_id === 'object' ? initialData.board_id._id : initialData?.board_id || '',
     class_id: typeof initialData?.class_id === 'object' ? initialData.class_id._id : initialData?.class_id || '',
     subject_id: typeof initialData?.subject_id === 'object' ? initialData.subject_id._id : initialData?.subject_id || '',
+    language_id: typeof initialData?.language_id === 'object' ? initialData.language_id._id : initialData?.language_id || '',
     title: initialData?.title || '',
     slug: initialData?.slug || '',
     seo_title: initialData?.seo_title || '',
@@ -141,12 +143,47 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     setForm(f => ({ ...f, subject_id: value }));
   };
 
+  const handleLanguageChange = (value: string) => {
+    setForm(f => ({ ...f, language_id: value }));
+  };
+
   const handleContentChange = (html: string) => {
     setForm({ ...form, content: html });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate required fields
+    if (!form.board_id) {
+      alert('Please select a Board');
+      return;
+    }
+    if (!form.class_id) {
+      alert('Please select a Class');
+      return;
+    }
+    if (!form.subject_id) {
+      alert('Please select a Subject');
+      return;
+    }
+    if (!form.language_id) {
+      alert('Please select a Language');
+      return;
+    }
+    if (!form.title.trim()) {
+      alert('Please enter a Chapter Title');
+      return;
+    }
+    if (!form.slug.trim()) {
+      alert('Please enter a Slug');
+      return;
+    }
+    if (!form.order) {
+      alert('Please enter an Order number');
+      return;
+    }
+    
     onSubmit(form);
   };
 
@@ -246,6 +283,15 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
             </>
           )}
           <div className="space-y-2">
+            <Label htmlFor="language_id">Language</Label>
+            <LanguageSelector
+              value={form.language_id}
+              onValueChange={handleLanguageChange}
+              placeholder="Select Language"
+              required
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="title">Chapter Title</Label>
             <Input
               id="title"
@@ -314,7 +360,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
             <Label htmlFor="is_published">Is Published</Label>
           </div>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : initialData ? 'Update Chapter' : 'Create Chapter'}
+            {loading ? 'Saving...' : isEditMode ? 'Update Chapter' : 'Add Chapter'}
           </Button>
         </form>
       </CardContent>

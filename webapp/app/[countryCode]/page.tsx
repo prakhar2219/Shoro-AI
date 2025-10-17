@@ -21,6 +21,16 @@ export async function generateStaticParams() {
 export default async function CountryPage({ params }: CountryPageProps) {
   const { countryCode } = params;
 
+  // Reject static file requests and invalid country codes
+  if (
+    countryCode.includes('.') || // Has file extension
+    countryCode.startsWith('_') || // Next.js internal
+    countryCode === 'api' || // API routes
+    countryCode.length < 2 // Too short for a country code
+  ) {
+    notFound();
+  }
+
   try {
     // Fetch all data with caching
     const { country, boards, mcqs, faqs, descriptiveQuestions } = await getCountryDataWithCache(countryCode);

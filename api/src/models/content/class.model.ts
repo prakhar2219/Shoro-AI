@@ -4,6 +4,7 @@ import mongoose, { Schema } from 'mongoose';
 const ClassSchema = new Schema<IClass>(
   {
     board_id: { type: Schema.Types.ObjectId, ref: 'Board', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
     name: { type: String, required: true },
     grade: { type: Number, required: true },
     content: { type: String, required: false },

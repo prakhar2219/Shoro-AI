@@ -39,7 +39,8 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
   const [topics, setTopics] = useState<any[]>([]);
   const [subtopics, setSubtopics] = useState<any[]>([]);
 
-  const isEditMode = Boolean(initialData && initialData.gb_subtopic_id);
+  // Check if we're editing existing question (has _id) vs adding new question (no _id)
+  const isEditMode = Boolean(initialData && initialData._id);
 
   // Load categories on mount
   useEffect(() => {

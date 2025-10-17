@@ -33,15 +33,23 @@ export const signup = async (userData: Partial<IUser>) => {
     ip: '', // Same
   });
 
-  return { user, accessToken, refreshToken, expiresIn: 3600 };
+  // Remove password from response
+  const userResponse = user.toObject();
+  delete userResponse.password;
+
+  return { user: userResponse, accessToken, refreshToken, expiresIn: 3600 };
 };
 
 export const login = async (email: string, password: string) => {
-  const user = await User.findOne({ email }).select('+password');
+  const user = await User.findOne({ email, active: true }).select('+password');
 
   if (!user || !(await user.comparePassword(password))) {
     throw new AppError('Email o contraseña incorrectos', 401);
   }
+
+  // Update last login
+  user.lastLogin = new Date();
+  await user.save({ validateBeforeSave: false });
 
   const accessToken = generateAccessToken(user._id.toString());
   const refreshToken = generateRefreshToken();
@@ -53,7 +61,11 @@ export const login = async (email: string, password: string) => {
     ip: '', // Likewise
   });
 
-  return { user, accessToken, refreshToken, expiresIn: 3600 };
+  // Remove password from response
+  const userResponse = user.toObject();
+  delete userResponse.password;
+
+  return { user: userResponse, accessToken, refreshToken, expiresIn: 3600 };
 };
 
 export const refreshAccessToken = async (refreshToken: string) => {

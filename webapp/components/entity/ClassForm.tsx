@@ -8,12 +8,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RichTextEditor } from "@/components/rich-text-editor"
+import { LanguageSelector } from "@/components/shared/LanguageSelector"
 import { useState, useEffect } from "react"
 
 const classSchema = z.object({
     name: z.string().min(1, "Class name is required"),
     grade: z.coerce.number().min(1, "Grade is required"),
     board_id: z.string().min(1, "Board is required"),
+    language_id: z.string().min(1, "Language is required"),
 })
 
 type ClassFormValues = z.infer<typeof classSchema>
@@ -47,6 +49,7 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
             name: defaultValues?.name || "",
             grade: defaultValues?.grade || 1,
             board_id: defaultValues?.board_id || boards[0]?.id || "",
+            language_id: defaultValues?.language_id || "",
         },
     })
 
@@ -61,6 +64,7 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 name: defaultValues.name || "",
                 grade: defaultValues.grade || 1,
                 board_id: defaultValues.board_id || boards[0]?.id || "",
+                language_id: defaultValues.language_id || "",
             };
             console.log('Form data to reset with:', formData);
             reset(formData)
@@ -71,6 +75,7 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 name: "",
                 grade: 1,
                 board_id: boards[0]?.id || "",
+                language_id: "",
             };
             console.log('Empty form data:', emptyFormData);
             reset(emptyFormData)
@@ -86,6 +91,7 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 name: "",
                 grade: 1,
                 board_id: "",
+                language_id: "",
             });
             setContent('');
         };
@@ -221,6 +227,19 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 )}
                 {errors.board_id && (
                     <p className="text-sm text-red-500">{errors.board_id.message}</p>
+                )}
+            </div>
+
+            <div>
+                <Label className="block text-sm font-medium mb-1">Language</Label>
+                <LanguageSelector
+                    value={watch("language_id")}
+                    onValueChange={value => setValue("language_id", value)}
+                    placeholder="Select Language"
+                    required
+                />
+                {errors.language_id && (
+                    <p className="text-sm text-red-500">{errors.language_id.message}</p>
                 )}
             </div>
 

@@ -44,30 +44,30 @@ export const getGBQuestions = async (params?: {
   if (params?.language_id) searchParams.append('language_id', params.language_id);
   if (params?.difficulty_level) searchParams.append('difficulty_level', params.difficulty_level);
 
-  const response = await api.get(`/content/gb-questions?${searchParams.toString()}`);
+  const response = await api.get(`/api/v1/content/gb-questions?${searchParams.toString()}`);
   return response.data;
 };
 
 export const getGBQuestionById = async (id: string): Promise<IGBQuestion> => {
-  const response = await api.get(`/content/gb-questions/${id}`);
+  const response = await api.get(`/api/v1/content/gb-questions/${id}`);
   return response.data;
 };
 
 export const createGBQuestion = async (data: Omit<IGBQuestion, '_id' | 'createdAt' | 'updatedAt'>): Promise<IGBQuestion> => {
-  const response = await api.post('/content/gb-questions', data);
+  const response = await api.post('/api/v1/content/gb-questions', data);
   return response.data;
 };
 
 export const updateGBQuestion = async (id: string, data: Partial<IGBQuestion>): Promise<IGBQuestion> => {
-  const response = await api.put(`/content/gb-questions/${id}`, data);
+  const response = await api.put(`/api/v1/content/gb-questions/${id}`, data);
   return response.data;
 };
 
 export const deleteGBQuestion = async (id: string): Promise<void> => {
-  await api.delete(`/content/gb-questions/${id}`);
+  await api.delete(`/api/v1/content/gb-questions/${id}`);
 };
 
 export const bulkCreateGBQuestions = async (questions: Omit<IGBQuestion, '_id' | 'createdAt' | 'updatedAt'>[]): Promise<IGBQuestion[]> => {
-  const response = await api.post('/content/gb-questions/bulk', { questions });
+  const response = await api.post('/api/v1/content/gb-questions/bulk', { questions });
   return response.data;
 };

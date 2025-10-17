@@ -11,8 +11,22 @@ import {
   Sun,
   Moon,
   BookOpen,
+  User,
+  LogOut,
+  Settings,
+  Shield,
 } from "lucide-react"
 import CountrySelector from "@/components/custom/CountrySelector"
+import { useClerkAuthAdapter } from "@/hooks/useClerkAuth"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 const NAV_ITEMS = [
   {
@@ -66,6 +80,7 @@ export function Navbar() {
   const leaveTimeout = useRef<NodeJS.Timeout | null>(null)
   const { theme, setTheme } = useTheme()
   const router = useRouter()
+  const { user, isAuthenticated, logout, hasRole } = useClerkAuthAdapter()
 
   // Prevent hydration mismatch by waiting for client-side mount
   useEffect(() => {
@@ -81,6 +96,19 @@ export function Navbar() {
     leaveTimeout.current = setTimeout(() => {
       setActiveDropdown(null)
     }, 150)
+  }
+
+  const handleLogout = async () => {
+    await logout()
+  }
+
+  const getUserInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
   }
 
   return (
@@ -158,19 +186,67 @@ export function Navbar() {
             )}
           </button>
 
-          <Link
-            href="/editor"
-            className="hidden md:inline text-sm font-medium text-gray-600 dark:text-gray-300 hover:underline"
-          >
-            Editor
-          </Link>
+          {isAuthenticated && user ? (
+            <>
+              {hasRole(['super_admin', 'admin', 'editor']) && (
+                <Link
+                  href="/admin"
+                  className="hidden md:flex items-center text-sm font-medium text-gray-600 dark:text-gray-300 hover:underline"
+                >
+                  <Shield className="w-4 h-4 mr-1" />
+                  Admin
+                </Link>
+              )}
 
-          <button
-            onClick={() => router.push("/get-started")}
-            className="hidden md:inline-block bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-blue-500"
-          >
-            Get Started
-          </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src={user.profileImage} alt={user.name} />
+                    <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                      <p className="text-xs text-blue-600 capitalize">{user.role.replace('_', ' ')}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => router.push('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => router.push('/settings')}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/sign-in"
+                className="hidden md:inline text-sm font-medium text-gray-600 dark:text-gray-300 hover:underline"
+              >
+                Sign In
+              </Link>
+
+              <button
+                onClick={() => router.push("/sign-up")}
+                className="hidden md:inline-block bg-blue-600 text-white text-sm font-semibold px-4 py-2 rounded hover:bg-blue-500"
+              >
+                Get Started
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -206,18 +282,57 @@ export function Navbar() {
             ))}
           </nav>
           <div className="mt-4 space-y-2">
-            <Link
-              href="/editor"
-              className="block text-sm text-gray-600 dark:text-gray-300"
-            >
-              Editor
-            </Link>
-            <Link
-              href="/get-started"
-              className="block bg-blue-600 text-white text-center text-sm font-semibold px-4 py-2 rounded hover:bg-blue-500"
-            >
-              Get Started
-            </Link>
+            {isAuthenticated && user ? (
+              <>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4 pb-2">
+                  <div className="flex items-center space-x-3 mb-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={user.profileImage} alt={user.name} />
+                      <AvatarFallback>{getUserInitials(user.name)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-medium">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                  </div>
+                </div>
+                {hasRole(['super_admin', 'admin', 'editor']) && (
+                  <Link
+                    href="/admin"
+                    className="block text-sm text-gray-600 dark:text-gray-300 py-2"
+                  >
+                    Admin Dashboard
+                  </Link>
+                )}
+                <Link
+                  href="/profile"
+                  className="block text-sm text-gray-600 dark:text-gray-300 py-2"
+                >
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="w-full text-left text-sm text-red-600 py-2"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/sign-in"
+                  className="block text-sm text-gray-600 dark:text-gray-300"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/sign-up"
+                  className="block bg-blue-600 text-white text-center text-sm font-semibold px-4 py-2 rounded hover:bg-blue-500"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

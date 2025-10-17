@@ -38,30 +38,30 @@ export const getGBCategories = async (params?: {
   if (params?.search) searchParams.append('search', params.search);
   if (params?.language_id) searchParams.append('language_id', params.language_id);
 
-  const response = await api.get(`/content/gb-categories?${searchParams.toString()}`);
+  const response = await api.get(`/api/v1/content/gb-categories?${searchParams.toString()}`);
   return response.data;
 };
 
 export const getGBCategoryById = async (id: string): Promise<IGBCategory> => {
-  const response = await api.get(`/content/gb-categories/${id}`);
+  const response = await api.get(`/api/v1/content/gb-categories/${id}`);
   return response.data;
 };
 
 export const createGBCategory = async (data: Omit<IGBCategory, '_id' | 'createdAt' | 'updatedAt'>): Promise<IGBCategory> => {
-  const response = await api.post('/content/gb-categories', data);
+  const response = await api.post('/api/v1/content/gb-categories', data);
   return response.data;
 };
 
 export const updateGBCategory = async (id: string, data: Partial<IGBCategory>): Promise<IGBCategory> => {
-  const response = await api.put(`/content/gb-categories/${id}`, data);
+  const response = await api.put(`/api/v1/content/gb-categories/${id}`, data);
   return response.data;
 };
 
 export const deleteGBCategory = async (id: string): Promise<void> => {
-  await api.delete(`/content/gb-categories/${id}`);
+  await api.delete(`/api/v1/content/gb-categories/${id}`);
 };
 
 export const bulkCreateGBCategories = async (categories: Omit<IGBCategory, '_id' | 'createdAt' | 'updatedAt'>[]): Promise<IGBCategory[]> => {
-  const response = await api.post('/content/gb-categories/bulk', { categories });
+  const response = await api.post('/api/v1/content/gb-categories/bulk', { categories });
   return response.data;
 };

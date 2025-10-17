@@ -56,4 +56,15 @@ export const subjectColumns: ColumnDef<ISubject>[] = [
       return <span className="text-zinc-400 italic">Unknown</span>;
     },
   },
+  {
+    accessorKey: "language_id",
+    header: "Language",
+    cell: ({ row }) => {
+      const language = row.original.language_id;
+      if (language && typeof language === 'object' && 'name' in language) {
+        return <span>{language.name} ({language.code})</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
 ]; 
