@@ -28,11 +28,9 @@ export default async function DynamicBoardsSection({ countryCode }: DynamicBoard
     const boards = boardsResponse?.data || boardsResponse || []
     
     if (!boards || boards.length === 0) {
-      console.log(`No boards found for country: ${countryCode}`)
       return null
     }
 
-    console.log(`Found ${boards.length} boards`)
     const displayBoards: Board[] = boards
 
     return (

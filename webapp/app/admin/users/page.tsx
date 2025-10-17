@@ -55,7 +55,6 @@ export default function UsersManagementPage() {
     try {
       // Get Clerk session token
       const token = await getAccessToken();
-      console.log('Access token obtained:', !!token);
       
       if (!token) {
         toast({
@@ -67,7 +66,6 @@ export default function UsersManagementPage() {
         return;
       }
 
-      console.log('Fetching users with params:', { page, limit: 10, search });
       const response: GetUsersResponse = await getClerkUsers(
         {
           page,
@@ -77,22 +75,16 @@ export default function UsersManagementPage() {
         token
       );
 
-      console.log('API Response:', response);
-      console.log('Users count:', response.users?.length || 0);
-
       // Apply client-side filtering for role and active status
       let filteredUsers = response.users || [];
-      console.log('Before filtering:', filteredUsers.length);
       
       if (roleFilter !== 'all') {
         filteredUsers = filteredUsers.filter(u => u.role === roleFilter);
-        console.log('After role filter:', filteredUsers.length);
       }
       
       if (activeFilter !== 'all') {
         const isActive = activeFilter === 'active';
         filteredUsers = filteredUsers.filter(u => u.active === isActive);
-        console.log('After active filter:', filteredUsers.length);
       }
 
       setUsers(filteredUsers);
