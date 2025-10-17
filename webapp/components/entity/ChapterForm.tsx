@@ -119,12 +119,14 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Special handling for slug field
+    // Special handling for slug field - Allow Unicode characters for multilingual support
     if (name === 'slug') {
       const formattedSlug = value
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, ''); 
+        .trim()
+        .replace(/\s+/g, '-')  // Replace spaces with hyphens
+        .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters only
+        .replace(/-+/g, '-')  // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
       setForm({ ...form, [name]: formattedSlug });
     } else {
       setForm({ ...form, [name]: value });

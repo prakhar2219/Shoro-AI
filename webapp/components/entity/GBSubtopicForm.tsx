@@ -215,7 +215,16 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
           <Input
             id="slug"
             value={formData.slug}
-            onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+            onChange={(e) => {
+              const formattedSlug = e.target.value
+                .trim()
+                .replace(/\s+/g, '-')  // Replace spaces with hyphens
+                .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
+                .replace(/-+/g, '-')  // Replace multiple hyphens with single
+                .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+              setFormData({ ...formData, slug: formattedSlug });
+            }}
+            placeholder="e.g., neural-networks or तंत्रिका-जाल"
             required
           />
         </div>

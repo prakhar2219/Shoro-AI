@@ -348,8 +348,16 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
             <Input
               id="slug"
               value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              placeholder="e.g., basics"
+              onChange={(e) => {
+                const formattedSlug = e.target.value
+                  .trim()
+                  .replace(/\s+/g, '-')  // Replace spaces with hyphens
+                  .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
+                  .replace(/-+/g, '-')  // Replace multiple hyphens with single
+                  .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+                setFormData({ ...formData, slug: formattedSlug });
+              }}
+              placeholder="e.g., basics or मूल बातें"
               required
             />
           </div>

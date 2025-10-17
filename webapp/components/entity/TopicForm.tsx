@@ -291,8 +291,16 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
             <Input
               id="slug"
               value={formData.slug}
-              onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-              placeholder="e.g., introduction"
+              onChange={(e) => {
+                const formattedSlug = e.target.value
+                  .trim()
+                  .replace(/\s+/g, '-')  // Replace spaces with hyphens
+                  .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
+                  .replace(/-+/g, '-')  // Replace multiple hyphens with single
+                  .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+                setFormData({ ...formData, slug: formattedSlug });
+              }}
+              placeholder="e.g., introduction or परिचय"
               required
             />
           </div>
