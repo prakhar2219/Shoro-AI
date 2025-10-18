@@ -46,7 +46,7 @@ export const getAllUsers = async (params: GetUsersParams, token: string): Promis
   if (params.active !== undefined) queryParams.append('active', params.active.toString());
   if (params.search) queryParams.append('search', params.search);
 
-  const response = await api.get(`/api/v1/users?${queryParams.toString()}`, {
+  const response = await api.get(`/users?${queryParams.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -55,7 +55,7 @@ export const getAllUsers = async (params: GetUsersParams, token: string): Promis
 
 // Get user by ID
 export const getUserById = async (id: string, token: string): Promise<User> => {
-  const response = await api.get(`/api/v1/users/${id}`, {
+  const response = await api.get(`/users/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data.data.user;
@@ -63,7 +63,7 @@ export const getUserById = async (id: string, token: string): Promise<User> => {
 
 // Create new user (Super Admin only)
 export const createUser = async (userData: Partial<User> & { password: string }, token: string): Promise<User> => {
-  const response = await api.post('/api/v1/users', userData, {
+  const response = await api.post('/users', userData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data.data.user;
@@ -71,7 +71,7 @@ export const createUser = async (userData: Partial<User> & { password: string },
 
 // Update user (Super Admin only)
 export const updateUser = async (id: string, userData: Partial<User>, token: string): Promise<User> => {
-  const response = await api.patch(`/api/v1/users/${id}`, userData, {
+  const response = await api.patch(`/users/${id}`, userData, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data.data.user;
@@ -79,7 +79,7 @@ export const updateUser = async (id: string, userData: Partial<User>, token: str
 
 // Soft delete user (Super Admin only)
 export const deleteUser = async (id: string, token: string): Promise<User> => {
-  const response = await api.delete(`/api/v1/users/${id}`, {
+  const response = await api.delete(`/users/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data.data.user;
@@ -87,7 +87,7 @@ export const deleteUser = async (id: string, token: string): Promise<User> => {
 
 // Hard delete user (Super Admin only)
 export const hardDeleteUser = async (id: string, token: string): Promise<void> => {
-  await api.delete(`/api/v1/users/${id}/hard`, {
+  await api.delete(`/users/${id}/hard`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 };
@@ -99,7 +99,7 @@ export const updateUserRole = async (
   token: string
 ): Promise<User> => {
   const response = await api.patch(
-    `/api/v1/users/${id}/role`,
+    `/users/${id}/role`,
     { role },
     {
       headers: { Authorization: `Bearer ${token}` },
@@ -110,7 +110,7 @@ export const updateUserRole = async (
 
 // Get user statistics (Super Admin only)
 export const getUserStats = async (token: string): Promise<UserStats> => {
-  const response = await api.get('/api/v1/users/stats', {
+  const response = await api.get('/users/stats', {
     headers: { Authorization: `Bearer ${token}` },
   });
   return response.data.data;
@@ -124,7 +124,7 @@ export const getClerkUsers = async (params: GetUsersParams, token: string): Prom
   if (params.limit) queryParams.append('limit', params.limit.toString());
   if (params.search) queryParams.append('search', params.search);
 
-  const response = await api.get(`/api/v1/users/clerk/list?${queryParams.toString()}`, {
+  const response = await api.get(`/users/clerk/list?${queryParams.toString()}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   
@@ -138,7 +138,7 @@ export const updateClerkUserRole = async (
   token: string
 ): Promise<void> => {
   await api.patch(
-    `/api/v1/users/clerk/${clerkId}/role`,
+    `/users/clerk/${clerkId}/role`,
     { role },
     {
       headers: { Authorization: `Bearer ${token}` },

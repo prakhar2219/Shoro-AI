@@ -127,7 +127,10 @@ export const getSubtopicsWithPagination = async (req: Request, res: Response) =>
 export const getSubtopic = async (req: Request, res: Response) => {
   try {
     const row = await subtopicService.getSubtopicById(req.params.id);
-    if (!row) return res.status(404).json({ error: 'Subtopic not found' });
+    if (!row) {
+      res.status(404).json({ error: 'Subtopic not found' });
+      return;
+    }
     res.status(200).json(row);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -137,7 +140,10 @@ export const getSubtopic = async (req: Request, res: Response) => {
 export const updateSubtopic = async (req: Request, res: Response) => {
   try {
     const row = await subtopicService.updateSubtopic(req.params.id, req.body);
-    if (!row) return res.status(404).json({ error: 'Subtopic not found' });
+    if (!row) {
+      res.status(404).json({ error: 'Subtopic not found' });
+      return;
+    }
     res.status(200).json(row);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -147,7 +153,10 @@ export const updateSubtopic = async (req: Request, res: Response) => {
 export const deleteSubtopic = async (req: Request, res: Response) => {
   try {
     const row = await subtopicService.deleteSubtopic(req.params.id);
-    if (!row) return res.status(404).json({ error: 'Subtopic not found' });
+    if (!row) {
+      res.status(404).json({ error: 'Subtopic not found' });
+      return;
+    }
     res.status(204).send();
   } catch (e: any) {
     res.status(500).json({ error: e.message });

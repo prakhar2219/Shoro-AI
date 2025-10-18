@@ -41,30 +41,30 @@ export const getGBSubtopics = async (params?: {
   if (params?.gb_topic_id) searchParams.append('gb_topic_id', params.gb_topic_id);
   if (params?.language_id) searchParams.append('language_id', params.language_id);
 
-  const response = await api.get(`/api/v1/content/gb-subtopics?${searchParams.toString()}`);
+  const response = await api.get(`/content/gb-subtopics?${searchParams.toString()}`);
   return response.data;
 };
 
 export const getGBSubtopicById = async (id: string): Promise<IGBSubtopic> => {
-  const response = await api.get(`/api/v1/content/gb-subtopics/${id}`);
+  const response = await api.get(`/content/gb-subtopics/${id}`);
   return response.data;
 };
 
 export const createGBSubtopic = async (data: Omit<IGBSubtopic, '_id' | 'createdAt' | 'updatedAt'>): Promise<IGBSubtopic> => {
-  const response = await api.post('/api/v1/content/gb-subtopics', data);
+  const response = await api.post('/content/gb-subtopics', data);
   return response.data;
 };
 
 export const updateGBSubtopic = async (id: string, data: Partial<IGBSubtopic>): Promise<IGBSubtopic> => {
-  const response = await api.put(`/api/v1/content/gb-subtopics/${id}`, data);
+  const response = await api.put(`/content/gb-subtopics/${id}`, data);
   return response.data;
 };
 
 export const deleteGBSubtopic = async (id: string): Promise<void> => {
-  await api.delete(`/api/v1/content/gb-subtopics/${id}`);
+  await api.delete(`/content/gb-subtopics/${id}`);
 };
 
 export const bulkCreateGBSubtopics = async (subtopics: Omit<IGBSubtopic, '_id' | 'createdAt' | 'updatedAt'>[]): Promise<IGBSubtopic[]> => {
-  const response = await api.post('/api/v1/content/gb-subtopics/bulk', { subtopics });
+  const response = await api.post('/content/gb-subtopics/bulk', { subtopics });
   return response.data;
 };

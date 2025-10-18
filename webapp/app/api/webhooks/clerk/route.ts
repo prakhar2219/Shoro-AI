@@ -47,7 +47,7 @@ export async function POST(req: Request) {
 
     // Sync user to your backend
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/clerk-sync`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/clerk-sync`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
 
     // Update user in your backend
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/clerk-sync`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/users/clerk-sync`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
     // Delete or deactivate user in your backend
     try {
       await fetch(
-        `${process.env.NEXT_PUBLIC_API_BASE_URL}/api/v1/users/clerk-sync/${id}`,
+        `${process.env.NEXT_PUBLIC_API_BASE_URL}/users/clerk-sync/${id}`,
         {
           method: 'DELETE',
         }

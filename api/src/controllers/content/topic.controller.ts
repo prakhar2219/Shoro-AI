@@ -127,7 +127,10 @@ export const getTopicsWithPagination = async (req: Request, res: Response) => {
 export const getTopic = async (req: Request, res: Response) => {
   try {
     const row = await topicService.getTopicById(req.params.id);
-    if (!row) return res.status(404).json({ error: 'Topic not found' });
+    if (!row) {
+      res.status(404).json({ error: 'Topic not found' });
+      return;
+    }
     res.status(200).json(row);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -137,7 +140,10 @@ export const getTopic = async (req: Request, res: Response) => {
 export const updateTopic = async (req: Request, res: Response) => {
   try {
     const row = await topicService.updateTopic(req.params.id, req.body);
-    if (!row) return res.status(404).json({ error: 'Topic not found' });
+    if (!row) {
+      res.status(404).json({ error: 'Topic not found' });
+      return;
+    }
     res.status(200).json(row);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
@@ -147,7 +153,10 @@ export const updateTopic = async (req: Request, res: Response) => {
 export const deleteTopic = async (req: Request, res: Response) => {
   try {
     const row = await topicService.deleteTopic(req.params.id);
-    if (!row) return res.status(404).json({ error: 'Topic not found' });
+    if (!row) {
+      res.status(404).json({ error: 'Topic not found' });
+      return;
+    }
     res.status(204).send();
   } catch (e: any) {
     res.status(500).json({ error: e.message });

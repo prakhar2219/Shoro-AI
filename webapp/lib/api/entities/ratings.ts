@@ -37,25 +37,25 @@ export const getAllRatings = async (params?: {
   if (params?.entityType) searchParams.append('entityType', params.entityType);
   if (params?.isApproved !== undefined) searchParams.append('isApproved', params.isApproved.toString());
 
-  const response = await api.get(`/api/v1/ratings/admin/all?${searchParams.toString()}`);
+  const response = await api.get(`/ratings/admin/all?${searchParams.toString()}`);
   return response.data;
 };
 
 export const updateRating = async (id: string, data: Partial<IRating>): Promise<IRating> => {
-  const response = await api.put(`/api/v1/ratings/${id}`, data);
+  const response = await api.put(`/ratings/${id}`, data);
   return response.data;
 };
 
 export const deleteRating = async (id: string): Promise<void> => {
-  await api.delete(`/api/v1/ratings/${id}`);
+  await api.delete(`/ratings/${id}`);
 };
 
 export const approveRating = async (id: string): Promise<IRating> => {
-  const response = await api.patch(`/api/v1/ratings/admin/${id}/approve`);
+  const response = await api.patch(`/ratings/admin/${id}/approve`);
   return response.data;
 };
 
 export const rejectRating = async (id: string): Promise<IRating> => {
-  const response = await api.patch(`/api/v1/ratings/admin/${id}/reject`);
+  const response = await api.patch(`/ratings/admin/${id}/reject`);
   return response.data;
 };
