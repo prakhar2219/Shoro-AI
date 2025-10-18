@@ -75,7 +75,7 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
         is_published: initialData.is_published || false,
       });
     }
-  }, [initialData]);
+  }, [initialData?._id, initialData?.gb_category_id]); // Only depend on stable IDs to prevent infinite loops
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

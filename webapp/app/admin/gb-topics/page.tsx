@@ -198,6 +198,15 @@ export default function GBTopicsPage() {
     }
   };
 
+  // Memoize GB Subtopic initial data to prevent infinite re-renders
+  const gbSubtopicInitialData = useMemo(() => {
+    if (!selectedTopicForGBSubtopic) return undefined;
+    return {
+      gb_topic_id: selectedTopicForGBSubtopic._id,
+      gb_topic: selectedTopicForGBSubtopic
+    };
+  }, [selectedTopicForGBSubtopic]);
+
   const renderExpandedRow = (gbTopic: any) => {
     const translations = gbTopic.translations || [];
     return (
@@ -463,10 +472,7 @@ export default function GBTopicsPage() {
         }}
       >
         <GBSubtopicForm
-          initialData={{ 
-            gb_topic_id: selectedTopicForGBSubtopic?._id,
-            gb_topic: selectedTopicForGBSubtopic 
-          }}
+          initialData={gbSubtopicInitialData}
           onSubmit={handleGBSubtopicSubmit}
           loading={isDataLoading}
         />

@@ -148,7 +148,7 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
         });
       }
     }
-  }, [initialData]);
+  }, [initialData?._id, initialData?.gb_topic_id]); // Only depend on stable IDs to prevent infinite loops
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

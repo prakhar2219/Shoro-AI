@@ -45,7 +45,7 @@ export function GBCategoryForm({ initialData = {}, onSubmit, loading = false }: 
         is_published: initialData.is_published || false,
       });
     }
-  }, [initialData]);
+  }, [initialData?._id]); // Only depend on _id to prevent infinite loops
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

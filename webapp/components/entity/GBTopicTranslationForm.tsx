@@ -41,7 +41,7 @@ export function GBTopicTranslationForm({ initialData, onSubmit, loading = false,
         translated_by_ai: initialData.translated_by_ai || false,
       });
     }
-  }, [initialData]);
+  }, [initialData?._id]); // Only depend on _id to prevent infinite loops
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;

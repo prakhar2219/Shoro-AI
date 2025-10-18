@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { SubjectForm } from "@/components/entity/SubjectForm";
@@ -226,17 +226,26 @@ export default function SubjectsPage() {
       };
       
       await createChapter(chapterData);
-      // toast({ title: 'Success', description: 'Chapter created successfully' });
+      toast({ title: 'Success', description: 'Chapter created successfully' });
       setOpenChapterModal(false);
       setSelectedSubjectForChapter(null);
     } catch (error: any) {
-      // toast({ 
-      //   title: 'Error', 
-      //   description: error?.response?.data?.error || 'Failed to create chapter', 
-      //   variant: 'destructive' 
-      // });
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create chapter', 
+        variant: 'destructive' 
+      });
     }
   };
+
+  // Memoize Chapter initial data to prevent infinite re-renders
+  const chapterInitialData = useMemo(() => {
+    if (!selectedSubjectForChapter) return undefined;
+    return {
+      subject_id: selectedSubjectForChapter._id,
+      subject: selectedSubjectForChapter
+    };
+  }, [selectedSubjectForChapter]);
 
   // Normalize subject data for form
   const getSubjectFormInitialData = (subject: ISubject) => ({
@@ -436,10 +445,7 @@ export default function SubjectsPage() {
         }}
       >
         <ChapterForm
-          initialData={{ 
-            subject_id: selectedSubjectForChapter?._id,
-            subject: selectedSubjectForChapter 
-          }}
+          initialData={chapterInitialData}
           onSubmit={handleChapterSubmit}
           loading={isLoading}
         />

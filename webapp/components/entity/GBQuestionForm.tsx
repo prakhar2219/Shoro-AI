@@ -151,7 +151,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       };
       fetchHierarchy();
     }
-  }, [initialData, categories]);
+  }, [initialData?._id, initialData?.gb_subtopic_id, categories]); // Only depend on stable IDs to prevent infinite loops
 
   useEffect(() => {
     if (initialData) {
@@ -173,7 +173,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
         is_published: initialData.is_published || false,
       });
     }
-  }, [initialData]);
+  }, [initialData?._id, initialData?.gb_subtopic_id]); // Only depend on stable IDs to prevent infinite loops
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

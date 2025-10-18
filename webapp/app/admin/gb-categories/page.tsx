@@ -189,6 +189,15 @@ export default function GBCategoriesPage() {
     }
   };
 
+  // Memoize GB Topic initial data to prevent infinite re-renders
+  const gbTopicInitialData = useMemo(() => {
+    if (!selectedCategoryForGBTopic) return undefined;
+    return {
+      gb_category_id: selectedCategoryForGBTopic._id,
+      gb_category: selectedCategoryForGBTopic
+    };
+  }, [selectedCategoryForGBTopic]);
+
   const renderExpandedRow = (gbCategory: any) => {
     const translations = gbCategory.translations || [];
     return (
@@ -395,10 +404,7 @@ export default function GBCategoriesPage() {
         }}
       >
         <GBTopicForm
-          initialData={{ 
-            gb_category_id: selectedCategoryForGBTopic?._id,
-            gb_category: selectedCategoryForGBTopic 
-          }}
+          initialData={gbTopicInitialData}
           onSubmit={handleGBTopicSubmit}
           loading={isDataLoading}
         />

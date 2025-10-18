@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { ChapterForm } from "@/components/entity/ChapterForm";
@@ -183,6 +183,12 @@ export default function ChapterAdminPage() {
     }
   };
 
+  // Memoize Topic initial data to prevent infinite re-renders
+  const topicInitialData = useMemo(() => {
+    if (!selectedChapterForTopic) return undefined;
+    return { chapter_id: selectedChapterForTopic._id };
+  }, [selectedChapterForTopic]);
+
   const renderExpandedRow = (chapter: any) => {
     const translations = chapter.translations || [];
     return (
@@ -357,7 +363,7 @@ export default function ChapterAdminPage() {
         }}
       >
         <TopicForm
-          initialData={{ chapter_id: selectedChapterForTopic?._id }}
+          initialData={topicInitialData}
           onSubmit={handleTopicSubmit}
           loading={isDataLoading}
         />

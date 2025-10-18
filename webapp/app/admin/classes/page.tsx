@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -255,17 +255,26 @@ export default function ClassesPage() {
       };
       
       await createSubject(subjectData);
-      toast({ title: 'Success', description: 'Subject created successfully' });
+      // toast({ title: 'Success', description: 'Subject created successfully' });
       setOpenSubjectModal(false);
       setSelectedClassForSubject(null);
     } catch (error: any) {
-      toast({ 
-        title: 'Error', 
-        description: error?.response?.data?.error || 'Failed to create subject', 
-        variant: 'destructive' 
-      });
+      // toast({ 
+      //   title: 'Error', 
+      //   description: error?.response?.data?.error || 'Failed to create subject', 
+      //   variant: 'destructive' 
+      // });
     }
   };
+
+  // Memoize Subject initial data to prevent infinite re-renders
+  const subjectInitialData = useMemo(() => {
+    if (!selectedClassForSubject) return undefined;
+    return {
+      class_id: selectedClassForSubject._id,
+      classItem: selectedClassForSubject
+    };
+  }, [selectedClassForSubject]);
 
   // Normalize class data for form
   const getClassFormInitialData = (classItem: IClass) => {
@@ -480,10 +489,7 @@ export default function ClassesPage() {
         }}
       >
         <SubjectForm
-          initialData={{ 
-            class_id: selectedClassForSubject?._id,
-            classItem: selectedClassForSubject 
-          }}
+          initialData={subjectInitialData}
           onSubmit={handleSubjectSubmit}
           loading={isLoading}
         />

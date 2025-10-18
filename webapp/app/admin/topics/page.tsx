@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
@@ -191,6 +191,12 @@ export default function TopicsPage() {
     }
   };
 
+  // Memoize Subtopic initial data to prevent infinite re-renders
+  const subtopicInitialData = useMemo(() => {
+    if (!selectedTopicForSubtopic) return undefined;
+    return { topic_id: selectedTopicForSubtopic._id };
+  }, [selectedTopicForSubtopic]);
+
   const renderExpandedRow = (topic: any) => {
     const translations = topic.translations || [];
     return (
@@ -352,7 +358,7 @@ export default function TopicsPage() {
         }}
       >
         <SubtopicForm
-          initialData={{ topic_id: selectedTopicForSubtopic?._id }}
+          initialData={subtopicInitialData}
           onSubmit={handleSubtopicSubmit}
           loading={isDataLoading}
         />

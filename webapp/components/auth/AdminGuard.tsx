@@ -2,7 +2,7 @@
 
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
 
 interface AdminGuardProps {
@@ -18,6 +18,9 @@ export function AdminGuard({
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
+  // Memoize allowedRoles to prevent infinite loops
+  const memoizedRoles = useMemo(() => allowedRoles, [allowedRoles.join(',')]);
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -31,14 +34,14 @@ export function AdminGuard({
     const userRole = (user.publicMetadata?.role as string) || 'user';
 
     // Check if user has required role
-    if (!allowedRoles.includes(userRole)) {
+    if (!memoizedRoles.includes(userRole)) {
       router.push('/'); // Redirect non-admin users to home
       return;
     }
 
     // User is authorized
     setIsAuthorized(true);
-  }, [user, isLoaded, router, allowedRoles]);
+  }, [user, isLoaded, router, memoizedRoles]);
 
   // Loading state
   if (!isLoaded || !isAuthorized) {

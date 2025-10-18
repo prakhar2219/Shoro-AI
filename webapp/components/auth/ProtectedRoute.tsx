@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Loader2 } from 'lucide-react';
@@ -16,6 +16,9 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
+  // Memoize requiredRoles to prevent infinite loops
+  const memoizedRoles = useMemo(() => requiredRoles, [requiredRoles?.join(',')]);
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -26,10 +29,10 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
     }
 
     // Check role if required
-    if (requiredRoles && requiredRoles.length > 0) {
+    if (memoizedRoles && memoizedRoles.length > 0) {
       const userRole = (user.publicMetadata?.role as string) || 'user';
       
-      if (!requiredRoles.includes(userRole)) {
+      if (!memoizedRoles.includes(userRole)) {
         // User doesn't have required role
         router.push('/');
         return;
@@ -38,7 +41,7 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
 
     // User is authorized
     setIsAuthorized(true);
-  }, [user, isLoaded, requiredRoles, router, pathname]);
+  }, [user, isLoaded, memoizedRoles, router, pathname]);
 
   // Loading state
   if (!isLoaded || (user && !isAuthorized)) {
@@ -58,7 +61,7 @@ export function ProtectedRoute({ children, requiredRoles }: ProtectedRouteProps)
   }
 
   // Not authorized
-  if (requiredRoles && requiredRoles.length > 0 && !isAuthorized) {
+  if (memoizedRoles && memoizedRoles.length > 0 && !isAuthorized) {
     return null;
   }
 
