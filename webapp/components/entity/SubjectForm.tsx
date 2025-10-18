@@ -26,6 +26,9 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     class_id: initialData?.class_id || '',
     language_id: initialData?.language_id || '',
     content: typeof initialData?.content === 'string' ? initialData.content : '',
+    tag: initialData?.tag?.join(', ') || '',
+    source: initialData?.source || '',
+    author: initialData?.author || '',
   });
   
   // Check if we're adding from a parent class
@@ -97,13 +100,17 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    const payload = {
+      ...form,
+      tag: form.tag ? form.tag.split(',').map((t: string) => t.trim()) : [],
+    };
+    onSubmit(payload);
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? 'Edit Subject' : 'Create Subject'}</CardTitle>
+        <CardTitle>{initialData?._id ? 'Edit Subject' : 'Create Subject'}</CardTitle>
       </CardHeader>
       <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -197,11 +204,41 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              name="author"
+              value={form.author}
+              onChange={handleChange}
+              placeholder="Enter author name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tag">Tags (comma separated)</Label>
+            <Input
+              id="tag"
+              name="tag"
+              value={form.tag}
+              onChange={handleChange}
+              placeholder="tag1, tag2, tag3"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              name="source"
+              value={form.source}
+              onChange={handleChange}
+              placeholder="Enter source"
+            />
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="content">Content</Label>
             <RichTextEditor value={form.content} onChange={handleContentChange} />
           </div>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : initialData ? 'Update Subject' : 'Create Subject'}
+            {loading ? 'Saving...' : initialData?._id ? 'Update Subject' : 'Create Subject'}
           </Button>
         </form>
       </CardContent>

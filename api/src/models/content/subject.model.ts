@@ -9,6 +9,9 @@ const SubjectSchema = new Schema<ISubject>(
     icon: { type: String },
     name: { type: String, required: true },
     content: { type: String, required: false },
+    tag: [{ type: String, trim: true }],
+    source: { type: String, trim: true },
+    author: { type: String, trim: true },
   },
   { timestamps: true }
 );

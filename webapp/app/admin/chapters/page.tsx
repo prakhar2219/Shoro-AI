@@ -186,7 +186,10 @@ export default function ChapterAdminPage() {
   // Memoize Topic initial data to prevent infinite re-renders
   const topicInitialData = useMemo(() => {
     if (!selectedChapterForTopic) return undefined;
-    return { chapter_id: selectedChapterForTopic._id };
+    return { 
+      chapter_id: selectedChapterForTopic._id,
+      chapter: selectedChapterForTopic
+    };
   }, [selectedChapterForTopic]);
 
   const renderExpandedRow = (chapter: any) => {
@@ -243,7 +246,7 @@ export default function ChapterAdminPage() {
   // CSV schema for chapters
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
-    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published",
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
@@ -251,6 +254,9 @@ export default function ChapterAdminPage() {
       { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "tag", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
       { name: "is_published", type: "boolean", required: false } as FieldSchema,
@@ -270,6 +276,9 @@ export default function ChapterAdminPage() {
           language_id: r.language_id,
           title: r.title,
           slug: r.slug,
+          author: r.author || undefined,
+          tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
+          source: r.source || undefined,
           content,
           order,
           is_published,

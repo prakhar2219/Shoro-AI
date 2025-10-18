@@ -10,6 +10,9 @@ export interface ISubtopic {
   order?: number;
   is_published?: boolean;
   content?: string; // HTML
+  tag?: string[];
+  source?: string;
+  author?: string;
   createdAt?: string;
   updatedAt?: string;
   translation?: any;

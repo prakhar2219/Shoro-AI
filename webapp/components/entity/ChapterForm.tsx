@@ -33,6 +33,9 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     content: typeof initialData?.content === 'string' ? initialData.content : '',
     order: initialData?.order || '',
     is_published: initialData?.is_published || false,
+    tag: initialData?.tag?.join(', ') || '',
+    source: initialData?.source || '',
+    author: initialData?.author || '',
   });
 
   // Check if we're adding from a parent subject
@@ -54,8 +57,11 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     } else {
       setClasses([]);
     }
-    setForm((f) => ({ ...f, class_id: '', subject_id: '' }));
-    setSubjects([]);
+    // Don't reset when adding from parent or in edit mode
+    if (!isAddingFromParent && !isEditMode) {
+      setForm((f) => ({ ...f, class_id: '', subject_id: '' }));
+      setSubjects([]);
+    }
   }, [form.board_id]);
 
   useEffect(() => {
@@ -71,7 +77,10 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     } else {
       setSubjects([]);
     }
-    setForm((f) => ({ ...f, subject_id: '' }));
+    // Don't reset when adding from parent or in edit mode
+    if (!isAddingFromParent && !isEditMode) {
+      setForm((f) => ({ ...f, subject_id: '' }));
+    }
   }, [form.class_id]);
 
   useEffect(() => {
@@ -106,12 +115,24 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       } else if (initialData.subject_id) {
         subjectId = initialData.subject_id;
       }
-      setForm(f => ({
-        ...f,
-        board_id: typeof initialData.board_id === 'object' ? initialData.board_id._id : initialData.board_id || boardId,
-        class_id: classId,
-        subject_id: subjectId,
-      }));
+      
+      // Only update form if we have all required IDs from parent (when adding from parent)
+      if (initialData.subject && boardId && classId && subjectId) {
+        setForm(f => ({
+          ...f,
+          board_id: boardId,
+          class_id: classId,
+          subject_id: subjectId,
+        }));
+      } else if (!initialData.subject) {
+        // For edit mode or direct creation (not from parent), set whatever we have
+        setForm(f => ({
+          ...f,
+          board_id: typeof initialData.board_id === 'object' ? initialData.board_id._id : initialData.board_id || boardId,
+          class_id: classId,
+          subject_id: subjectId,
+        }));
+      }
     }
     // eslint-disable-next-line
   }, [initialData]);
@@ -186,7 +207,11 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       return;
     }
     
-    onSubmit(form);
+    const payload = {
+      ...form,
+      tag: form.tag ? form.tag.split(',').map((t: string) => t.trim()) : [],
+    };
+    onSubmit(payload);
   };
 
   return (
@@ -336,10 +361,6 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <RichTextEditor value={form.content} onChange={handleContentChange} />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="order">Order</Label>
             <Input
               id="order"
@@ -350,6 +371,40 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
               placeholder="Enter order"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              name="author"
+              value={form.author}
+              onChange={handleChange}
+              placeholder="Enter author name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tag">Tags (comma separated)</Label>
+            <Input
+              id="tag"
+              name="tag"
+              value={form.tag}
+              onChange={handleChange}
+              placeholder="tag1, tag2, tag3"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              name="source"
+              value={form.source}
+              onChange={handleChange}
+              placeholder="Enter source"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={form.content} onChange={handleContentChange} />
           </div>
           <div className="flex items-center space-x-2">
             <input

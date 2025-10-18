@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as topicService from '../../services/content/topic.service';
 
 export const createTopic = async (req: Request, res: Response) => {
-  const { chapter_id, language_id, title, slug, order, is_published, created_by, content } = req.body;
+  const { chapter_id, language_id, title, slug, order, is_published, created_by, content, tag, source, author } = req.body;
   
   if (!chapter_id || !language_id || !title || !slug) {
     res.status(400).json({ error: 'Missing required fields: chapter_id, language_id, title, slug' });
@@ -39,6 +39,9 @@ export const createTopic = async (req: Request, res: Response) => {
       order: finalOrder,
       is_published: !!is_published,
       created_by,
+      tag,
+      source,
+      author,
     };
 
     const created = await topicService.createTopic(topic as any);

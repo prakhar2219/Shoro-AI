@@ -1,6 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ITopic } from "@/lib/api/entities/topics";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Copy, Check } from "lucide-react";
 import React, { useState } from "react";
 
@@ -109,6 +110,38 @@ export const topicColumns: ColumnDef<ITopic>[] = [
         return <span>{language.name} ({language.code})</span>;
       }
       return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
+  {
+    accessorKey: "author",
+    header: "Author",
+    cell: ({ row }) => {
+      const author = row.getValue("author") as string;
+      return author || <span className="text-zinc-400 italic">N/A</span>;
+    },
+  },
+  {
+    accessorKey: "tag",
+    header: "Tags",
+    cell: ({ row }) => {
+      const tags = row.getValue("tag") as string[];
+      if (!tags || tags.length === 0) {
+        return <span className="text-zinc-400 italic">No tags</span>;
+      }
+      return (
+        <div className="flex gap-1 flex-wrap">
+          {tags.slice(0, 2).map((tag, index) => (
+            <Badge key={index} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+          {tags.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{tags.length - 2}
+            </Badge>
+          )}
+        </div>
+      );
     },
   },
   {

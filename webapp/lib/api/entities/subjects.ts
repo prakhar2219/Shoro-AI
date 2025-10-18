@@ -11,6 +11,9 @@ export interface ISubject {
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   language_id: string | { _id: string; name: string; code: string; [key: string]: any };
   content?: any[];
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: ISubjectTranslation;
   translations?: ISubjectTranslation[];
   createdAt?: string;

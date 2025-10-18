@@ -14,6 +14,9 @@ export interface IChapter extends Document {
   seo_description?: string;
   content?: string;
   version?: number;
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: any;
   translations?: any[];
 }

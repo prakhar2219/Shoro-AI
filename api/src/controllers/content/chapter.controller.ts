@@ -61,7 +61,7 @@ export const createChapter = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { board_id, class_id, subject_id, language_id, order, is_published, created_by, title, slug, content } = req.body;
+    const { board_id, class_id, subject_id, language_id, order, is_published, created_by, title, slug, content, tag, source, author } = req.body;
 
     if (!board_id || !class_id || !subject_id || !language_id || !title || !slug) {
       res.status(400).json({ error: 'Missing required fields: board_id, class_id, subject_id, language_id, title, slug' });
@@ -97,6 +97,9 @@ export const createChapter = async (
       order: typeof order === 'number' ? order : Number(order),
       is_published: !!is_published,
       created_by,
+      tag,
+      source,
+      author,
     } as IChapter;
 
     const created = await chapterService.createChapter(chapter);

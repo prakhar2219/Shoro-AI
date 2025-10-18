@@ -16,6 +16,9 @@ export interface IChapter {
   seo_description?: string;
   content: any[];
   version?: number;
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: any;
   translations?: any[];
 }

@@ -11,6 +11,9 @@ const TopicSchema = new Schema<ITopic>(
     is_published: { type: Boolean, default: false },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: false },
+    tag: [{ type: String, trim: true }],
+    source: { type: String, trim: true },
+    author: { type: String, trim: true },
   },
   { timestamps: true }
 );

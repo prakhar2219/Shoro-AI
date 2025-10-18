@@ -10,6 +10,9 @@ export interface ITopic {
   order?: number;
   is_published?: boolean;
   content?: string; // HTML string like chapters
+  tag?: string[];
+  source?: string;
+  author?: string;
   createdAt?: string;
   updatedAt?: string;
   translation?: any;

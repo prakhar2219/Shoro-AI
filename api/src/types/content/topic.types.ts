@@ -9,6 +9,9 @@ export interface ITopic extends Document {
   is_published: boolean;
   created_by?: mongoose.Types.ObjectId;
   content?: string;
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: any;
   translations?: any[];
 }

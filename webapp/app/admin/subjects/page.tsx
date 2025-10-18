@@ -323,13 +323,16 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), content (HTML - optional).",
+    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "icon", type: "text", required: false } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "tag", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
@@ -346,6 +349,9 @@ export default function SubjectsPage() {
           code: r.code,
           name: r.name,
           icon: r.icon || undefined,
+          author: r.author || undefined,
+          tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
+          source: r.source || undefined,
           content,
         };
       });

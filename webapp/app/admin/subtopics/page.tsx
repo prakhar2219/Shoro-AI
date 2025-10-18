@@ -206,7 +206,7 @@ export default function SubtopicsPage() {
   // CSV schema for subtopics
   const subtopicCsvSchema: CsvSchema = {
     title: "Upload Subtopics CSV",
-    description: "Upload a CSV with columns: topic_id, language_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id and language_id correspond to existing entities in the system.",
+    description: "Upload a CSV with columns: topic_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id and language_id correspond to existing entities in the system.",
     fields: [
       { name: "topic_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
@@ -217,6 +217,9 @@ export default function SubtopicsPage() {
       { name: "board_name", type: "text", required: false } as FieldSchema, // For reference only - shows board context
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "tag", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
       { name: "is_published", type: "boolean", required: false } as FieldSchema,
@@ -235,6 +238,9 @@ export default function SubtopicsPage() {
           language_id: r.language_id,
           title: r.title,
           slug: r.slug,
+          author: r.author || undefined,
+          tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
+          source: r.source || undefined,
           content,
           order,
           is_published,

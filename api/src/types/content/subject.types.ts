@@ -7,6 +7,9 @@ export interface ISubject extends Document {
   icon?: string;
   name: string;
   content?: string;
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: any; // single translation (for FE/BE consistency)
   translations?: any[]; // all translations (for FE/BE consistency)
 }

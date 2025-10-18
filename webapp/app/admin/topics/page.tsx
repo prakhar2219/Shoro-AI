@@ -194,7 +194,10 @@ export default function TopicsPage() {
   // Memoize Subtopic initial data to prevent infinite re-renders
   const subtopicInitialData = useMemo(() => {
     if (!selectedTopicForSubtopic) return undefined;
-    return { topic_id: selectedTopicForSubtopic._id };
+    return { 
+      topic_id: selectedTopicForSubtopic._id,
+      topic: selectedTopicForSubtopic
+    };
   }, [selectedTopicForSubtopic]);
 
   const renderExpandedRow = (topic: any) => {
@@ -250,7 +253,7 @@ export default function TopicsPage() {
   // CSV schema for topics
   const topicCsvSchema: CsvSchema = {
     title: "Upload Topics CSV",
-    description: "Upload a CSV with columns: chapter_id, language_id, title, slug, content(HTML - optional), order, is_published. IMPORTANT: Topics belong to Chapters in the educational hierarchy (Board → Class → Subject → Chapter → Topic). Make sure your chapter_id and language_id correspond to existing entities in the system.",
+    description: "Upload a CSV with columns: chapter_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published. IMPORTANT: Topics belong to Chapters in the educational hierarchy (Board → Class → Subject → Chapter → Topic). Make sure your chapter_id and language_id correspond to existing entities in the system.",
     fields: [
       { name: "chapter_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
@@ -260,6 +263,9 @@ export default function TopicsPage() {
       { name: "board_name", type: "text", required: false } as FieldSchema, // For reference only - shows board context
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "tag", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
       { name: "is_published", type: "boolean", required: false } as FieldSchema,
@@ -278,6 +284,9 @@ export default function TopicsPage() {
           language_id: r.language_id,
           title: r.title,
           slug: r.slug,
+          author: r.author || undefined,
+          tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
+          source: r.source || undefined,
           content,
           order,
           is_published,

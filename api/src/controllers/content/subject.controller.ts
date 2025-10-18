@@ -55,7 +55,7 @@ export const createSubject = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { class_id, language_id, code, icon, name, content } = req.body;
+    const { class_id, language_id, code, icon, name, content, tag, source, author } = req.body;
 
     if (!class_id || !language_id || !code || !name) {
       res.status(400).json({ error: 'Missing required fields: class_id, language_id, code, name' });
@@ -87,6 +87,9 @@ export const createSubject = async (
       icon,
       name,
       content,
+      tag,
+      source,
+      author,
     } as ISubject;
 
     const created = await subjectService.createSubject(subject);

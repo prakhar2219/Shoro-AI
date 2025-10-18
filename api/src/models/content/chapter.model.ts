@@ -16,6 +16,9 @@ const ChapterSchema = new Schema<IChapter>(
     seo_description: { type: String },
     content: { type: String, required: false },
     version: { type: Number, default: 1 },
+    tag: [{ type: String, trim: true }],
+    source: { type: String, trim: true },
+    author: { type: String, trim: true },
   },
   { timestamps: true }
 );

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import * as subtopicService from '../../services/content/subtopic.service';
 
 export const createSubtopic = async (req: Request, res: Response) => {
-  const { topic_id, language_id, title, slug, order, is_published, created_by, content } = req.body;
+  const { topic_id, language_id, title, slug, order, is_published, created_by, content, tag, source, author } = req.body;
 
   if (!topic_id || !language_id || !title || !slug) {
     res.status(400).json({ error: 'Missing required fields: topic_id, language_id, title, slug' });
@@ -39,6 +39,9 @@ export const createSubtopic = async (req: Request, res: Response) => {
       order: finalOrder,
       is_published: !!is_published,
       created_by,
+      tag,
+      source,
+      author,
     };
 
     const created = await subtopicService.createSubtopic(subtopic as any);

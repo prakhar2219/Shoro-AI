@@ -22,12 +22,16 @@ interface TopicFormProps {
     class_id?: string;
     subject_id?: string;
     chapter_id?: string;
+    chapter?: any; // Full chapter object for auto-populating hierarchy
     language_id?: string;
     title?: string;
     slug?: string;
     order?: number;
     is_published?: boolean;
     content?: string;
+    tag?: string[];
+    source?: string;
+    author?: string;
   };
 }
 
@@ -48,10 +52,69 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     order: initialData?.order ?? 0,
     is_published: initialData?.is_published ?? true,
     content: typeof initialData?.content === 'string' ? initialData.content : '',
+    tag: initialData?.tag?.join(', ') || '',
+    source: initialData?.source || '',
+    author: initialData?.author || '',
   });
+
+  // Check if we're adding from a parent chapter
+  const isAddingFromParent = Boolean(initialData?.chapter);
+  const parentChapter = initialData?.chapter;
+  const parentSubject = parentChapter?.subject_id;
+  const parentClass = parentSubject?.class_id;
+  const parentBoard = parentClass?.board_id;
 
   // Check if we're editing existing topic (has _id) vs adding new topic (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
+
+  // Auto-populate formData from parent chapter when adding from parent
+  useEffect(() => {
+    if (isAddingFromParent && parentChapter) {
+      let subjectId = '';
+      let classId = '';
+      let boardId = '';
+      
+      // Extract subject ID
+      if (typeof parentChapter.subject_id === 'object' && parentChapter.subject_id) {
+        subjectId = parentChapter.subject_id._id || '';
+        
+        // Extract class ID from subject
+        if (parentChapter.subject_id.class_id) {
+          classId = typeof parentChapter.subject_id.class_id === 'object' 
+            ? parentChapter.subject_id.class_id._id || ''
+            : parentChapter.subject_id.class_id;
+          
+          // Extract board ID from class
+          if (typeof parentChapter.subject_id.class_id === 'object' && parentChapter.subject_id.class_id.board_id) {
+            boardId = typeof parentChapter.subject_id.class_id.board_id === 'object'
+              ? parentChapter.subject_id.class_id.board_id._id || ''
+              : parentChapter.subject_id.class_id.board_id;
+          }
+        }
+      } else if (parentChapter.subject_id) {
+        subjectId = parentChapter.subject_id;
+      }
+      
+      // Fallback: try to get IDs from chapter's direct properties if nested data isn't available
+      if (!classId && parentChapter.class_id) {
+        classId = typeof parentChapter.class_id === 'object' ? parentChapter.class_id._id || '' : parentChapter.class_id;
+      }
+      if (!boardId && parentChapter.board_id) {
+        boardId = typeof parentChapter.board_id === 'object' ? parentChapter.board_id._id || '' : parentChapter.board_id;
+      }
+      
+      // Only update if we have all required IDs from parent
+      if (boardId && classId && subjectId) {
+        setFormData(prev => ({
+          ...prev,
+          board_id: boardId,
+          class_id: classId,
+          subject_id: subjectId,
+          chapter_id: parentChapter._id || initialData?.chapter_id || '',
+        }));
+      }
+    }
+  }, [isAddingFromParent, parentChapter, initialData?.chapter_id]);
 
   // Load boards on mount
   useEffect(() => {
@@ -65,12 +128,13 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     } else {
       setClasses([]);
     }
-    if (!isEditMode) {
+    // Don't reset when adding from parent or in edit mode
+    if (!isEditMode && !isAddingFromParent) {
       setFormData(prev => ({ ...prev, class_id: "", subject_id: "", chapter_id: "" }));
       setSubjects([]);
       setChapters([]);
     }
-  }, [formData.board_id, isEditMode]);
+  }, [formData.board_id, isEditMode, isAddingFromParent]);
 
   // Load subjects when class changes
   useEffect(() => {
@@ -84,11 +148,12 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     } else {
       setSubjects([]);
     }
-    if (!isEditMode) {
+    // Don't reset when adding from parent or in edit mode
+    if (!isEditMode && !isAddingFromParent) {
       setFormData(prev => ({ ...prev, subject_id: "", chapter_id: "" }));
       setChapters([]);
     }
-  }, [formData.class_id, isEditMode]);
+  }, [formData.class_id, isEditMode, isAddingFromParent]);
 
   // Load chapters when subject changes
   useEffect(() => {
@@ -103,10 +168,11 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     } else {
       setChapters([]);
     }
-    if (!isEditMode) {
+    // Don't reset when adding from parent or in edit mode
+    if (!isEditMode && !isAddingFromParent) {
       setFormData(prev => ({ ...prev, chapter_id: "" }));
     }
-  }, [formData.subject_id, isEditMode]);
+  }, [formData.subject_id, isEditMode, isAddingFromParent]);
 
   // Auto-populate hierarchy in edit mode
   useEffect(() => {
@@ -180,90 +246,132 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
       slug: formData.slug,
       order: Number(formData.order),
       is_published: formData.is_published,
-      content: formData.content
+      content: formData.content,
+      tag: formData.tag ? formData.tag.split(',').map((t: string) => t.trim()) : [],
+      source: formData.source,
+      author: formData.author
     });
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? "Edit Topic" : "Create Topic"}</CardTitle>
+        <CardTitle>{initialData?._id ? "Edit Topic" : "Create Topic"}</CardTitle>
       </CardHeader>
       <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="board_id">Board</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {boards.find((b) => b._id === formData.board_id)?.name || '-'}
+          {isAddingFromParent ? (
+            <>
+              <div className="space-y-2">
+                <Label>Board</Label>
+                <Input
+                  value={typeof parentBoard === 'object' ? parentBoard?.name : boards.find(b => b._id === formData.board_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={formData.board_id} onValueChange={(value) => setFormData(prev => ({ ...prev, board_id: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Board" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boards.map((b) => (
-                    <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="class_id">Class</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {classes.find((c) => c._id === formData.class_id)?.name || '-'}
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Input
+                  value={typeof parentClass === 'object' ? parentClass?.name : classes.find(c => c._id === formData.class_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={formData.class_id} onValueChange={(value) => setFormData(prev => ({ ...prev, class_id: value }))} disabled={!formData.board_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((c) => (
-                    <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="subject_id">Subject</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {subjects.find((s) => s._id === formData.subject_id)?.name || '-'}
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input
+                  value={parentSubject?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={formData.subject_id} onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))} disabled={!formData.class_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((s) => (
-                    <SelectItem key={s._id} value={s._id}>{s.name} ({s.code})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
+              <div className="space-y-2">
+                <Label>Chapter</Label>
+                <Input
+                  value={parentChapter?.title || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="board_id">Board</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {boards.find((b) => b._id === formData.board_id)?.name || '-'}
+                  </div>
+                ) : (
+                  <Select value={formData.board_id} onValueChange={(value) => setFormData(prev => ({ ...prev, board_id: value }))}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Board" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="chapter_id">Chapter</Label>
-            <Select value={formData.chapter_id} onValueChange={(value) => setFormData(prev => ({ ...prev, chapter_id: value }))} disabled={!formData.subject_id}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Chapter" />
-              </SelectTrigger>
-              <SelectContent>
-                {chapters.map((c) => (
-                  <SelectItem key={c._id} value={c._id}>{c.title}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="class_id">Class</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {classes.find((c) => c._id === formData.class_id)?.name || '-'}
+                  </div>
+                ) : (
+                  <Select value={formData.class_id} onValueChange={(value) => setFormData(prev => ({ ...prev, class_id: value }))} disabled={!formData.board_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((c) => (
+                        <SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="subject_id">Subject</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {subjects.find((s) => s._id === formData.subject_id)?.name || '-'}
+                  </div>
+                ) : (
+                  <Select value={formData.subject_id} onValueChange={(value) => setFormData(prev => ({ ...prev, subject_id: value }))} disabled={!formData.class_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((s) => (
+                        <SelectItem key={s._id} value={s._id}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="chapter_id">Chapter</Label>
+                <Select value={formData.chapter_id} onValueChange={(value) => setFormData(prev => ({ ...prev, chapter_id: value }))} disabled={!formData.subject_id}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Chapter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {chapters.map((c) => (
+                      <SelectItem key={c._id} value={c._id}>{c.title}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
 
           <div className="space-y-2">
             <Label htmlFor="language_id">Language</Label>
@@ -317,17 +425,47 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="is_published">Published</Label>
-              <select
-                id="is_published"
-                className="w-full border rounded px-3 py-2 bg-background"
-                value={String(formData.is_published)}
-                onChange={(e) => setFormData({ ...formData, is_published: e.target.value === 'true' })}
-              >
-                <option value="true">Yes</option>
-                <option value="false">No</option>
-              </select>
+              <Label htmlFor="author">Author</Label>
+              <Input
+                id="author"
+                value={formData.author}
+                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                placeholder="Enter author name"
+              />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="tag">Tags (comma separated)</Label>
+            <Input
+              id="tag"
+              value={formData.tag}
+              onChange={(e) => setFormData({ ...formData, tag: e.target.value })}
+              placeholder="tag1, tag2, tag3"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              value={formData.source}
+              onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+              placeholder="Enter source"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="is_published">Published</Label>
+            <select
+              id="is_published"
+              className="w-full border rounded px-3 py-2 bg-background"
+              value={String(formData.is_published)}
+              onChange={(e) => setFormData({ ...formData, is_published: e.target.value === 'true' })}
+            >
+              <option value="true">Yes</option>
+              <option value="false">No</option>
+            </select>
           </div>
 
           <div className="space-y-2">
@@ -336,7 +474,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
           </div>
 
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Saving..." : initialData ? "Update Topic" : "Create Topic"}
+            {loading ? "Saving..." : initialData?._id ? "Update Topic" : "Create Topic"}
           </Button>
         </form>
       </CardContent>
