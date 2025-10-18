@@ -14,6 +14,9 @@ export interface IChapter {
   slug: string;
   seo_title?: string;
   seo_description?: string;
+  downloadNotes?: string;
+  downloadPDF?: string;
+  downloadQA?: string;
   content: any[];
   version?: number;
   tag?: string[];

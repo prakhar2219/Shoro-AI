@@ -12,6 +12,9 @@ export interface IChapter extends Document {
   slug: string;
   seo_title?: string;
   seo_description?: string;
+  downloadNotes?: string;
+  downloadPDF?: string;
+  downloadQA?: string;
   content?: string;
   version?: number;
   tag?: string[];

@@ -323,7 +323,7 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), content (HTML - optional).",
+    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
@@ -333,6 +333,9 @@ export default function SubjectsPage() {
       { name: "author", type: "text", required: false } as FieldSchema,
       { name: "tag", type: "text", required: false } as FieldSchema,
       { name: "source", type: "text", required: false } as FieldSchema,
+      { name: "downloadNotes", type: "text", required: false } as FieldSchema,
+      { name: "downloadPDF", type: "text", required: false } as FieldSchema,
+      { name: "downloadQA", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
@@ -352,6 +355,9 @@ export default function SubjectsPage() {
           author: r.author || undefined,
           tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
           source: r.source || undefined,
+          downloadNotes: r.downloadNotes || undefined,
+          downloadPDF: r.downloadPDF || undefined,
+          downloadQA: r.downloadQA || undefined,
           content,
         };
       });

@@ -25,6 +25,9 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     board_id: initialData?.board_id || '',
     class_id: initialData?.class_id || '',
     language_id: initialData?.language_id || '',
+    downloadNotes: initialData?.downloadNotes || '',
+    downloadPDF: initialData?.downloadPDF || '',
+    downloadQA: initialData?.downloadQA || '',
     content: typeof initialData?.content === 'string' ? initialData.content : '',
     tag: initialData?.tag?.join(', ') || '',
     source: initialData?.source || '',
@@ -231,6 +234,36 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
               value={form.source}
               onChange={handleChange}
               placeholder="Enter source"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadNotes">Download Notes (URL)</Label>
+            <Input
+              id="downloadNotes"
+              name="downloadNotes"
+              value={form.downloadNotes}
+              onChange={handleChange}
+              placeholder="https://example.com/notes.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadPDF">Download PDF (URL)</Label>
+            <Input
+              id="downloadPDF"
+              name="downloadPDF"
+              value={form.downloadPDF}
+              onChange={handleChange}
+              placeholder="https://example.com/document.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadQA">Download Q&A (URL)</Label>
+            <Input
+              id="downloadQA"
+              name="downloadQA"
+              value={form.downloadQA}
+              onChange={handleChange}
+              placeholder="https://example.com/qa.pdf"
             />
           </div>
           <div className="space-y-2">

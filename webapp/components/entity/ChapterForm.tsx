@@ -30,6 +30,9 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     slug: initialData?.slug || '',
     seo_title: initialData?.seo_title || '',
     seo_description: initialData?.seo_description || '',
+    downloadNotes: initialData?.downloadNotes || '',
+    downloadPDF: initialData?.downloadPDF || '',
+    downloadQA: initialData?.downloadQA || '',
     content: typeof initialData?.content === 'string' ? initialData.content : '',
     order: initialData?.order || '',
     is_published: initialData?.is_published || false,
@@ -400,6 +403,36 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
               value={form.source}
               onChange={handleChange}
               placeholder="Enter source"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadNotes">Download Notes (URL)</Label>
+            <Input
+              id="downloadNotes"
+              name="downloadNotes"
+              value={form.downloadNotes}
+              onChange={handleChange}
+              placeholder="https://example.com/notes.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadPDF">Download PDF (URL)</Label>
+            <Input
+              id="downloadPDF"
+              name="downloadPDF"
+              value={form.downloadPDF}
+              onChange={handleChange}
+              placeholder="https://example.com/document.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadQA">Download Q&A (URL)</Label>
+            <Input
+              id="downloadQA"
+              name="downloadQA"
+              value={form.downloadQA}
+              onChange={handleChange}
+              placeholder="https://example.com/qa.pdf"
             />
           </div>
           <div className="space-y-2">

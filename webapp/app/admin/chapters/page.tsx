@@ -246,7 +246,7 @@ export default function ChapterAdminPage() {
   // CSV schema for chapters
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
-    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content(HTML - optional), order, is_published",
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
@@ -257,6 +257,9 @@ export default function ChapterAdminPage() {
       { name: "author", type: "text", required: false } as FieldSchema,
       { name: "tag", type: "text", required: false } as FieldSchema,
       { name: "source", type: "text", required: false } as FieldSchema,
+      { name: "downloadNotes", type: "text", required: false } as FieldSchema,
+      { name: "downloadPDF", type: "text", required: false } as FieldSchema,
+      { name: "downloadQA", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
       { name: "is_published", type: "boolean", required: false } as FieldSchema,
@@ -279,6 +282,9 @@ export default function ChapterAdminPage() {
           author: r.author || undefined,
           tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
           source: r.source || undefined,
+          downloadNotes: r.downloadNotes || undefined,
+          downloadPDF: r.downloadPDF || undefined,
+          downloadQA: r.downloadQA || undefined,
           content,
           order,
           is_published,
