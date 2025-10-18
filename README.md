@@ -157,7 +157,7 @@ cd Education-AI-main
 
 **For API:**
 ```bash
-cd api
+cd api sd
 npm install
 ```
 
