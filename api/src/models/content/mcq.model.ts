@@ -3,7 +3,7 @@ import { IMCQ } from '@/types/content/mcq.types';
 
 const MCQSchema = new Schema<IMCQ>(
   {
-    entity_type: { type: String, required: true }, // "Chapter" | "Country" | "Board" | "Class" | "Subject"
+    entity_type: { type: String, required: true }, // "Chapter" | "Topic" | "Subtopic" | "Country" | "Board" | "Class" | "Subject"
     entity_id: { type: Schema.Types.ObjectId, required: true },
     question: { type: String, required: true },
     options: [

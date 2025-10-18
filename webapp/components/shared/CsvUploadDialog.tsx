@@ -24,11 +24,12 @@ export type ValidationError = {
 
 export type FieldSchema = {
   name: string
-  type: 'text' | 'select' | 'boolean' | 'number'
+  type: 'text' | 'select' | 'boolean' | 'number' | 'custom'
   required: boolean
   options?: string[] // for select type
   defaultValue?: any
   validation?: (value: any) => string | null // custom validation function
+  customRenderer?: (value: any, onChange: (value: any) => void) => React.ReactNode // for custom type
 }
 
 export type CsvSchema = {
@@ -102,6 +103,10 @@ export function CsvUploadDialog({
 
         // Type validation
         switch (field.type) {
+            case 'custom':
+                // Custom fields rely on their own validation function
+                break
+                
             case 'text':
                 if (typeof value !== 'string') {
                     errors.push({ 
@@ -281,6 +286,14 @@ export function CsvUploadDialog({
 
     const renderFieldInput = (field: FieldSchema, value: any, onChange: (value: any) => void) => {
         switch (field.type) {
+            case 'custom':
+                return field.customRenderer ? field.customRenderer(value, onChange) : (
+                    <Input
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        placeholder={field.name}
+                    />
+                )
             case 'select':
                 return (
                     <Select value={value} onValueChange={onChange}>

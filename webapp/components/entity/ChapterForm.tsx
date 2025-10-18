@@ -3,6 +3,7 @@ import { RichTextEditor } from '@/components/rich-text-editor';
 import { getBoards } from '@/lib/api/entities/boards';
 import { getClassesByBoard } from '@/lib/api/entities/classes';
 import { getSubjects } from '@/lib/api/entities/subjects';
+import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -24,14 +25,27 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     board_id: typeof initialData?.board_id === 'object' ? initialData.board_id._id : initialData?.board_id || '',
     class_id: typeof initialData?.class_id === 'object' ? initialData.class_id._id : initialData?.class_id || '',
     subject_id: typeof initialData?.subject_id === 'object' ? initialData.subject_id._id : initialData?.subject_id || '',
+    language_id: typeof initialData?.language_id === 'object' ? initialData.language_id._id : initialData?.language_id || '',
     title: initialData?.title || '',
     slug: initialData?.slug || '',
     seo_title: initialData?.seo_title || '',
     seo_description: initialData?.seo_description || '',
+    downloadNotes: initialData?.downloadNotes || '',
+    downloadPDF: initialData?.downloadPDF || '',
+    downloadQA: initialData?.downloadQA || '',
     content: typeof initialData?.content === 'string' ? initialData.content : '',
     order: initialData?.order || '',
     is_published: initialData?.is_published || false,
+    tag: initialData?.tag?.join(', ') || '',
+    source: initialData?.source || '',
+    author: initialData?.author || '',
   });
+
+  // Check if we're adding from a parent subject
+  const isAddingFromParent = Boolean(initialData?.subject);
+  const parentSubject = initialData?.subject;
+  const parentClass = parentSubject?.class_id;
+  const parentBoard = parentClass?.board_id;
 
   const isEditMode = Boolean(initialData && initialData._id);
 
@@ -46,8 +60,11 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     } else {
       setClasses([]);
     }
-    setForm((f) => ({ ...f, class_id: '', subject_id: '' }));
-    setSubjects([]);
+    // Don't reset when adding from parent or in edit mode
+    if (!isAddingFromParent && !isEditMode) {
+      setForm((f) => ({ ...f, class_id: '', subject_id: '' }));
+      setSubjects([]);
+    }
   }, [form.board_id]);
 
   useEffect(() => {
@@ -63,7 +80,10 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     } else {
       setSubjects([]);
     }
-    setForm((f) => ({ ...f, subject_id: '' }));
+    // Don't reset when adding from parent or in edit mode
+    if (!isAddingFromParent && !isEditMode) {
+      setForm((f) => ({ ...f, subject_id: '' }));
+    }
   }, [form.class_id]);
 
   useEffect(() => {
@@ -71,7 +91,19 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       let boardId = '';
       let classId = '';
       let subjectId = '';
-      if (initialData.class_id && typeof initialData.class_id === 'object') {
+      
+      // If adding from parent, extract full hierarchy
+      if (initialData.subject) {
+        subjectId = initialData.subject._id || '';
+        const subjectClassId = initialData.subject.class_id;
+        if (subjectClassId) {
+          classId = typeof subjectClassId === 'object' ? subjectClassId._id : subjectClassId;
+          const classBoardId = typeof subjectClassId === 'object' ? subjectClassId.board_id : '';
+          if (classBoardId) {
+            boardId = typeof classBoardId === 'object' ? classBoardId._id : classBoardId;
+          }
+        }
+      } else if (initialData.class_id && typeof initialData.class_id === 'object') {
         classId = initialData.class_id._id || '';
         if (initialData.class_id.board_id) {
           boardId = typeof initialData.class_id.board_id === 'object'
@@ -86,12 +118,24 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       } else if (initialData.subject_id) {
         subjectId = initialData.subject_id;
       }
-      setForm(f => ({
-        ...f,
-        board_id: typeof initialData.board_id === 'object' ? initialData.board_id._id : initialData.board_id || boardId,
-        class_id: classId,
-        subject_id: subjectId,
-      }));
+      
+      // Only update form if we have all required IDs from parent (when adding from parent)
+      if (initialData.subject && boardId && classId && subjectId) {
+        setForm(f => ({
+          ...f,
+          board_id: boardId,
+          class_id: classId,
+          subject_id: subjectId,
+        }));
+      } else if (!initialData.subject) {
+        // For edit mode or direct creation (not from parent), set whatever we have
+        setForm(f => ({
+          ...f,
+          board_id: typeof initialData.board_id === 'object' ? initialData.board_id._id : initialData.board_id || boardId,
+          class_id: classId,
+          subject_id: subjectId,
+        }));
+      }
     }
     // eslint-disable-next-line
   }, [initialData]);
@@ -99,12 +143,14 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Special handling for slug field
+    // Special handling for slug field - Allow Unicode characters for multilingual support
     if (name === 'slug') {
       const formattedSlug = value
-        .toLowerCase()
-        .replace(/\s+/g, '-')
-        .replace(/[^a-z0-9-]/g, ''); 
+        .trim()
+        .replace(/\s+/g, '-')  // Replace spaces with hyphens
+        .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters only
+        .replace(/-+/g, '-')  // Replace multiple hyphens with single hyphen
+        .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
       setForm({ ...form, [name]: formattedSlug });
     } else {
       setForm({ ...form, [name]: value });
@@ -123,13 +169,52 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     setForm(f => ({ ...f, subject_id: value }));
   };
 
+  const handleLanguageChange = (value: string) => {
+    setForm(f => ({ ...f, language_id: value }));
+  };
+
   const handleContentChange = (html: string) => {
     setForm({ ...form, content: html });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(form);
+    
+    // Validate required fields
+    if (!form.board_id) {
+      alert('Please select a Board');
+      return;
+    }
+    if (!form.class_id) {
+      alert('Please select a Class');
+      return;
+    }
+    if (!form.subject_id) {
+      alert('Please select a Subject');
+      return;
+    }
+    if (!form.language_id) {
+      alert('Please select a Language');
+      return;
+    }
+    if (!form.title.trim()) {
+      alert('Please enter a Chapter Title');
+      return;
+    }
+    if (!form.slug.trim()) {
+      alert('Please enter a Slug');
+      return;
+    }
+    if (!form.order) {
+      alert('Please enter an Order number');
+      return;
+    }
+    
+    const payload = {
+      ...form,
+      tag: form.tag ? form.tag.split(',').map((t: string) => t.trim()) : [],
+    };
+    onSubmit(payload);
   };
 
   return (
@@ -139,62 +224,102 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
       </CardHeader>
       <CardContent className="max-h-[80vh] overflow-y-auto pt-6">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="board_id">Board</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {boards.find((b) => b._id === form.board_id)?.name || (typeof form.board_id === 'object' ? form.board_id.name : form.board_id) || '-'}
+          {isAddingFromParent ? (
+            <>
+              <div className="space-y-2">
+                <Label>Board</Label>
+                <Input
+                  value={typeof parentBoard === 'object' ? parentBoard?.name : boards.find(b => b._id === form.board_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={form.board_id} onValueChange={handleBoardChange}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Board" />
-                </SelectTrigger>
-                <SelectContent>
-                  {boards.map((b) => (
-                    <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="class_id">Class</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {classes.find((cls) => cls._id === form.class_id)?.name || (typeof form.class_id === 'object' ? form.class_id.name : form.class_id) || '-'}
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Input
+                  value={typeof parentClass === 'object' ? parentClass?.name : classes.find(c => c._id === form.class_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Class" />
-                </SelectTrigger>
-                <SelectContent>
-                  {classes.map((cls) => (
-                    <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="subject_id">Subject</Label>
-            {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {subjects.find((s) => s._id === form.subject_id)?.name || (typeof form.subject_id === 'object' ? form.subject_id.name : form.subject_id) || '-'}
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input
+                  value={parentSubject?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
               </div>
-            ) : (
-              <Select value={form.subject_id} onValueChange={handleSubjectChange} disabled={!form.class_id}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select Subject" />
-                </SelectTrigger>
-                <SelectContent>
-                  {subjects.map((s) => (
-                    <SelectItem key={s._id} value={s._id as string}>{s.name} ({s.code})</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="board_id">Board</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {boards.find((b) => b._id === form.board_id)?.name || (typeof form.board_id === 'object' ? form.board_id.name : form.board_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.board_id} onValueChange={handleBoardChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Board" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class_id">Class</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {classes.find((cls) => cls._id === form.class_id)?.name || (typeof form.class_id === 'object' ? form.class_id.name : form.class_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject_id">Subject</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {subjects.find((s) => s._id === form.subject_id)?.name || (typeof form.subject_id === 'object' ? form.subject_id.name : form.subject_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.subject_id} onValueChange={handleSubjectChange} disabled={!form.class_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((s) => (
+                        <SelectItem key={s._id} value={s._id as string}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="language_id">Language</Label>
+            <LanguageSelector
+              value={form.language_id}
+              onValueChange={handleLanguageChange}
+              placeholder="Select Language"
+              required
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="title">Chapter Title</Label>
@@ -239,10 +364,6 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <RichTextEditor value={form.content} onChange={handleContentChange} />
-          </div>
-          <div className="space-y-2">
             <Label htmlFor="order">Order</Label>
             <Input
               id="order"
@@ -253,6 +374,70 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
               placeholder="Enter order"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              name="author"
+              value={form.author}
+              onChange={handleChange}
+              placeholder="Enter author name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tag">Tags (comma separated)</Label>
+            <Input
+              id="tag"
+              name="tag"
+              value={form.tag}
+              onChange={handleChange}
+              placeholder="tag1, tag2, tag3"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              name="source"
+              value={form.source}
+              onChange={handleChange}
+              placeholder="Enter source"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadNotes">Download Notes (URL)</Label>
+            <Input
+              id="downloadNotes"
+              name="downloadNotes"
+              value={form.downloadNotes}
+              onChange={handleChange}
+              placeholder="https://example.com/notes.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadPDF">Download PDF (URL)</Label>
+            <Input
+              id="downloadPDF"
+              name="downloadPDF"
+              value={form.downloadPDF}
+              onChange={handleChange}
+              placeholder="https://example.com/document.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadQA">Download Q&A (URL)</Label>
+            <Input
+              id="downloadQA"
+              name="downloadQA"
+              value={form.downloadQA}
+              onChange={handleChange}
+              placeholder="https://example.com/qa.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={form.content} onChange={handleContentChange} />
           </div>
           <div className="flex items-center space-x-2">
             <input
@@ -265,7 +450,7 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
             <Label htmlFor="is_published">Is Published</Label>
           </div>
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Saving...' : initialData ? 'Update Chapter' : 'Create Chapter'}
+            {loading ? 'Saving...' : isEditMode ? 'Update Chapter' : 'Add Chapter'}
           </Button>
         </form>
       </CardContent>

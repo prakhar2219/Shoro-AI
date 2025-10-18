@@ -26,7 +26,9 @@ import { getCountries, ICountry } from "@/lib/api/entities/countries";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
 import { BoardForm } from "@/components/entity/BoardForm";
 import { BoardTranslationForm } from "@/components/entity/BoardTranslationForm";
+import { ClassForm } from "@/components/entity/ClassForm";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { createClass } from "@/lib/api/entities/classes";
 import { MCQFormModal } from "@/components/shared/MCQFormModal";
 import { FAQFormModal } from "@/components/shared/FAQFormModal";
 import { DescriptiveQuestionFormModal } from "@/components/shared/DescriptiveQuestionFormModal";
@@ -56,6 +58,10 @@ export default function BoardsPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+
+  // Class modal states
+  const [openClassModal, setOpenClassModal] = useState(false);
+  const [selectedBoardForClass, setSelectedBoardForClass] = useState<IBoard | null>(null);
 
   // Use the custom hook for common admin page functionality
   const {
@@ -239,6 +245,33 @@ export default function BoardsPage() {
     }
   };
 
+  // Class handler
+  const handleAddClass = (board: IBoard) => {
+    setSelectedBoardForClass(board);
+    setOpenClassModal(true);
+  };
+
+  const handleClassSubmit = async (data: any) => {
+    try {
+      // Add board_id to the class data
+      const classData = {
+        ...data,
+        board_id: selectedBoardForClass?._id
+      };
+      
+      await createClass(classData);
+      toast({ title: 'Success', description: 'Class created successfully' });
+      setOpenClassModal(false);
+      setSelectedBoardForClass(null);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create class', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
   // Render translations for expanded row
   const renderExpandedRow = (board: IBoard) => {
     const translations = board.translations || [];
@@ -282,6 +315,9 @@ export default function BoardsPage() {
           onAddDescriptiveQuestion={(entityId) => {
             setSelectedEntity({ id: entityId, name: row.original.name });
             setOpenDescriptiveQuestionModal(true);
+          }}
+          onAddClass={(entityId) => {
+            handleAddClass(row.original);
           }}
         />
       ),
@@ -416,6 +452,28 @@ export default function BoardsPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Class Form Modal */}
+      <EntityFormModal
+        title={`Add Class to Board: ${selectedBoardForClass?.name || ''}`}
+        open={openClassModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenClassModal(false);
+            setSelectedBoardForClass(null);
+          }
+        }}
+      >
+        <ClassForm
+          defaultValues={{ 
+            board_id: selectedBoardForClass?._id,
+            board: selectedBoardForClass 
+          }}
+          onSubmit={handleClassSubmit}
+          boards={boards.filter(b => b._id).map(b => ({ id: b._id as string, name: b.name }))}
+          loading={isLoading}
+        />
+      </EntityFormModal>
 
       {/* Content Form Modals */}
       <ContentFormModals

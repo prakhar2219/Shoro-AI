@@ -1,10 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { ConfirmationDialog } from "@/components/shared/ConfirmationDialog";
 import { SubjectForm } from "@/components/entity/SubjectForm";
 import { SubjectTranslationForm } from "@/components/entity/SubjectTranslationForm";
+import { ChapterForm } from "@/components/entity/ChapterForm";
+import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { createChapter } from "@/lib/api/entities/chapters";
 import { DataTable } from "@/components/ui/DataTable";
 import { subjectColumns } from "@/components/table/columns/subjectColumns";
 import { ColumnDef } from "@tanstack/react-table";
@@ -22,7 +25,6 @@ import {
 } from "@/lib/api/entities/subjects";
 import { getClasses, IClass } from "@/lib/api/entities/classes";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
-import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
 import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
@@ -51,6 +53,10 @@ export default function SubjectsPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+
+  // Chapter modal states
+  const [openChapterModal, setOpenChapterModal] = useState(false);
+  const [selectedSubjectForChapter, setSelectedSubjectForChapter] = useState<ISubject | null>(null);
 
   // Use the custom hook for common admin page functionality
   const {
@@ -103,20 +109,21 @@ export default function SubjectsPage() {
       setIsLoading(true);
       if (editing?._id) {
         await updateSubject(editing._id, data);
-        // toast({ title: "Success", description: "Subject updated successfully." });
+        toast({ title: "Success", description: "Subject updated successfully." });
       } else {
         await createSubject(data);
-        // toast({ title: "Success", description: "Subject created successfully." });
+        toast({ title: "Success", description: "Subject created successfully." });
       }
       setOpenForm(false);
       setEditing(null);
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
-      // toast({
-      //   title: "Error",
-      //   description: error.response?.data?.error || "Failed to save subject. Please try again.",
-      //   variant: "destructive",
-      // });
+      toast({
+        title: "Error",
+        description: error.response?.data?.error || "Failed to save subject. Please try again.",
+        variant: "destructive",
+      });
+      console.error('Error saving subject:', error);
     } finally {
       setIsLoading(false);
     }
@@ -204,6 +211,42 @@ export default function SubjectsPage() {
     }
   };
 
+  // Chapter handler
+  const handleAddChapter = (subject: ISubject) => {
+    setSelectedSubjectForChapter(subject);
+    setOpenChapterModal(true);
+  };
+
+  const handleChapterSubmit = async (data: any) => {
+    try {
+      // Add subject_id to the chapter data
+      const chapterData = {
+        ...data,
+        subject_id: selectedSubjectForChapter?._id
+      };
+      
+      await createChapter(chapterData);
+      toast({ title: 'Success', description: 'Chapter created successfully' });
+      setOpenChapterModal(false);
+      setSelectedSubjectForChapter(null);
+    } catch (error: any) {
+      toast({ 
+        title: 'Error', 
+        description: error?.response?.data?.error || 'Failed to create chapter', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
+  // Memoize Chapter initial data to prevent infinite re-renders
+  const chapterInitialData = useMemo(() => {
+    if (!selectedSubjectForChapter) return undefined;
+    return {
+      subject_id: selectedSubjectForChapter._id,
+      subject: selectedSubjectForChapter
+    };
+  }, [selectedSubjectForChapter]);
+
   // Normalize subject data for form
   const getSubjectFormInitialData = (subject: ISubject) => ({
     ...subject,
@@ -267,6 +310,9 @@ export default function SubjectsPage() {
             setSelectedEntity({ id: entityId, name: row.original.name });
             setOpenDescriptiveQuestionModal(true);
           }}
+          onAddChapter={(entityId) => {
+            handleAddChapter(row.original);
+          }}
         />
       ),
       enableSorting: false,
@@ -277,12 +323,19 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, code, name, icon (optional), content (HTML - optional).",
+    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "icon", type: "text", required: false } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "tag", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
+      { name: "downloadNotes", type: "text", required: false } as FieldSchema,
+      { name: "downloadPDF", type: "text", required: false } as FieldSchema,
+      { name: "downloadQA", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
@@ -295,9 +348,16 @@ export default function SubjectsPage() {
         const content = r.content || undefined
         return {
           class_id: r.class_id,
+          language_id: r.language_id,
           code: r.code,
           name: r.name,
           icon: r.icon || undefined,
+          author: r.author || undefined,
+          tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
+          source: r.source || undefined,
+          downloadNotes: r.downloadNotes || undefined,
+          downloadPDF: r.downloadPDF || undefined,
+          downloadQA: r.downloadQA || undefined,
           content,
         };
       });
@@ -384,6 +444,24 @@ export default function SubjectsPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Chapter Form Modal */}
+      <EntityFormModal
+        title={`Add Chapter to Subject: ${selectedSubjectForChapter?.name || ''}`}
+        open={openChapterModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenChapterModal(false);
+            setSelectedSubjectForChapter(null);
+          }
+        }}
+      >
+        <ChapterForm
+          initialData={chapterInitialData}
+          onSubmit={handleChapterSubmit}
+          loading={isLoading}
+        />
+      </EntityFormModal>
 
       {/* Content Form Modals */}
       <ContentFormModals

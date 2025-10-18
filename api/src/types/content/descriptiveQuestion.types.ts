@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
 
 export interface IDescriptiveQuestion {
-  entity_type: string; // "Chapter" | "Country" | "Board" | "Class" | "Subject"
+  entity_type: string; // "Chapter" | "Topic" | "Subtopic" | "Country" | "Board" | "Class" | "Subject"
   entity_id: Schema.Types.ObjectId;
   question: string;
   answer: string;

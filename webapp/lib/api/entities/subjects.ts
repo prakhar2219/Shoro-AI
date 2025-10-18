@@ -9,7 +9,14 @@ export interface ISubject {
   code: string;
   icon?: string;
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
+  language_id: string | { _id: string; name: string; code: string; [key: string]: any };
+  downloadNotes?: string;
+  downloadPDF?: string;
+  downloadQA?: string;
   content?: any[];
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: ISubjectTranslation;
   translations?: ISubjectTranslation[];
   createdAt?: string;

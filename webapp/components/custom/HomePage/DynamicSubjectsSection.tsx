@@ -36,24 +36,20 @@ export default async function DynamicSubjectsSection({ countryCode }: DynamicSub
     const boards = await getBoardsByCountry(countryCode)
     
     if (!boards || boards.length === 0) {
-      console.log(`No boards found for country: ${countryCode}`)
       return null
     }
 
     // Get subjects from the first board using paginated API
     const firstBoard = boards[0]
-    console.log(`Fetching subjects for board: ${firstBoard.short_code}`)
     
     // Use paginated API with limit 6
     const subjectsResponse = await getSubjectsWithPagination(1, 6, '', undefined)
     const subjects = subjectsResponse?.data || subjectsResponse || []
     
     if (!subjects || subjects.length === 0) {
-      console.log(`No subjects found for board: ${firstBoard.short_code}`)
       return null
     }
 
-    console.log(`Found ${subjects.length} subjects`, subjects)
     const displaySubjects: Subject[] = subjects
 
     return (

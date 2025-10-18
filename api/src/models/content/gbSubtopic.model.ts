@@ -1,0 +1,30 @@
+import mongoose, { Schema } from 'mongoose';
+import { IGBSubtopic } from '../../types/content/gbSubtopic.types';
+
+const GBSubtopicSchema = new Schema<IGBSubtopic>(
+  {
+    gb_topic_id: { type: Schema.Types.ObjectId, ref: 'GBTopic', required: true },
+    name: { type: String, required: true, trim: true },
+    slug: { type: String, required: true, trim: true },
+    description: { type: String, trim: true },
+    content: { type: String, required: false },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    order: { type: Number, required: true, default: 0 },
+    image: { type: String, trim: true },
+    tag: [{ type: String, trim: true }],
+    source: { type: String, trim: true },
+    author: { type: String, trim: true },
+    is_published: { type: Boolean, default: false },
+    created_by: { type: Schema.Types.ObjectId, ref: 'User' },
+  },
+  { timestamps: true }
+);
+
+// Virtuals for translation and translations (for FE/BE consistency)
+GBSubtopicSchema.virtual('translation');
+GBSubtopicSchema.virtual('translations');
+
+// Compound unique index: slug must be unique within each GB topic
+GBSubtopicSchema.index({ gb_topic_id: 1, slug: 1 }, { unique: true });
+
+export default mongoose.model<IGBSubtopic>('GBSubtopic', GBSubtopicSchema);

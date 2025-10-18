@@ -12,11 +12,50 @@ interface TipTapNode {
 }
 
 interface ServerTipTapRendererProps {
-  content: TipTapNode[];
+  content: TipTapNode[] | string | any;
   className?: string;
 }
 
 export function ServerTipTapRenderer({ content, className = '' }: ServerTipTapRendererProps) {
+  // Parse content if it's a string
+  let parsedContent: TipTapNode[] = [];
+  
+  if (typeof content === 'string') {
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(content);
+      if (Array.isArray(parsed)) {
+        parsedContent = parsed;
+      } else if (parsed && typeof parsed === 'object' && parsed.content && Array.isArray(parsed.content)) {
+        // Handle TipTap document format { type: 'doc', content: [...] }
+        parsedContent = parsed.content;
+      } else {
+        // If it's just a plain string, create a simple paragraph node
+        parsedContent = [{
+          type: 'paragraph',
+          content: [{ type: 'text', text: content }]
+        }];
+      }
+    } catch (e) {
+      // If JSON parsing fails, treat as plain text
+      parsedContent = [{
+        type: 'paragraph',
+        content: [{ type: 'text', text: content }]
+      }];
+    }
+  } else if (Array.isArray(content)) {
+    parsedContent = content;
+  } else if (content && typeof content === 'object' && content.content && Array.isArray(content.content)) {
+    // Handle TipTap document format { type: 'doc', content: [...] }
+    parsedContent = content.content;
+  } else if (content) {
+    // Fallback for any other content type
+    parsedContent = [{
+      type: 'paragraph',
+      content: [{ type: 'text', text: String(content) }]
+    }];
+  }
+
   const renderNode = (node: TipTapNode): React.ReactNode => {
     if (node.type === 'text') {
       let text = node.text || '';
@@ -236,7 +275,7 @@ export function ServerTipTapRenderer({ content, className = '' }: ServerTipTapRe
     }
   };
 
-  if (!content || content.length === 0) {
+  if (!parsedContent || parsedContent.length === 0) {
     return (
       <div className={`text-gray-500 italic ${className}`}>
         No content available
@@ -246,7 +285,7 @@ export function ServerTipTapRenderer({ content, className = '' }: ServerTipTapRe
 
   return (
     <div className={`prose prose-lg max-w-none ${className}`}>
-      {content.map((node, index) => (
+      {parsedContent.map((node, index) => (
         <React.Fragment key={index}>
           {renderNode(node)}
         </React.Fragment>

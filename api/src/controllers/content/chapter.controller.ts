@@ -15,15 +15,40 @@ export const bulkCreateChapters = async (
       res.status(400).json({ error: 'chapters array is required' });
       return;
     }
+    
+    // Basic field validation
     for (const c of chapters) {
-      if (!c.board_id || !c.class_id || !c.subject_id || !c.title || !c.slug) {
-        res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, title, and slug' });
+      if (!c.board_id || !c.class_id || !c.subject_id || !c.language_id || !c.title || !c.slug) {
+        res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, language_id, title, and slug' });
         return;
       }
       // Normalize types
       (c as any).order = typeof c.order === 'number' ? c.order : Number((c as any).order || 0);
       (c as any).is_published = !!(c as any).is_published;
     }
+    
+    // Validate all subject IDs exist
+    const subjectIds = chapters.map(c => c.subject_id.toString());
+    const subjectValidation = await chapterService.validateSubjectIds(subjectIds);
+    
+    if (subjectValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid subject_id(s) found: ${subjectValidation.invalid.join(', ')}. Please ensure all subject IDs exist in the database.` 
+      });
+      return;
+    }
+    
+    // Validate all language IDs exist
+    const languageIds = chapters.map(c => c.language_id.toString());
+    const languageValidation = await chapterService.validateLanguageIds(languageIds);
+    
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id(s) found: ${languageValidation.invalid.join(', ')}. Please ensure all language IDs exist in the database.` 
+      });
+      return;
+    }
+    
     const created = await chapterService.bulkCreateChapters(chapters);
     res.status(201).json(created);
   } catch (error) {
@@ -36,10 +61,28 @@ export const createChapter = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { board_id, class_id, subject_id, order, is_published, created_by, title, slug, content } = req.body;
+    const { board_id, class_id, subject_id, language_id, order, is_published, created_by, title, slug, downloadNotes, downloadPDF, downloadQA, content, tag, source, author } = req.body;
 
-    if (!board_id || !class_id || !subject_id || !title || !slug) {
-      res.status(400).json({ error: 'Missing required fields' });
+    if (!board_id || !class_id || !subject_id || !language_id || !title || !slug) {
+      res.status(400).json({ error: 'Missing required fields: board_id, class_id, subject_id, language_id, title, slug' });
+      return;
+    }
+
+    // Validate subject ID exists
+    const subjectValidation = await chapterService.validateSubjectIds([subject_id.toString()]);
+    if (subjectValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid subject_id: ${subject_id}. Please ensure the subject ID exists in the database.` 
+      });
+      return;
+    }
+
+    // Validate language ID exists
+    const languageValidation = await chapterService.validateLanguageIds([language_id.toString()]);
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id: ${language_id}. Please ensure the language ID exists in the database.` 
+      });
       return;
     }
 
@@ -47,12 +90,19 @@ export const createChapter = async (
       board_id,
       class_id,
       subject_id,
+      language_id,
       title,
       slug,
+      downloadNotes,
+      downloadPDF,
+      downloadQA,
       content,
       order: typeof order === 'number' ? order : Number(order),
       is_published: !!is_published,
       created_by,
+      tag,
+      source,
+      author,
     } as IChapter;
 
     const created = await chapterService.createChapter(chapter);
@@ -75,6 +125,7 @@ export const getChapters = async (
       class_id, 
       subject_id, 
       language_id,
+      search,
       board_short_code,
       class_grade,
       subject_code
@@ -93,14 +144,15 @@ export const getChapters = async (
     }
     
     // Existing functionality: Filter by IDs
-    if (page || limit || board_id || class_id || subject_id || language_id) {
+    if (page || limit || board_id || class_id || subject_id || language_id || search) {
       const result = await chapterService.getChaptersWithPagination(
         Number(page),
         Number(limit),
         board_id as string,
         class_id as string,
         subject_id as string,
-        language_id as string
+        language_id as string,
+        search as string
       );
       res.status(200).json(result);
       return;

@@ -3,7 +3,7 @@ import { IDescriptiveQuestion } from '@/types/content/descriptiveQuestion.types'
 
 const DescriptiveQuestionSchema = new Schema<IDescriptiveQuestion>(
   {
-    entity_type: { type: String, required: true }, // "Chapter" | "Country" | "Board" | "Class" | "Subject"
+    entity_type: { type: String, required: true }, // "Chapter" | "Topic" | "Subtopic" | "Country" | "Board" | "Class" | "Subject"
     entity_id: { type: Schema.Types.ObjectId, required: true },
     question: { type: String, required: true },
     answer: { type: String, required: true },

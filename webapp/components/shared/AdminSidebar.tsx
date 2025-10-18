@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import { useState } from "react"
 import {
     Home,
+    Users,
     Globe,
     Layers,
     Book,
@@ -15,21 +16,34 @@ import {
     Languages,
     HelpCircle,
     MessageSquare,
-    CheckSquare
+    CheckSquare,
+    Folder,
+    FolderOpen,
+    FileQuestion,
+    Bookmark,
+    Star
 } from "lucide-react"
 import clsx from "clsx"
 
 const navItems = [
     { name: "Dashboard", href: "/admin", icon: Home },
+    { name: "Users", href: "/admin/users", icon: Users },
     { name: "Languages", href: "/admin/languages", icon: Languages },
     { name: "Countries", href: "/admin/countries", icon: Globe },
     { name: "Boards", href: "/admin/boards", icon: Layers },
     { name: "Classes", href: "/admin/classes", icon: Book },
     { name: "Subjects", href: "/admin/subjects", icon: FileText },
     { name: "Chapters", href: "/admin/chapters", icon: LayoutList },
+    { name: "Topics", href: "/admin/topics", icon: LayoutList },
+    { name: "Subtopics", href: "/admin/subtopics", icon: LayoutList },
     { name: "MCQs", href: "/admin/mcqs", icon: CheckSquare },
     { name: "Descriptive Questions", href: "/admin/descriptive-questions", icon: MessageSquare },
     { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
+    { name: "GB Categories", href: "/admin/gb-categories", icon: Folder },
+    { name: "GB Topics", href: "/admin/gb-topics", icon: FolderOpen },
+    { name: "GB Subtopics", href: "/admin/gb-subtopics", icon: Bookmark },
+    { name: "GB Questions", href: "/admin/gb-questions", icon: FileQuestion },
+    { name: "Ratings & Reviews", href: "/admin/ratings", icon: Star },
 ]
 
 export function AdminSidebar() {

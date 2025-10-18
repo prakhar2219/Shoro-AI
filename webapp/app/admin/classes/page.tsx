@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { EntityFormModal } from "@/components/shared/EntityFormModal";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { useToast } from "@/hooks/use-toast";
@@ -25,7 +25,9 @@ import { getBoards, IBoard } from "@/lib/api/entities/boards";
 import { getLanguages, ILanguage } from "@/lib/api/entities/language";
 import { ClassForm } from "@/components/entity/ClassForm";
 import { ClassTranslationForm } from "@/components/entity/ClassTranslationForm";
+import { SubjectForm } from "@/components/entity/SubjectForm";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
+import { createSubject } from "@/lib/api/entities/subjects";
 import { AdminPageLayout } from "@/components/shared/AdminPageLayout";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
 import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
@@ -50,6 +52,10 @@ export default function ClassesPage() {
   const [openFAQModal, setOpenFAQModal] = useState(false);
   const [openDescriptiveQuestionModal, setOpenDescriptiveQuestionModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<{ id: string; name: string } | null>(null);
+
+  // Subject modal states
+  const [openSubjectModal, setOpenSubjectModal] = useState(false);
+  const [selectedClassForSubject, setSelectedClassForSubject] = useState<IClass | null>(null);
 
   // Use the custom hook for common admin page functionality
   const {
@@ -151,7 +157,8 @@ export default function ClassesPage() {
       const processedData = classesData.map(cls => ({
         ...cls,
         grade: typeof cls.grade === 'number' ? cls.grade : Number(cls.grade),
-        content: cls.content || undefined
+        content: cls.content || undefined,
+        language_id: cls.language_id
       }));
       
       await bulkCreateClasses(processedData);
@@ -233,6 +240,42 @@ export default function ClassesPage() {
     }
   };
 
+  // Subject handler
+  const handleAddSubject = (classItem: IClass) => {
+    setSelectedClassForSubject(classItem);
+    setOpenSubjectModal(true);
+  };
+
+  const handleSubjectSubmit = async (data: any) => {
+    try {
+      // Add class_id to the subject data
+      const subjectData = {
+        ...data,
+        class_id: selectedClassForSubject?._id
+      };
+      
+      await createSubject(subjectData);
+      // toast({ title: 'Success', description: 'Subject created successfully' });
+      setOpenSubjectModal(false);
+      setSelectedClassForSubject(null);
+    } catch (error: any) {
+      // toast({ 
+      //   title: 'Error', 
+      //   description: error?.response?.data?.error || 'Failed to create subject', 
+      //   variant: 'destructive' 
+      // });
+    }
+  };
+
+  // Memoize Subject initial data to prevent infinite re-renders
+  const subjectInitialData = useMemo(() => {
+    if (!selectedClassForSubject) return undefined;
+    return {
+      class_id: selectedClassForSubject._id,
+      classItem: selectedClassForSubject
+    };
+  }, [selectedClassForSubject]);
+
   // Normalize class data for form
   const getClassFormInitialData = (classItem: IClass) => {
     const result = {
@@ -242,6 +285,12 @@ export default function ClassesPage() {
           ? classItem.board_id._id
           : typeof classItem.board_id === 'string'
             ? classItem.board_id
+            : '',
+      language_id:
+        typeof classItem.language_id === 'object' && classItem.language_id !== null && '_id' in classItem.language_id && typeof classItem.language_id._id === 'string'
+          ? classItem.language_id._id
+          : typeof classItem.language_id === 'string'
+            ? classItem.language_id
             : '',
     };
     console.log('getClassFormInitialData input:', classItem);
@@ -303,6 +352,9 @@ export default function ClassesPage() {
             setSelectedEntity({ id: entityId, name: row.original.name });
             setOpenDescriptiveQuestionModal(true);
           }}
+          onAddSubject={(entityId) => {
+            handleAddSubject(row.original);
+          }}
         />
       ),
       enableSorting: false,
@@ -313,10 +365,11 @@ export default function ClassesPage() {
   // CSV schema for classes
   const classCsvSchema: CsvSchema = {
     title: "Upload Classes CSV",
-    description: "Upload a CSV file with columns: name, board_id, grade, content (HTML - optional).",
+    description: "Upload a CSV file with columns: name, board_id, language_id, grade, content (HTML - optional).",
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "board_id", type: "text", required: true } as FieldSchema,
+      { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "grade", type: "number", required: true } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
@@ -369,6 +422,7 @@ export default function ClassesPage() {
               name: editing.name,
               grade: editing.grade,
               board_id: getClassFormInitialData(editing).board_id,
+              language_id: getClassFormInitialData(editing).language_id,
               content: typeof editing.content === 'string' ? editing.content : undefined
             };
             console.log('ClassForm defaultValues:', defaultVals);
@@ -422,6 +476,24 @@ export default function ClassesPage() {
         onCancel={() => setDeleteTranslationTarget(null)}
         onConfirm={confirmDeleteTranslation}
       />
+
+      {/* Subject Form Modal */}
+      <EntityFormModal
+        title={`Add Subject to Class: ${selectedClassForSubject?.name || ''}`}
+        open={openSubjectModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setOpenSubjectModal(false);
+            setSelectedClassForSubject(null);
+          }
+        }}
+      >
+        <SubjectForm
+          initialData={subjectInitialData}
+          onSubmit={handleSubjectSubmit}
+          loading={isLoading}
+        />
+      </EntityFormModal>
 
       {/* Content Form Modals */}
       <ContentFormModals

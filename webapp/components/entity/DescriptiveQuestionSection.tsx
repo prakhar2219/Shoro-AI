@@ -7,7 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { DescriptiveQuestionForm } from "./DescriptiveQuestionForm";
 import { DescriptiveQuestionTranslationForm } from "./DescriptiveQuestionTranslationForm";
-import { Edit, Trash2, Plus, Languages } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Dynamically import icons to prevent hydration issues
+const Edit = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Edit })), { ssr: false });
+const Trash2 = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Trash2 })), { ssr: false });
+const Plus = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Plus })), { ssr: false });
+const Languages = dynamic(() => import("lucide-react").then(mod => ({ default: mod.Languages })), { ssr: false });
 import { useToast } from "@/hooks/use-toast";
 import { useLoading } from "@/hooks/use-loading";
 import {

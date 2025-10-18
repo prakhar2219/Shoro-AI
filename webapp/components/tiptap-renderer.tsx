@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent, JSONContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import Table from "@tiptap/extension-table"
+import { Table } from "@tiptap/extension-table"
 import TableRow from "@tiptap/extension-table-row"
 import TableHeader from "@tiptap/extension-table-header"
 import TableCell from "@tiptap/extension-table-cell"
@@ -33,21 +33,25 @@ export function TipTapRenderer({ content, className, showEmptyState = true, cont
   }
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-blue-600 underline cursor-pointer hover:text-blue-800 transition-colors",
-        },
-      }),
-    ],
+    extensions: (() => {
+      const base = [StarterKit];
+      const canConfigureTable = (Table as any)?.configure;
+      if (canConfigureTable) {
+        base.push(
+          (Table as any).configure({ resizable: true }),
+          TableRow as any,
+          TableHeader as any,
+          TableCell as any,
+        );
+      }
+      base.push(
+        Link.configure({
+          openOnClick: false,
+          HTMLAttributes: { class: "text-blue-600 underline cursor-pointer hover:text-blue-800 transition-colors" },
+        }) as any,
+      );
+      return base as any[];
+    })(),
     content: tipTapContent || { type: 'doc', content: [] },
     editable: false, // Read-only for rendering
     editorProps: {
@@ -55,6 +59,7 @@ export function TipTapRenderer({ content, className, showEmptyState = true, cont
         class: "prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none",
       },
     },
+    immediatelyRender: false,
   })
 
   if (!editor) {

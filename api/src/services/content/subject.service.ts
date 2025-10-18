@@ -1,6 +1,32 @@
 import SubjectModel from '../../models/content/subject.model';
 import SubjectTranslation from '../../models/content/subjectTranslation.model';
+import ClassModel from '../../models/content/class.model';
+import LanguageModel from '../../models/content/language.model';
 import { ISubject } from '@/types/content/subject.types';
+
+// Helper function to validate if class IDs exist
+export const validateClassIds = async (classIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueClassIds = [...new Set(classIds)]; // Remove duplicates
+  const existingClasses = await ClassModel.find({ _id: { $in: uniqueClassIds } }).select('_id');
+  const existingClassIds = existingClasses.map(c => c._id.toString());
+  
+  const valid = uniqueClassIds.filter(id => existingClassIds.includes(id));
+  const invalid = uniqueClassIds.filter(id => !existingClassIds.includes(id));
+  
+  return { valid, invalid };
+};
+
+// Helper function to validate if language IDs exist
+export const validateLanguageIds = async (languageIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
+  const uniqueLanguageIds = [...new Set(languageIds)]; // Remove duplicates
+  const existingLanguages = await LanguageModel.find({ _id: { $in: uniqueLanguageIds } }).select('_id');
+  const existingLanguageIds = existingLanguages.map(l => l._id.toString());
+  
+  const valid = uniqueLanguageIds.filter(id => existingLanguageIds.includes(id));
+  const invalid = uniqueLanguageIds.filter(id => !existingLanguageIds.includes(id));
+  
+  return { valid, invalid };
+};
 
 export const createSubject = async (data: ISubject) => {
   return await SubjectModel.create(data);
@@ -20,7 +46,7 @@ export const bulkCreateSubjects = async (subjects: ISubject[]) => {
 };
 
 export const getAllSubjects = async (language_id?: string) => {
-  const subjects = await SubjectModel.find().populate('class_id');
+  const subjects = await SubjectModel.find().populate('class_id').populate('language_id');
   if (!language_id) {
     // Return main subject data only, with translation as a separate property
     return subjects.map((subject: any) => ({
@@ -52,7 +78,7 @@ export const getAllSubjects = async (language_id?: string) => {
 };
 
 export const getSubjectById = async (id: string, language_id?: string) => {
-  const subject = await SubjectModel.findById(id).populate('class_id');
+  const subject = await SubjectModel.findById(id).populate('class_id').populate('language_id');
   if (!subject) return null;
   let translation = null;
   if (language_id) {
@@ -101,6 +127,7 @@ export const getSubjectsWithPagination = async (
         path: 'class_id',
         populate: { path: 'board_id' }
       })
+      .populate('language_id')
       .sort({ name: 1 })
       .skip(skip)
       .limit(limit),

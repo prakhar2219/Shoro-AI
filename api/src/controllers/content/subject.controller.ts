@@ -13,12 +13,36 @@ export const bulkCreateSubjects = async (
       res.status(400).json({ error: 'subjects array is required' });
       return;
     }
+    // Basic field validation
     for (const s of subjects) {
-      if (!s.class_id || !s.code || !s.name) {
-        res.status(400).json({ error: 'Each subject must have class_id, code, and name' });
+      if (!s.class_id || !s.language_id || !s.code || !s.name) {
+        res.status(400).json({ error: 'Each subject must have class_id, language_id, code, and name' });
         return;
       }
     }
+    
+    // Validate all class IDs exist
+    const classIds = subjects.map(s => s.class_id.toString());
+    const classValidation = await subjectService.validateClassIds(classIds);
+    
+    if (classValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid class_id(s) found: ${classValidation.invalid.join(', ')}. Please ensure all class IDs exist in the database.` 
+      });
+      return;
+    }
+    
+    // Validate all language IDs exist
+    const languageIds = subjects.map(s => s.language_id.toString());
+    const languageValidation = await subjectService.validateLanguageIds(languageIds);
+    
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id(s) found: ${languageValidation.invalid.join(', ')}. Please ensure all language IDs exist in the database.` 
+      });
+      return;
+    }
+    
     const created = await subjectService.bulkCreateSubjects(subjects);
     res.status(201).json(created);
   } catch (error) {
@@ -31,19 +55,44 @@ export const createSubject = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { class_id, code, icon, name, content } = req.body;
+    const { class_id, language_id, code, icon, name, downloadNotes, downloadPDF, downloadQA, content, tag, source, author } = req.body;
 
-    if (!class_id || !code || !name) {
-      res.status(400).json({ error: 'Missing required fields' });
+    if (!class_id || !language_id || !code || !name) {
+      res.status(400).json({ error: 'Missing required fields: class_id, language_id, code, name' });
+      return;
+    }
+
+    // Validate class ID exists
+    const classValidation = await subjectService.validateClassIds([class_id.toString()]);
+    if (classValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid class_id: ${class_id}. Please ensure the class ID exists in the database.` 
+      });
+      return;
+    }
+
+    // Validate language ID exists
+    const languageValidation = await subjectService.validateLanguageIds([language_id.toString()]);
+    if (languageValidation.invalid.length > 0) {
+      res.status(400).json({ 
+        error: `Invalid language_id: ${language_id}. Please ensure the language ID exists in the database.` 
+      });
       return;
     }
 
     const subject: ISubject = {
       class_id,
+      language_id,
       code,
       icon,
       name,
+      downloadNotes,
+      downloadPDF,
+      downloadQA,
       content,
+      tag,
+      source,
+      author,
     } as ISubject;
 
     const created = await subjectService.createSubject(subject);

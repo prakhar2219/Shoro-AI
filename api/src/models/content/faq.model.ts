@@ -3,7 +3,7 @@ import { IFAQ } from '@/types/content/faq.types';
 
 const FAQSchema = new Schema<IFAQ>(
   {
-    entity_type: { type: String, required: true }, // "Chapter" | "Country" | "Board" | "Class" | "Subject"
+    entity_type: { type: String, required: true }, // "Chapter" | "Topic" | "Subtopic" | "Country" | "Board" | "Class" | "Subject"
     entity_id: { type: Schema.Types.ObjectId, required: true },
     question: { type: String, required: true },
     answer: { type: String, required: true },

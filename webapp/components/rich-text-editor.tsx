@@ -2,7 +2,7 @@
 
 import { useEditor, EditorContent, JSONContent } from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
-import Table from "@tiptap/extension-table"
+import { Table } from "@tiptap/extension-table"
 import TableRow from "@tiptap/extension-table-row"
 import TableHeader from "@tiptap/extension-table-header"
 import TableCell from "@tiptap/extension-table-cell"
@@ -32,21 +32,26 @@ export function RichTextEditor({ value, onChange, className, editable = true }: 
   const [isExpanded, setIsExpanded] = useState(false)
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Table.configure({
-        resizable: true,
-      }),
-      TableRow,
-      TableHeader,
-      TableCell,
-      Link.configure({
-        openOnClick: false,
-        HTMLAttributes: {
-          class: "text-blue-600 underline cursor-pointer",
-        },
-      }),
-    ],
+    extensions: (() => {
+      const base = [StarterKit];
+      // Conditionally add table extensions if available to prevent runtime errors
+      const canConfigureTable = (Table as any)?.configure;
+      if (canConfigureTable) {
+        base.push(
+          (Table as any).configure({ resizable: true }),
+          TableRow as any,
+          TableHeader as any,
+          TableCell as any,
+        );
+      }
+      base.push(
+        Link.configure({
+          openOnClick: false,
+          HTMLAttributes: { class: "text-blue-600 underline cursor-pointer" },
+        }) as any,
+      );
+      return base as any[];
+    })(),
     content: value,
     editable,
     onUpdate: ({ editor }) => {
@@ -59,6 +64,7 @@ export function RichTextEditor({ value, onChange, className, editable = true }: 
         class: "prose prose-sm sm:prose-lg lg:prose-lg xl:prose-2xl mx-auto focus:outline-none min-h-[300px] p-4",
       },
     },
+    immediatelyRender: false,
   })
 
   // Sync raw HTML value when switching modes or when value prop changes

@@ -20,10 +20,12 @@ Thumbs.db
 api/combined.log
 api/error.log
 api/.env
-api/.env.*
+api/.env.local
+api/.env.*.local
 
 # Webapp-specific ignores
 webapp/.env
-webapp/.env.*
+webapp/.env.local
+webapp/.env.*.local
 # Build artifacts
 webapp/.next/

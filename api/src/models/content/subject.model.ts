@@ -4,10 +4,17 @@ import mongoose, { Schema } from 'mongoose';
 const SubjectSchema = new Schema<ISubject>(
   {
     class_id: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
     code: { type: String, required: true },
     icon: { type: String },
     name: { type: String, required: true },
+    downloadNotes: { type: String, trim: true },
+    downloadPDF: { type: String, trim: true },
+    downloadQA: { type: String, trim: true },
     content: { type: String, required: false },
+    tag: [{ type: String, trim: true }],
+    source: { type: String, trim: true },
+    author: { type: String, trim: true },
   },
   { timestamps: true }
 );

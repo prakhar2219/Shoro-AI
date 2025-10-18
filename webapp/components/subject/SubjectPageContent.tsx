@@ -9,6 +9,7 @@ import { ServerTipTapRenderer } from '../country/ServerTipTapRenderer';
 import { ServerMCQSection } from '../country/ServerMCQSection';
 import { ServerFAQSection } from '../country/ServerFAQSection';
 import { ServerDescriptiveQuestionSection } from '../country/ServerDescriptiveQuestionSection';
+import { RatingSystem } from '../shared/RatingSystem';
 
 interface Chapter {
   _id: string;
@@ -241,6 +242,13 @@ export function SubjectPageContent({
         questions={descriptiveQuestions}
         title="Descriptive Questions"
         description="Detailed answers and explanations"
+      />
+
+      {/* Rating System */}
+      <RatingSystem
+        entityType="subject"
+        entityId={subject._id}
+        entityTitle={subject.code}
       />
     </PageLayout>
   );

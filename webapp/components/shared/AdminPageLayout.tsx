@@ -8,7 +8,7 @@ import { ColumnDef } from '@tanstack/react-table';
 
 interface AdminPageLayoutProps<T> {
   title: string;
-  onAddClick: () => void;
+  onAddClick?: () => void;
   onImportClick?: () => void;
   searchTerm: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -25,6 +25,7 @@ interface AdminPageLayoutProps<T> {
   emptyStateTitle: string;
   emptyStateMessage: string;
   emptyStateAction?: React.ReactNode;
+  customFilters?: React.ReactNode;
   children?: React.ReactNode;
 }
 
@@ -47,6 +48,7 @@ export function AdminPageLayout<T>({
   emptyStateTitle,
   emptyStateMessage,
   emptyStateAction,
+  customFilters,
   children
 }: AdminPageLayoutProps<T>) {
   return (
@@ -83,6 +85,13 @@ export function AdminPageLayout<T>({
           </select>
         </div>
       </div>
+      
+      {/* Custom Filters */}
+      {customFilters && (
+        <div className="mb-4">
+          {customFilters}
+        </div>
+      )}
       
       <hr className="my-4" />
 

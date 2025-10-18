@@ -6,7 +6,7 @@ export interface IMCQOption {
 }
 
 export interface IMCQ {
-  entity_type: string; // "Chapter" | "Country" | "Board" | "Class" | "Subject"
+  entity_type: string; // "Chapter" | "Topic" | "Subtopic" | "Country" | "Board" | "Class" | "Subject"
   entity_id: Schema.Types.ObjectId;
   question: string;
   options: IMCQOption[];

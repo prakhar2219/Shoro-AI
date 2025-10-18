@@ -6,6 +6,7 @@ export interface IChapter {
   board_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   subject_id: string | { _id: string; name: string; grade: number; [key: string]: any };
+  language_id: string | { _id: string; name: string; code: string; [key: string]: any };
   order: number;
   is_published: boolean;
   created_by: string;
@@ -13,14 +14,25 @@ export interface IChapter {
   slug: string;
   seo_title?: string;
   seo_description?: string;
+  downloadNotes?: string;
+  downloadPDF?: string;
+  downloadQA?: string;
   content: any[];
   version?: number;
+  tag?: string[];
+  source?: string;
+  author?: string;
   translation?: any;
   translations?: any[];
 }
 
-export const getChapters = async ({ page = 1, limit = 10 } = {}) => {
-    const res = await api.get(API_ENDPOINTS.chapters, { params: { page, limit } });
+export const getChapters = async ({ page = 1, limit = 10, search = '', subject_id = '', board_id = '', class_id = '' } = {}) => {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (subject_id) params.subject_id = subject_id;
+    if (board_id) params.board_id = board_id;
+    if (class_id) params.class_id = class_id;
+    const res = await api.get(API_ENDPOINTS.chapters, { params });
     return res.data;
 };
 
