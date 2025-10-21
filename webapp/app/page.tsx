@@ -5,6 +5,9 @@ import DynamicBoardsSection from "@/components/custom/HomePage/DynamicBoardsSect
 import DynamicSubjectsSection from "@/components/custom/HomePage/DynamicSubjectsSection"
 import ImprovedCountriesSection from "@/components/custom/HomePage/ImprovedCountriesSection"
 
+// Force dynamic rendering to avoid build-time API call timeouts
+export const dynamic = 'force-dynamic'
+export const revalidate = 3600 // Revalidate every hour (optional)
 
 export default async function HomePage() {
   // Default to India for the homepage

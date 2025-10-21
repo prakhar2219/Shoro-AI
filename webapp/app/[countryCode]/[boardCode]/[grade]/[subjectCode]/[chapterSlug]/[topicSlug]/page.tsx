@@ -1,6 +1,9 @@
 import { notFound } from 'next/navigation';
 import { TopicPageContent } from '@/components/topic/TopicPageContent';
 
+// Force dynamic rendering to avoid build-time API call timeouts
+export const dynamic = 'force-dynamic'
+
 // This would typically come from your API
 async function getTopicData(params: {
   countryCode: string;

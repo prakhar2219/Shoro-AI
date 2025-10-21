@@ -9,7 +9,8 @@ interface BoardPageProps {
   };
 }
 
-// Enable caching for this page
+// Force dynamic rendering to avoid build-time API call timeouts
+export const dynamic = 'force-dynamic'
 export const revalidate = 3600; // Revalidate every hour
 
 // Generate static params for better performance
