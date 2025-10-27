@@ -16,4 +16,7 @@ const ClassSchema = new Schema<IClass>(
 ClassSchema.virtual('translation');
 ClassSchema.virtual('translations');
 
+// Compound unique index: board_id + grade + language_id must be unique
+ClassSchema.index({ board_id: 1, grade: 1, language_id: 1 }, { unique: true });
+
 export default mongoose.model<IClass>('Class', ClassSchema);

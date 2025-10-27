@@ -29,6 +29,15 @@ export const createSubtopic = async (req: Request, res: Response) => {
       });
       return;
     }
+
+    // Check for duplicate order within topic
+    const existingSubtopic = await subtopicService.checkDuplicateOrder(topic_id, finalOrder);
+    if (existingSubtopic) {
+      res.status(409).json({ 
+        error: `A subtopic with order ${finalOrder} already exists for this topic. Please use a different order number.` 
+      });
+      return;
+    }
     
     const subtopic = {
       topic_id,
@@ -56,8 +65,8 @@ export const createSubtopic = async (req: Request, res: Response) => {
 };
 
 export const bulkCreateSubtopics = async (req: Request, res: Response) => {
+  const { subtopics } = req.body as { subtopics: any[] };
   try {
-    const { subtopics } = req.body as { subtopics: any[] };
     if (!Array.isArray(subtopics) || subtopics.length === 0) {
       res.status(400).json({ error: 'subtopics array is required' });
       return;
@@ -98,7 +107,23 @@ export const bulkCreateSubtopics = async (req: Request, res: Response) => {
     const created = await subtopicService.bulkCreateSubtopics(subtopics);
     res.status(201).json(created);
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    if (e.code === 11000) {
+      // Duplicate key error - likely duplicate order within same topic
+      const duplicateInfo = e.writeErrors?.map((err: any) => {
+        const failedDoc = subtopics[err.index];
+        return `Row ${err.index + 1}: Order ${failedDoc?.order} already exists for topic_id ${failedDoc?.topic_id}`;
+      }).join('; ') || 'Duplicate order numbers detected within the same topic';
+      
+      const successCount = e.insertedDocs?.length || Object.keys(e.insertedIds || {}).length || 0;
+      res.status(207).json({ 
+        message: `Partial success: ${successCount} subtopics created, ${subtopics.length - successCount} failed due to duplicate orders`,
+        error: duplicateInfo,
+        inserted: successCount,
+        failed: subtopics.length - successCount
+      });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
   }
 };
 

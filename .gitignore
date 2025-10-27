@@ -29,3 +29,24 @@ webapp/.env.local
 webapp/.env.*.local
 # Build artifacts
 webapp/.next/
+api/dist/
+
+# Temporary files and test files
+test.txt
+*.tmp
+*.temp
+*~
+
+# PowerShell and command fragments
+*--noEmit*
+*--short*
+*Select-Object*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

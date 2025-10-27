@@ -86,6 +86,16 @@ export const createChapter = async (
       return;
     }
 
+    // Check for duplicate order within subject
+    const orderNum = typeof order === 'number' ? order : Number(order);
+    const existingChapter = await chapterService.checkDuplicateOrder(subject_id, orderNum);
+    if (existingChapter) {
+      res.status(409).json({ 
+        error: `A chapter with order ${orderNum} already exists for this subject. Please use a different order number.` 
+      });
+      return;
+    }
+
     const chapter: IChapter = {
       board_id,
       class_id,

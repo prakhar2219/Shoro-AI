@@ -13,6 +13,31 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["@chakra-ui/react"],
   },
+  // Configure webpack to handle large strings more efficiently
+  webpack: (config, { isServer }) => {
+    // Optimize webpack cache for better performance with large strings
+    config.cache = {
+      ...config.cache,
+      compression: 'gzip', // Compress cache files
+    };
+    
+    // Optimize module concatenation
+    config.optimization = {
+      ...config.optimization,
+      moduleIds: 'deterministic',
+    };
+    
+    // Suppress the PackFileCacheStrategy warning by optimizing cache strategy
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings || []),
+      {
+        module: /node_modules/,
+        message: /PackFileCacheStrategy/,
+      },
+    ];
+    
+    return config;
+  },
   async rewrites() {
     return [
       {

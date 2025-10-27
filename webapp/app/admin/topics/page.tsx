@@ -257,10 +257,6 @@ export default function TopicsPage() {
     fields: [
       { name: "chapter_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
-      { name: "chapter_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the chapter
-      { name: "subject_name", type: "text", required: false } as FieldSchema, // For reference only - shows subject context
-      { name: "class_name", type: "text", required: false } as FieldSchema, // For reference only - shows class context
-      { name: "board_name", type: "text", required: false } as FieldSchema, // For reference only - shows board context
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "author", type: "text", required: false } as FieldSchema,
@@ -278,7 +274,6 @@ export default function TopicsPage() {
         const content = r.content || undefined;
         const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
-        // Note: Reference columns (chapter_name, subject_name, etc.) are ignored during upload
         return {
           chapter_id: r.chapter_id,
           language_id: r.language_id,

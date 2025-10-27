@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBCategoryTranslationForm } from "@/components/entity/GBCategoryTranslationForm";
@@ -384,6 +385,13 @@ export default function GBCategoriesPage() {
         onConfirm={handleDelete}
       />
       
+      {/* Global Content Management for All GB Categories */}
+      <GlobalContentManagement
+        entityType="GBCategory"
+        entityId=""
+        entityName="All GB Categories"
+      />
+
       {/* CSV Upload Dialog */}
       <CsvUploadDialog
         schema={gbCategoryCsvSchema}

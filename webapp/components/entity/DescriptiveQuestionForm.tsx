@@ -22,6 +22,8 @@ interface DescriptiveQuestionFormProps {
     difficulty?: string;
     tags?: string[];
     content?: any;
+    author?: string;
+    source?: string;
   };
   entityType?: string;
   entityId?: string;
@@ -36,12 +38,18 @@ export function DescriptiveQuestionForm({ onSubmit, loading = false, initialData
     difficulty: initialData?.difficulty || "medium",
     tags: initialData?.tags || [],
     content: typeof initialData?.content === 'string' ? initialData.content : '',
+    author: initialData?.author || "",
+    source: initialData?.source || "",
   });
 
   const [newTag, setNewTag] = useState("");
 
   const handleContentChange = (html: string) => {
     setForm({ ...form, content: html });
+  };
+
+  const handleAnswerChange = (html: string) => {
+    setForm({ ...form, answer: html });
   };
 
   const addTag = () => {
@@ -115,14 +123,7 @@ export function DescriptiveQuestionForm({ onSubmit, loading = false, initialData
 
           <div className="space-y-2">
             <Label htmlFor="answer">Answer</Label>
-            <Textarea
-              id="answer"
-              value={form.answer}
-              onChange={(e) => setForm({ ...form, answer: e.target.value })}
-              placeholder="Enter the detailed answer"
-              rows={5}
-              required
-            />
+            <RichTextEditor value={form.answer} onChange={handleAnswerChange} />
           </div>
 
           <div className="space-y-2">
@@ -166,6 +167,26 @@ export function DescriptiveQuestionForm({ onSubmit, loading = false, initialData
                 </Badge>
               ))}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              value={form.author}
+              onChange={(e) => setForm({ ...form, author: e.target.value })}
+              placeholder="Enter author name"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              value={form.source}
+              onChange={(e) => setForm({ ...form, source: e.target.value })}
+              placeholder="Enter source"
+            />
           </div>
 
           <div className="space-y-2">

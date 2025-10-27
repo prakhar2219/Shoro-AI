@@ -4,16 +4,15 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import ChakraUIProvider from "@/providers/chakra-provider"
 import { ClerkProvider } from '@clerk/nextjs'
-import { AuthProvider } from "@/contexts/AuthContext"
 import { MainLayout } from "@/components/layout/main-layout"
 import { Toaster } from "@/components/ui/toaster"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "EduPlatform - Quality Education for All",
+  title: "Education AI Platform - Admin Panel",
   description:
-    "Comprehensive educational content for CBSE, NCERT, and other boards. Learn, practice, and excel with our interactive platform.",
+    "Administration dashboard for managing educational content, including countries, boards, classes, subjects, chapters, topics, and related content for the Education AI Platform.",
   generator: 'v0.dev',
   icons: {
     icon: [
@@ -35,10 +34,8 @@ export default function RootLayout({
       <html lang="en">
         <body className={inter.className}>
           <ChakraUIProvider>
-            <AuthProvider>
-              <MainLayout>{children}</MainLayout>
-              <Toaster />
-            </AuthProvider>
+            <MainLayout>{children}</MainLayout>
+            <Toaster />
           </ChakraUIProvider>
         </body>
       </html>

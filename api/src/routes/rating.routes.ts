@@ -9,25 +9,25 @@ import {
   approveRating,
   rejectRating
 } from '../controllers/rating.controller';
+import { clerkProtect, clerkRestrictTo } from '../middleware/clerkAuth';
 
 const router = Router();
 
-// Create a new rating
-router.post('/', createRating);
-
-// Get all ratings for a specific entity
+// Public rating endpoints (GET operations) - no auth required
 router.get('/:entityType/:entityId', getRatingsByEntity);
-
-// Get rating statistics for a specific entity
 router.get('/:entityType/:entityId/stats', getRatingStats);
 
-// Update a rating
-router.put('/:id', updateRating);
+// Protected routes - require authentication
+router.use(clerkProtect);
 
-// Delete a rating
+// Create, update, delete ratings (for authenticated users)
+router.post('/', createRating);
+router.put('/:id', updateRating);
 router.delete('/:id', deleteRating);
 
-// Admin routes
+// Admin-only routes - require admin role
+router.use(clerkRestrictTo('super_admin', 'admin', 'editor'));
+
 router.get('/admin/all', getAllRatings);
 router.patch('/admin/:id/approve', approveRating);
 router.patch('/admin/:id/reject', rejectRating);

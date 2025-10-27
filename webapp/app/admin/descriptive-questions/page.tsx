@@ -332,7 +332,7 @@ export default function DescriptiveQuestionsPage() {
   // CSV schema for Descriptive Questions
   const dqCsvSchema: CsvSchema = {
     title: "Upload Descriptive Questions CSV",
-    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), is_active(optional), content(HTML - optional)",
+    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), author(optional), source(optional), is_active(optional), content(HTML - optional)",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -340,6 +340,8 @@ export default function DescriptiveQuestionsPage() {
       { name: "answer", type: "text", required: true } as FieldSchema,
       { name: "difficulty", type: "text", required: false } as FieldSchema,
       { name: "tags", type: "text", required: false } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
       { name: "is_active", type: "boolean", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
@@ -359,13 +361,15 @@ export default function DescriptiveQuestionsPage() {
           answer: r.answer,
           difficulty: (r.difficulty || 'medium') as any,
           tags,
+          author: r.author || undefined,
+          source: r.source || undefined,
           is_active,
           content,
         };
       });
       await bulkCreateDescriptiveQuestions(payload);
       toast({ title: 'Success', description: `${payload.length} questions uploaded successfully.` });
-      fetchPaginatedData(page, pageSize, searchTerm);
+      await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload questions.', variant: 'destructive' });
     } finally {

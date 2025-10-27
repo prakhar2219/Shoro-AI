@@ -12,6 +12,8 @@ const DescriptiveQuestionSchema = new Schema<IDescriptiveQuestion>(
     is_active: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: false },
+    author: { type: String, trim: true },
+    source: { type: String, trim: true },
   },
   { timestamps: true }
 );

@@ -23,4 +23,7 @@ const GBCategorySchema = new Schema<IGBCategory>(
 GBCategorySchema.virtual('translation');
 GBCategorySchema.virtual('translations');
 
+// Compound unique index: order must be unique within each language
+GBCategorySchema.index({ language_id: 1, order: 1 }, { unique: true });
+
 export default mongoose.model<IGBCategory>('GBCategory', GBCategorySchema);

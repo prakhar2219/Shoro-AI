@@ -18,6 +18,7 @@ import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/Csv
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBTopicTranslationForm } from "@/components/entity/GBTopicTranslationForm";
@@ -427,6 +428,13 @@ export default function GBTopicsPage() {
         onConfirm={handleDelete}
       />
       
+      {/* Global Content Management for All GB Topics */}
+      <GlobalContentManagement
+        entityType="GBTopic"
+        entityId=""
+        entityName="All GB Topics"
+      />
+
       {/* CSV Upload Dialog */}
       <CsvUploadDialog
         schema={gbTopicCsvSchema}

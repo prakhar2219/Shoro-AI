@@ -30,4 +30,7 @@ const ChapterSchema = new Schema<IChapter>(
 ChapterSchema.virtual('translation');
 ChapterSchema.virtual('translations');
 
+// Compound unique index: order must be unique within each subject
+ChapterSchema.index({ subject_id: 1, order: 1 }, { unique: true });
+
 export default mongoose.model<IChapter>('Chapter', ChapterSchema);

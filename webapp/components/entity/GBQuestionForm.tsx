@@ -175,6 +175,14 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
     }
   }, [initialData?._id, initialData?.gb_subtopic_id]); // Only depend on stable IDs to prevent infinite loops
 
+  const handleContentChange = (html: string) => {
+    setFormData({ ...formData, content: html });
+  };
+
+  const handleAnswerChange = (html: string) => {
+    setFormData({ ...formData, answer: html });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -311,12 +319,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
 
       <div>
         <Label htmlFor="answer">Answer</Label>
-        <Textarea
-          id="answer"
-          value={formData.answer}
-          onChange={(e) => setFormData({ ...formData, answer: e.target.value })}
-          rows={4}
-        />
+        <RichTextEditor value={formData.answer} onChange={handleAnswerChange} />
       </div>
 
       <div>

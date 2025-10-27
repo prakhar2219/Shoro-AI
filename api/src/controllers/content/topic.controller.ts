@@ -29,6 +29,15 @@ export const createTopic = async (req: Request, res: Response) => {
       });
       return;
     }
+
+    // Check for duplicate order within chapter
+    const existingTopic = await topicService.checkDuplicateOrder(chapter_id, finalOrder);
+    if (existingTopic) {
+      res.status(409).json({ 
+        error: `A topic with order ${finalOrder} already exists for this chapter. Please use a different order number.` 
+      });
+      return;
+    }
     
     const topic = {
       chapter_id,
@@ -56,8 +65,8 @@ export const createTopic = async (req: Request, res: Response) => {
 };
 
 export const bulkCreateTopics = async (req: Request, res: Response) => {
+  const { topics } = req.body as { topics: any[] };
   try {
-    const { topics } = req.body as { topics: any[] };
     if (!Array.isArray(topics) || topics.length === 0) {
       res.status(400).json({ error: 'topics array is required' });
       return;
@@ -98,7 +107,23 @@ export const bulkCreateTopics = async (req: Request, res: Response) => {
     const created = await topicService.bulkCreateTopics(topics);
     res.status(201).json(created);
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    if (e.code === 11000) {
+      // Duplicate key error - likely duplicate order within same chapter
+      const duplicateInfo = e.writeErrors?.map((err: any) => {
+        const failedDoc = topics[err.index];
+        return `Row ${err.index + 1}: Order ${failedDoc?.order} already exists for chapter_id ${failedDoc?.chapter_id}`;
+      }).join('; ') || 'Duplicate order numbers detected within the same chapter';
+      
+      const successCount = e.insertedDocs?.length || Object.keys(e.insertedIds || {}).length || 0;
+      res.status(207).json({ 
+        message: `Partial success: ${successCount} topics created, ${topics.length - successCount} failed due to duplicate orders`,
+        error: duplicateInfo,
+        inserted: successCount,
+        failed: topics.length - successCount
+      });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
   }
 };
 

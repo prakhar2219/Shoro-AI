@@ -206,6 +206,7 @@ export function CsvUploadDialog({
         Papa.parse(file, {
             header: true,
             skipEmptyLines: true,
+            encoding: "UTF-8",
             complete: (result) => {
                 const rows = result.data as any[]
                 if (rows.length === 0) {

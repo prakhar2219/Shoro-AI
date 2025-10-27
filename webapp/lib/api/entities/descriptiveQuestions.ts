@@ -11,6 +11,8 @@ export interface IDescriptiveQuestion {
   tags: string[];
   is_active: boolean;
   content: any[];
+  author?: string;
+  source?: string;
   translation?: any;
   translations?: any[];
   createdAt?: string;

@@ -23,4 +23,7 @@ const SubjectSchema = new Schema<ISubject>(
 SubjectSchema.virtual('translation');
 SubjectSchema.virtual('translations');
 
+// Compound unique index: class_id + code + language_id must be unique
+SubjectSchema.index({ class_id: 1, code: 1, language_id: 1 }, { unique: true });
+
 export default mongoose.model<ISubject>('Subject', SubjectSchema);

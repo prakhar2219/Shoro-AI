@@ -27,4 +27,7 @@ GBSubtopicSchema.virtual('translations');
 // Compound unique index: slug must be unique within each GB topic
 GBSubtopicSchema.index({ gb_topic_id: 1, slug: 1 }, { unique: true });
 
+// Compound unique index: order must be unique within each GB topic
+GBSubtopicSchema.index({ gb_topic_id: 1, order: 1 }, { unique: true });
+
 export default mongoose.model<IGBSubtopic>('GBSubtopic', GBSubtopicSchema);

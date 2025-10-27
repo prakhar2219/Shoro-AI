@@ -14,9 +14,16 @@ import gbCategoryRoutes from './gbCategory.routes';
 import gbTopicRoutes from './gbTopic.routes';
 import gbSubtopicRoutes from './gbSubtopic.routes';
 import gbQuestionRoutes from './gbQuestion.routes';
+import { clerkProtect, clerkRestrictTo } from '../../middleware/clerkAuth';
 
 const router = Router();
 
+// Apply authentication and authorization to all content routes
+// Only authenticated admin users (super_admin, admin, editor) can access
+router.use(clerkProtect);
+router.use(clerkRestrictTo('super_admin', 'admin', 'editor'));
+
+// All content routes require authentication
 router.use('/languages', languageRoutes);
 router.use('/countries', countryRoutes);
 router.use('/boards', boardRoutes);

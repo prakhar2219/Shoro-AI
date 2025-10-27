@@ -17,6 +17,7 @@ import { Edit, Trash2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBQuestionTranslationForm } from "@/components/entity/GBQuestionTranslationForm";
@@ -414,6 +415,13 @@ export default function GBQuestionsPage() {
         onConfirm={handleDelete}
       />
       
+      {/* Global Content Management for All GB Questions */}
+      <GlobalContentManagement
+        entityType="GBQuestion"
+        entityId=""
+        entityName="All GB Questions"
+      />
+
       {/* CSV Upload Dialog */}
       <CsvUploadDialog
         schema={gbQuestionCsvSchema}

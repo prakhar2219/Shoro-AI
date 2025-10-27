@@ -210,11 +210,6 @@ export default function SubtopicsPage() {
     fields: [
       { name: "topic_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
-      { name: "topic_name", type: "text", required: false } as FieldSchema, // For reference only - helps identify the topic
-      { name: "chapter_name", type: "text", required: false } as FieldSchema, // For reference only - shows chapter context
-      { name: "subject_name", type: "text", required: false } as FieldSchema, // For reference only - shows subject context
-      { name: "class_name", type: "text", required: false } as FieldSchema, // For reference only - shows class context
-      { name: "board_name", type: "text", required: false } as FieldSchema, // For reference only - shows board context
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "author", type: "text", required: false } as FieldSchema,
@@ -232,7 +227,6 @@ export default function SubtopicsPage() {
         const content = r.content || undefined;
         const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
-        // Note: Reference columns (topic_name, chapter_name, etc.) are ignored during upload
         return {
           topic_id: r.topic_id,
           language_id: r.language_id,

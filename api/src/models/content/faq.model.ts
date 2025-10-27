@@ -22,4 +22,7 @@ FAQSchema.index({ category: 1 });
 FAQSchema.index({ order: 1 });
 FAQSchema.index({ is_active: 1 });
 
+// Compound unique index: order must be unique within each entity (entity_type + entity_id)
+FAQSchema.index({ entity_type: 1, entity_id: 1, order: 1 }, { unique: true });
+
 export default mongoose.model<IFAQ>('FAQ', FAQSchema); 
