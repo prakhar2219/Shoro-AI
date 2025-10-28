@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBCategoryTranslationForm } from "@/components/entity/GBCategoryTranslationForm";
@@ -76,9 +77,21 @@ export default function GBCategoriesPage() {
   });
 
   useEffect(() => {
-    getLanguages().then((langs) => {
-      setLanguages(langs || []);
-      setLanguageIdMap(Object.fromEntries((langs || []).filter(l => l._id).map(l => [l._id!, l.name])));
+    getLanguages().then((langs: any) => {
+      // Ensure langs is always an array
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+        console.warn('Languages API returned non-array data:', langs);
+      }
+      
+      setLanguages(languagesArray);
+      setLanguageIdMap(Object.fromEntries(languagesArray.filter(l => l._id).map((l: any) => [l._id!, l.name])));
     });
   }, []);
 
@@ -194,7 +207,8 @@ export default function GBCategoriesPage() {
     if (!selectedCategoryForGBTopic) return undefined;
     return {
       gb_category_id: selectedCategoryForGBTopic._id,
-      gb_category: selectedCategoryForGBTopic
+      gb_category: selectedCategoryForGBTopic,
+      language_id: selectedCategoryForGBTopic.language_id // Inherit parent's language
     };
   }, [selectedCategoryForGBTopic]);
 
@@ -272,7 +286,7 @@ export default function GBCategoriesPage() {
   // CSV schema for GB categories - memoized to handle languages dependency
   const gbCategoryCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Categories CSV",
-    description: "Upload a CSV with columns: name, slug, description, content, language_id, order, image, tag, source, author, is_published",
+    description: "Upload a CSV with columns: name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published",
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
@@ -300,6 +314,7 @@ export default function GBCategoriesPage() {
           return isValid ? null : "Invalid language selected";
         }
       } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "description", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
@@ -319,6 +334,9 @@ export default function GBCategoriesPage() {
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,
+        supported_language_ids: r.supported_language_ids 
+          ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+          : [],
         order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
@@ -384,6 +402,13 @@ export default function GBCategoriesPage() {
         onConfirm={handleDelete}
       />
       
+      {/* Global Content Management for All GB Categories */}
+      <GlobalContentManagement
+        entityType="GBCategory"
+        entityId=""
+        entityName="All GB Categories"
+      />
+
       {/* CSV Upload Dialog */}
       <CsvUploadDialog
         schema={gbCategoryCsvSchema}

@@ -5,6 +5,7 @@ const SubtopicSchema = new Schema<ISubtopic>(
   {
     topic_id: { type: Schema.Types.ObjectId, ref: 'Topic', required: true },
     language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
     title: { type: String, required: true },
     slug: { type: String, required: true },
     order: { type: Number, required: true },

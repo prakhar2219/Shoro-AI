@@ -5,6 +5,7 @@ const SubjectSchema = new Schema<ISubject>(
   {
     class_id: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
     language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
     code: { type: String, required: true },
     icon: { type: String },
     name: { type: String, required: true },
@@ -22,5 +23,8 @@ const SubjectSchema = new Schema<ISubject>(
 // Virtuals for translation and translations (for FE/BE consistency)
 SubjectSchema.virtual('translation');
 SubjectSchema.virtual('translations');
+
+// Compound unique index: class_id + code + language_id must be unique
+SubjectSchema.index({ class_id: 1, code: 1, language_id: 1 }, { unique: true });
 
 export default mongoose.model<ISubject>('Subject', SubjectSchema);

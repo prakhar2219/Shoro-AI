@@ -4,7 +4,7 @@ A robust and scalable backend built with Node.js, Express, TypeScript, and Mongo
 
 ## 🚀 Features
 
-- JWT Authentication
+- Clerk Authentication
 - Data Validation
 - Centralized Error Handling
 - Winston Logger
@@ -36,10 +36,10 @@ cp .env.example .env
 Edit `.env` with your settings:
 ```plaintext
 NODE_ENV=development
-PORT=3000
+PORT=8000
 MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-JWT_EXPIRES_IN=1d
+CLERK_PUBLISHABLE_KEY=your_clerk_publishable_key
+CLERK_SECRET_KEY=your_clerk_secret_key
 LOG_LEVEL=info
 ```
 
@@ -74,12 +74,6 @@ http://localhost:3000/api-docs
 ```
 
 ## 🔑 Main Endpoints
-
-### Authentication
-```typescript
-POST /api/v1/auth/signup
-POST /api/v1/auth/login
-```
 
 ### Users
 ```typescript

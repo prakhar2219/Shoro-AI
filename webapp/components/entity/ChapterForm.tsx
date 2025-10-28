@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { getLanguages } from '@/lib/api/entities/language';
 
 interface ChapterFormProps {
   initialData?: any;
@@ -20,6 +21,8 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
   const [boards, setBoards] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
 
   const [form, setForm] = useState({
     board_id: typeof initialData?.board_id === 'object' ? initialData.board_id._id : initialData?.board_id || '',
@@ -51,7 +54,46 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
 
   useEffect(() => {
     getBoards().then(setBoards);
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      setLanguages(languagesArray);
+    }).catch(() => setLanguages([]));
   }, []);
+
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData) {
+      const extractId = (field: any) => {
+        return typeof field === 'object' && field !== null && field._id ? field._id : (typeof field === 'string' ? field : '');
+      };
+
+      setForm({
+        board_id: extractId(initialData.board_id),
+        class_id: extractId(initialData.class_id),
+        subject_id: extractId(initialData.subject_id),
+        language_id: extractId(initialData.language_id),
+        title: initialData.title || '',
+        slug: initialData.slug || '',
+        seo_title: initialData.seo_title || '',
+        seo_description: initialData.seo_description || '',
+        downloadNotes: initialData.downloadNotes || '',
+        downloadPDF: initialData.downloadPDF || '',
+        downloadQA: initialData.downloadQA || '',
+        content: typeof initialData.content === 'string' ? initialData.content : '',
+        order: initialData.order || '',
+        is_published: initialData.is_published || false,
+        tag: initialData.tag?.join(', ') || '',
+        source: initialData.source || '',
+        author: initialData.author || '',
+      });
+      
+      setSupportedLanguageIds(initialData.supported_language_ids || []);
+    }
+  }, [initialData]);
 
   useEffect(() => {
     const boardId = typeof form.board_id === 'object' ? form.board_id._id : form.board_id;
@@ -213,8 +255,18 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     const payload = {
       ...form,
       tag: form.tag ? form.tag.split(',').map((t: string) => t.trim()) : [],
+      supported_language_ids: supportedLanguageIds
     };
     onSubmit(payload);
+  };
+
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => {
+      const exists = prev.includes(value);
+      return exists
+        ? prev.filter((id) => id !== value)
+        : [...prev, value];
+    });
   };
 
   return (
@@ -320,6 +372,22 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
               placeholder="Select Language"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <Button
+                  key={lang._id}
+                  type="button"
+                  variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </Button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="title">Chapter Title</Label>

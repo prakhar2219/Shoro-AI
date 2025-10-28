@@ -80,6 +80,15 @@ export const createSubject = async (
       return;
     }
 
+    // Check for duplicate: class_id + code + language_id combination
+    const existingSubject = await subjectService.checkDuplicateSubject(class_id, code, language_id);
+    if (existingSubject) {
+      res.status(409).json({ 
+        error: `A subject with code "${code}" already exists for this class and language. Please use a different code or update the existing subject.` 
+      });
+      return;
+    }
+
     const subject: ISubject = {
       class_id,
       language_id,

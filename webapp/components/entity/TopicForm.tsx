@@ -12,6 +12,7 @@ import { getBoards } from "@/lib/api/entities/boards";
 import { getClassesByBoard } from "@/lib/api/entities/classes";
 import { getSubjects } from "@/lib/api/entities/subjects";
 import { getChapters } from "@/lib/api/entities/chapters";
+import { getLanguages } from "@/lib/api/entities/language";
 
 interface TopicFormProps {
   onSubmit: (data: any) => void;
@@ -24,6 +25,7 @@ interface TopicFormProps {
     chapter_id?: string;
     chapter?: any; // Full chapter object for auto-populating hierarchy
     language_id?: string;
+    supported_language_ids?: string[];
     title?: string;
     slug?: string;
     order?: number;
@@ -32,6 +34,12 @@ interface TopicFormProps {
     tag?: string[];
     source?: string;
     author?: string;
+    translations?: Array<{
+      language_id: string;
+      title: string;
+      slug: string;
+      content?: string;
+    }>;
   };
 }
 
@@ -40,6 +48,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     board_id: initialData?.board_id || "",
@@ -47,6 +56,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     subject_id: initialData?.subject_id || "",
     chapter_id: initialData?.chapter_id || "",
     language_id: initialData?.language_id || "",
+    supported_language_ids: initialData?.supported_language_ids || [],
     title: initialData?.title || "",
     slug: initialData?.slug || "",
     order: initialData?.order ?? 0,
@@ -57,6 +67,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     author: initialData?.author || '',
   });
 
+
   // Check if we're adding from a parent chapter
   const isAddingFromParent = Boolean(initialData?.chapter);
   const parentChapter = initialData?.chapter;
@@ -66,6 +77,29 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
 
   // Check if we're editing existing topic (has _id) vs adding new topic (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
+
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData && initialData._id) {
+      // This is edit mode
+      setFormData({
+        board_id: initialData.board_id || "",
+        class_id: initialData.class_id || "",
+        subject_id: initialData.subject_id || "",
+        chapter_id: initialData.chapter_id || "",
+        language_id: initialData.language_id || "",
+        supported_language_ids: initialData.supported_language_ids || [],
+        title: initialData.title || "",
+        slug: initialData.slug || "",
+        order: initialData.order ?? 0,
+        is_published: initialData.is_published ?? true,
+        content: typeof initialData.content === 'string' ? initialData.content : '',
+        tag: initialData.tag?.join(', ') || '',
+        source: initialData.source || '',
+        author: initialData.author || '',
+      });
+    }
+  }, [initialData]);
 
   // Auto-populate formData from parent chapter when adding from parent
   useEffect(() => {
@@ -116,9 +150,23 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     }
   }, [isAddingFromParent, parentChapter, initialData?.chapter_id]);
 
-  // Load boards on mount
+  // Load boards and languages on mount
   useEffect(() => {
     getBoards().then(setBoards);
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs)
+        ? langs
+        : Array.isArray(langs?.data)
+        ? langs.data
+        : [];
+      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+        console.warn('Languages API returned non-array data:', langs);
+      }
+      setLanguages(languagesArray);
+    }).catch(error => {
+      console.error('Error fetching languages:', error);
+      setLanguages([]);
+    });
   }, []);
 
   // Load classes when board changes
@@ -201,6 +249,19 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     }
   }, [initialData, boards]);
 
+  // Handle supported languages change
+  const handleSupportedLanguagesChange = (value: string) => {
+    setFormData((prev) => {
+      const exists = prev.supported_language_ids.includes(value);
+      return {
+        ...prev,
+        supported_language_ids: exists
+          ? prev.supported_language_ids.filter((id) => id !== value)
+          : [...prev.supported_language_ids, value],
+      };
+    });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -242,6 +303,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     onSubmit({ 
       chapter_id: formData.chapter_id,
       language_id: formData.language_id,
+      supported_language_ids: formData.supported_language_ids,
       title: formData.title,
       slug: formData.slug,
       order: Number(formData.order),
@@ -375,12 +437,41 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
 
           <div className="space-y-2">
             <Label htmlFor="language_id">Language</Label>
-            <LanguageSelector
+            <Select
               value={formData.language_id}
               onValueChange={(value) => setFormData(prev => ({ ...prev, language_id: value }))}
-              placeholder="Select Language"
-              required
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select Language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang._id} value={lang._id}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <button
+                  type="button"
+                  key={lang._id}
+                  className={`px-2 py-1 rounded border text-xs ${
+                    formData.supported_language_ids.includes(lang._id) 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-zinc-100 dark:bg-zinc-800"
+                  }`}
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">

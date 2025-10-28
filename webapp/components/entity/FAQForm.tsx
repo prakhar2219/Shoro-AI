@@ -40,6 +40,10 @@ export function FAQForm({ onSubmit, loading = false, initialData, entityType, en
     setForm({ ...form, content: html });
   };
 
+  const handleAnswerChange = (html: string) => {
+    setForm({ ...form, answer: html });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(form);
@@ -100,14 +104,7 @@ export function FAQForm({ onSubmit, loading = false, initialData, entityType, en
 
           <div className="space-y-2">
             <Label htmlFor="answer">Answer</Label>
-            <Textarea
-              id="answer"
-              value={form.answer}
-              onChange={(e) => setForm({ ...form, answer: e.target.value })}
-              placeholder="Enter the FAQ answer"
-              rows={5}
-              required
-            />
+            <RichTextEditor value={form.answer} onChange={handleAnswerChange} />
           </div>
 
           <div className="space-y-2">

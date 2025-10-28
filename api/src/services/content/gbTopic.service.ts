@@ -27,6 +27,24 @@ export const validateLanguageIds = async (languageIds: string[]): Promise<{ vali
   return { valid, invalid };
 };
 
+// Check for duplicate slug within GB category
+export const checkDuplicateSlug = async (gb_category_id: string, slug: string, excludeId?: string) => {
+  const query: any = { gb_category_id, slug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await GBTopicModel.findOne(query);
+};
+
+// Check for duplicate order within GB category
+export const checkDuplicateOrder = async (gb_category_id: string, order: number, excludeId?: string) => {
+  const query: any = { gb_category_id, order };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await GBTopicModel.findOne(query);
+};
+
 export const createGBTopic = async (data: IGBTopic) => {
   return await GBTopicModel.create(data);
 };

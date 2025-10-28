@@ -49,6 +49,17 @@ export const bulkCreateChapters = async (
       return;
     }
     
+    // Check for duplicate slugs within subject and language combinations
+    for (const chapter of chapters) {
+      const existingSlugChapter = await chapterService.checkDuplicateSlug(chapter.subject_id.toString(), chapter.language_id.toString(), chapter.slug);
+      if (existingSlugChapter) {
+        res.status(409).json({ 
+          error: `A chapter with slug "${chapter.slug}" already exists for subject ${chapter.subject_id} and language ${chapter.language_id}. Please use a different slug.` 
+        });
+        return;
+      }
+    }
+    
     const created = await chapterService.bulkCreateChapters(chapters);
     res.status(201).json(created);
   } catch (error) {
@@ -82,6 +93,25 @@ export const createChapter = async (
     if (languageValidation.invalid.length > 0) {
       res.status(400).json({ 
         error: `Invalid language_id: ${language_id}. Please ensure the language ID exists in the database.` 
+      });
+      return;
+    }
+
+    // Check for duplicate slug within subject and language
+    const existingSlugChapter = await chapterService.checkDuplicateSlug(subject_id, language_id, slug);
+    if (existingSlugChapter) {
+      res.status(409).json({ 
+        error: `A chapter with slug "${slug}" already exists for this subject and language. Please use a different slug.` 
+      });
+      return;
+    }
+
+    // Check for duplicate order within subject
+    const orderNum = typeof order === 'number' ? order : Number(order);
+    const existingChapter = await chapterService.checkDuplicateOrder(subject_id, orderNum);
+    if (existingChapter) {
+      res.status(409).json({ 
+        error: `A chapter with order ${orderNum} already exists for this subject. Please use a different order number.` 
       });
       return;
     }
@@ -218,6 +248,30 @@ export const updateChapter = async (
   res: Response
 ): Promise<void> => {
   try {
+    const { slug, subject_id, language_id, order } = req.body;
+    
+    // Check for duplicate slug if slug is being updated
+    if (slug && subject_id && language_id) {
+      const existingSlugChapter = await chapterService.checkDuplicateSlug(subject_id, language_id, slug, req.params.id);
+      if (existingSlugChapter) {
+        res.status(409).json({ 
+          error: `A chapter with slug "${slug}" already exists for this subject and language. Please use a different slug.` 
+        });
+        return;
+      }
+    }
+    
+    // Check for duplicate order if order is being updated
+    if (order !== undefined && subject_id) {
+      const existingOrderChapter = await chapterService.checkDuplicateOrder(subject_id, order, req.params.id);
+      if (existingOrderChapter) {
+        res.status(409).json({ 
+          error: `A chapter with order ${order} already exists for this subject. Please use a different order number.` 
+        });
+        return;
+      }
+    }
+    
     const updated = await chapterService.updateChapter(req.params.id, req.body);
     if (!updated) {
       res.status(404).json({ error: 'Chapter not found' });
@@ -225,7 +279,11 @@ export const updateChapter = async (
     }
     res.status(200).json(updated);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    if ((error as any).code === 11000) {
+      res.status(409).json({ error: 'Duplicate key error. Please check slug and order uniqueness.' });
+    } else {
+      res.status(500).json({ error: (error as Error).message });
+    }
   }
 };
 

@@ -30,6 +30,25 @@ export const createGBQuestion = async (
       return;
     }
 
+    // Check for duplicate slug within GB subtopic
+    const existingSlugQuestion = await gbQuestionService.checkDuplicateSlug(gb_subtopic_id, slug);
+    if (existingSlugQuestion) {
+      res.status(409).json({ 
+        error: `A GB Question with slug "${slug}" already exists for this GB subtopic. Please use a different slug.` 
+      });
+      return;
+    }
+
+    // Check for duplicate order within GB subtopic
+    const orderNum = typeof order === 'number' ? order : Number(order || 0);
+    const existingOrderQuestion = await gbQuestionService.checkDuplicateOrder(gb_subtopic_id, orderNum);
+    if (existingOrderQuestion) {
+      res.status(409).json({ 
+        error: `A GB Question with order ${orderNum} already exists for this GB subtopic. Please use a different order number.` 
+      });
+      return;
+    }
+
     const questionData: IGBQuestion = {
       gb_subtopic_id,
       question,
@@ -153,6 +172,30 @@ export const updateGBQuestion = async (
   res: Response
 ): Promise<void> => {
   try {
+    const { slug, gb_subtopic_id, order } = req.body;
+    
+    // Check for duplicate slug if slug is being updated
+    if (slug && gb_subtopic_id) {
+      const existingSlugQuestion = await gbQuestionService.checkDuplicateSlug(gb_subtopic_id, slug, req.params.id);
+      if (existingSlugQuestion) {
+        res.status(409).json({ 
+          error: `A GB Question with slug "${slug}" already exists for this GB subtopic. Please use a different slug.` 
+        });
+        return;
+      }
+    }
+    
+    // Check for duplicate order if order is being updated
+    if (order !== undefined && gb_subtopic_id) {
+      const existingOrderQuestion = await gbQuestionService.checkDuplicateOrder(gb_subtopic_id, order, req.params.id);
+      if (existingOrderQuestion) {
+        res.status(409).json({ 
+          error: `A GB Question with order ${order} already exists for this GB subtopic. Please use a different order number.` 
+        });
+        return;
+      }
+    }
+    
     const updated = await gbQuestionService.updateGBQuestion(req.params.id, req.body);
     if (!updated) {
       res.status(404).json({ error: 'GB Question not found' });
@@ -160,7 +203,11 @@ export const updateGBQuestion = async (
     }
     res.status(200).json(updated);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    if ((error as any).code === 11000) {
+      res.status(409).json({ error: 'Duplicate key error. Please check slug and order uniqueness.' });
+    } else {
+      res.status(500).json({ error: (error as Error).message });
+    }
   }
 };
 

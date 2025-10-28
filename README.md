@@ -53,7 +53,7 @@ User → Next.js Frontend → RESTful API → MongoDB Database
 ### Backend API (`/api`)
 - **Framework**: Express.js with TypeScript
 - **Database**: MongoDB with Mongoose ODM
-- **Authentication**: JWT-based authentication
+- **Authentication**: Clerk-based authentication
 - **File Storage**: Cloudinary integration for media uploads
 - **Documentation**: Swagger/OpenAPI specification
 - **Security**: Helmet, CORS, rate limiting

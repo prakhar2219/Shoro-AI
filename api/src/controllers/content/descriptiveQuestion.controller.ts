@@ -41,6 +41,8 @@ export const createDescriptiveQuestion = async (
       difficulty,
       tags,
       content,
+      author,
+      source,
     } = req.body;
 
     if (!entity_type || !entity_id || !question || !answer) {
@@ -56,6 +58,8 @@ export const createDescriptiveQuestion = async (
       difficulty: difficulty || 'medium',
       tags: Array.isArray(tags) ? tags : [],
       content,
+      author,
+      source,
     } as IDescriptiveQuestion;
 
     const created = await descriptiveQuestionService.createDescriptiveQuestion(descriptiveQuestion);

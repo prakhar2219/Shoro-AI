@@ -1,6 +1,15 @@
 import Blog from '../models/blog.model';
 import { BlogInput } from '../types/blog.types';
 
+// Check for duplicate slug globally
+export const checkDuplicateSlug = async (slug: string, excludeId?: string) => {
+  const query: any = { slug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await Blog.findOne(query);
+};
+
 export const createBlog = async (data: BlogInput) => {
   return await Blog.create(data);
 };

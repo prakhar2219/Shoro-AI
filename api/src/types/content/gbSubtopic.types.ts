@@ -8,6 +8,7 @@ export interface IGBSubtopic extends Document {
   description?: string;
   content?: string;
   language_id: Types.ObjectId;
+  supported_language_ids?: Types.ObjectId[];
   order: number;
   image?: string;
   tag?: string[];

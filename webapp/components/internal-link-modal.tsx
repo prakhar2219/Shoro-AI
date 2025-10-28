@@ -20,14 +20,18 @@ interface InternalLinkModalProps {
   onAddLink: (url: string, text: string) => void
 }
 
-// Mock internal pages - replace with your actual pages/routes
+// Admin panel internal pages
 const INTERNAL_PAGES = [
-  { id: "home", title: "Home Page", url: "/" },
-  { id: "about", title: "About Us", url: "/about" },
-  { id: "services", title: "Our Services", url: "/services" },
-  { id: "contact", title: "Contact", url: "/contact" },
-  { id: "blog", title: "Blog", url: "/blog" },
-  { id: "pricing", title: "Pricing", url: "/pricing" },
+  { id: "home", title: "Dashboard", url: "/" },
+  { id: "admin", title: "Admin Panel", url: "/admin" },
+  { id: "countries", title: "Countries", url: "/admin/countries" },
+  { id: "boards", title: "Boards", url: "/admin/boards" },
+  { id: "classes", title: "Classes", url: "/admin/classes" },
+  { id: "subjects", title: "Subjects", url: "/admin/subjects" },
+  { id: "chapters", title: "Chapters", url: "/admin/chapters" },
+  { id: "topics", title: "Topics", url: "/admin/topics" },
+  { id: "subtopics", title: "Subtopics", url: "/admin/subtopics" },
+  { id: "users", title: "Users", url: "/admin/users" },
 ]
 
 export function InternalLinkModal({ isOpen, onClose, onAddLink }: InternalLinkModalProps) {

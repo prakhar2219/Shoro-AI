@@ -136,9 +136,11 @@ export function useAdminPage<T>({
     stats,
     setData,
     setIsLoading,
+    setStats,
     handleSearchInputChange,
     handlePageSizeChange,
     fetchPaginatedData,
+    fetchStatsData,
     toast
   };
 }

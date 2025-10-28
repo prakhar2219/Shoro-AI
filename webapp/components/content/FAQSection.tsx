@@ -39,7 +39,17 @@ export function FAQSection({
         limit: 50 // Get all FAQs for this entity
       });
 
-      const faqsData = response.data || response || [];
+      const faqsData = Array.isArray(response.data) 
+        ? response.data 
+        : Array.isArray(response) 
+        ? response 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(response.data) && !Array.isArray(response)) {
+        console.warn('FAQ API returned non-array data:', response);
+      }
+      
       setFaqs(faqsData);
     } catch (error) {
       console.error('Error fetching FAQs:', error);

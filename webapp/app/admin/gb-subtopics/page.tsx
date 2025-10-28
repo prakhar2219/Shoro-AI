@@ -16,6 +16,7 @@ import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/Csv
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
+import { GlobalContentManagement } from "@/components/shared/GlobalContentManagement";
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBSubtopicTranslationForm } from "@/components/entity/GBSubtopicTranslationForm";
@@ -81,9 +82,21 @@ export default function GBSubtopicsPage() {
 
   useEffect(() => {
     getGBTopics().then((topics) => setTopics(Array.isArray(topics) ? topics : topics?.data || []));
-    getLanguages().then((langs) => {
-      setLanguages(langs || []);
-      setLanguageIdMap(Object.fromEntries((langs || []).map(l => [l._id || l.code, l.name])));
+    getLanguages().then((langs: any) => {
+      // Ensure langs is always an array
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+        console.warn('Languages API returned non-array data:', langs);
+      }
+      
+      setLanguages(languagesArray);
+      setLanguageIdMap(Object.fromEntries(languagesArray.map((l: any) => [l._id || l.code, l.name])));
     });
   }, []);
 
@@ -253,7 +266,7 @@ export default function GBSubtopicsPage() {
   // CSV schema for GB subtopics - memoized to handle dependencies
   const gbSubtopicCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Subtopics CSV",
-    description: "Upload a CSV with columns: gb_topic_id, name, slug, description, content, language_id, order, image, tag, source, author, is_published. IMPORTANT: GB Subtopics belong to GB Topics in the General Blogging hierarchy (GB Category → GB Topic → GB Subtopic). Make sure your gb_topic_id corresponds to an existing GB topic. You can find GB topic IDs in the GB Topics admin section.",
+    description: "Upload a CSV with columns: gb_topic_id, name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published. IMPORTANT: GB Subtopics belong to GB Topics in the General Blogging hierarchy (GB Category → GB Topic → GB Subtopic). Make sure your gb_topic_id corresponds to an existing GB topic. You can find GB topic IDs in the GB Topics admin section.",
     fields: [
       { 
         name: "gb_topic_id", 
@@ -307,6 +320,7 @@ export default function GBSubtopicsPage() {
           return isValid ? null : "Invalid language selected";
         }
       } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "description", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
@@ -328,6 +342,9 @@ export default function GBSubtopicsPage() {
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,
+        supported_language_ids: r.supported_language_ids 
+          ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+          : [],
         order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
@@ -393,6 +410,13 @@ export default function GBSubtopicsPage() {
         onConfirm={handleDelete}
       />
       
+      {/* Global Content Management for All GB Subtopics */}
+      <GlobalContentManagement
+        entityType="GBSubtopic"
+        entityId=""
+        entityName="All GB Subtopics"
+      />
+
       {/* CSV Upload Dialog */}
       <CsvUploadDialog
         schema={gbSubtopicCsvSchema}

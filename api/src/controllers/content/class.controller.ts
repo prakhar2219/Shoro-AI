@@ -32,6 +32,15 @@ export const createClass = async (
       return;
     }
 
+    // Check for duplicate: board_id + grade + language_id combination
+    const existingClass = await classService.checkDuplicateClass(board_id, grade, language_id);
+    if (existingClass) {
+      res.status(409).json({ 
+        error: `A class with grade ${grade} already exists for this board and language. Please use a different grade or update the existing class.` 
+      });
+      return;
+    }
+
     const classData: IClass = {
       board_id,
       language_id,

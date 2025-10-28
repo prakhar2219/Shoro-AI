@@ -28,6 +28,11 @@ export const validateLanguageIds = async (languageIds: string[]): Promise<{ vali
   return { valid, invalid };
 };
 
+// Check for duplicate class (board_id + grade + language_id)
+export const checkDuplicateClass = async (board_id: string, grade: number, language_id: string) => {
+  return await ClassModel.findOne({ board_id, grade, language_id });
+};
+
 export const createClass = async (data: IClass) => {
   return await ClassModel.create(data);
 };

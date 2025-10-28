@@ -80,16 +80,28 @@ export default function BoardsPage() {
     pageSize: 15
   });
 
-  // Map for country and language display
-  const countryMap = Object.fromEntries(countries.map(c => [c._id || c.code, c.name]));
-  const languageMap = Object.fromEntries(languages.map(l => [l._id || l.code, l.name]));
-  const languageIdMap = Object.fromEntries(languages.map(l => [l._id, l.name]));
+  // Map for country and language display - ensure arrays are always valid
+  const countryMap = Object.fromEntries((Array.isArray(countries) ? countries : []).map(c => [c._id || c.code, c.name]));
+  const languageMap = Object.fromEntries((Array.isArray(languages) ? languages : []).map(l => [l._id || l.code, l.name]));
+  const languageIdMap = Object.fromEntries((Array.isArray(languages) ? languages : []).map(l => [l._id, l.name]));
 
   // Fetch countries and languages for dropdowns and display
   const fetchCountries = async () => {
     try {
       const res = await getCountries();
-      setCountries(res || []);
+      // Ensure we always get an array
+      const countriesArray = Array.isArray(res) 
+        ? res 
+        : Array.isArray(res?.data) 
+        ? res.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+        console.warn('Countries API returned non-array data:', res);
+      }
+      
+      setCountries(countriesArray);
     } catch {
       setCountries([]);
     }
@@ -98,7 +110,19 @@ export default function BoardsPage() {
   const fetchLanguages = async () => {
     try {
       const res = await getLanguages();
-      setLanguages(res || []);
+      // Ensure we always get an array
+      const languagesArray = Array.isArray(res) 
+        ? res 
+        : Array.isArray(res?.data) 
+        ? res.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+        console.warn('Languages API returned non-array data:', res);
+      }
+      
+      setLanguages(languagesArray);
     } catch {
       setLanguages([]);
     }

@@ -74,16 +74,28 @@ export default function ClassesPage() {
     pageSize: 15
   });
 
-  // Map for board and language display
-  const boardMap = Object.fromEntries(boards.map(b => [b._id || b.short_code, b.name]));
-  const languageMap = Object.fromEntries(languages.map(l => [l._id || l.code, l.name]));
-  const languageIdMap = Object.fromEntries(languages.map(l => [l._id, l.name]));
+  // Map for board and language display - ensure arrays are always valid
+  const boardMap = Object.fromEntries((Array.isArray(boards) ? boards : []).map(b => [b._id || b.short_code, b.name]));
+  const languageMap = Object.fromEntries((Array.isArray(languages) ? languages : []).map(l => [l._id || l.code, l.name]));
+  const languageIdMap = Object.fromEntries((Array.isArray(languages) ? languages : []).map(l => [l._id, l.name]));
 
   // Fetch boards and languages for dropdowns and display
   const fetchBoards = async () => {
     try {
-      const res = await getBoards();
-      setBoards(res || []);
+      const res: any = await getBoards();
+      // Ensure we always get an array
+      const boardsArray = Array.isArray(res) 
+        ? res 
+        : Array.isArray(res?.data) 
+        ? res.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+        console.warn('Boards API returned non-array data:', res);
+      }
+      
+      setBoards(boardsArray);
     } catch {
       setBoards([]);
     }
@@ -91,8 +103,20 @@ export default function ClassesPage() {
 
   const fetchLanguages = async () => {
     try {
-      const res = await getLanguages();
-      setLanguages(res || []);
+      const res: any = await getLanguages();
+      // Ensure we always get an array
+      const languagesArray = Array.isArray(res) 
+        ? res 
+        : Array.isArray(res?.data) 
+        ? res.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+        console.warn('Languages API returned non-array data:', res);
+      }
+      
+      setLanguages(languagesArray);
     } catch {
       setLanguages([]);
     }
@@ -158,7 +182,10 @@ export default function ClassesPage() {
         ...cls,
         grade: typeof cls.grade === 'number' ? cls.grade : Number(cls.grade),
         content: cls.content || undefined,
-        language_id: cls.language_id
+        language_id: cls.language_id,
+        supported_language_ids: cls.supported_language_ids 
+          ? cls.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+          : []
       }));
       
       await bulkCreateClasses(processedData);
@@ -272,7 +299,8 @@ export default function ClassesPage() {
     if (!selectedClassForSubject) return undefined;
     return {
       class_id: selectedClassForSubject._id,
-      classItem: selectedClassForSubject
+      classItem: selectedClassForSubject,
+      language_id: selectedClassForSubject.language_id // Inherit parent's language
     };
   }, [selectedClassForSubject]);
 
@@ -365,12 +393,13 @@ export default function ClassesPage() {
   // CSV schema for classes
   const classCsvSchema: CsvSchema = {
     title: "Upload Classes CSV",
-    description: "Upload a CSV file with columns: name, board_id, language_id, grade, content (HTML - optional).",
+    description: "Upload a CSV file with columns: name, board_id, language_id, grade, supported_language_ids (comma-separated IDs - optional), content (HTML - optional).",
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "grade", type: "number", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
   };
@@ -423,6 +452,7 @@ export default function ClassesPage() {
               grade: editing.grade,
               board_id: getClassFormInitialData(editing).board_id,
               language_id: getClassFormInitialData(editing).language_id,
+              supported_language_ids: editing.supported_language_ids || [],
               content: typeof editing.content === 'string' ? editing.content : undefined
             };
             console.log('ClassForm defaultValues:', defaultVals);

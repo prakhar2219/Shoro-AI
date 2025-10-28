@@ -10,9 +10,11 @@ export interface IDescriptiveQuestion {
   is_active: boolean;
   created_by?: Schema.Types.ObjectId;
   content?: string;
+  author?: string;
+  source?: string;
   translation?: any; // Single translation (for FE/BE consistency)
   translations?: any[]; // All translations (for FE/BE consistency)
   createdAt?: Date;
   updatedAt?: Date;
   _id?: string;
-} 
+}

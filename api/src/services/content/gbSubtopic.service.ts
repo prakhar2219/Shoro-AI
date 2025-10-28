@@ -27,6 +27,24 @@ export const validateLanguageIds = async (languageIds: string[]): Promise<{ vali
   return { valid, invalid };
 };
 
+// Check for duplicate slug within GB topic
+export const checkDuplicateSlug = async (gb_topic_id: string, slug: string, excludeId?: string) => {
+  const query: any = { gb_topic_id, slug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await GBSubtopicModel.findOne(query);
+};
+
+// Check for duplicate order within GB topic
+export const checkDuplicateOrder = async (gb_topic_id: string, order: number, excludeId?: string) => {
+  const query: any = { gb_topic_id, order };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await GBSubtopicModel.findOne(query);
+};
+
 export const createGBSubtopic = async (data: IGBSubtopic) => {
   return await GBSubtopicModel.create(data);
 };

@@ -52,12 +52,48 @@ export default function ChapterAdminPage() {
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchChaptersData = useCallback(async (pageNum: number, size: number, search: string) => {
-    const result = await getChapters({ page: pageNum, limit: size, search });
-    return {
-      data: result.data || [],
-      totalPages: result.totalPages || 1,
-      total: result.total || 0,
-    };
+    try {
+      console.log('Fetching chapters with params:', { page: pageNum, limit: size, search });
+      const result = await getChapters({ page: pageNum, limit: size, search });
+      console.log('Chapters API response:', result);
+      
+      // Handle different response structures from the API
+      if (result && typeof result === 'object') {
+        // If it's a paginated response
+        if (result.data && Array.isArray(result.data)) {
+          console.log('Using paginated response structure');
+          return {
+            data: result.data,
+            totalPages: result.totalPages || Math.ceil((result.total || 0) / size),
+            total: result.total || 0,
+          };
+        }
+        // If it's a direct array response
+        if (Array.isArray(result)) {
+          console.log('Using direct array response structure');
+          return {
+            data: result,
+            totalPages: Math.ceil(result.length / size),
+            total: result.length,
+          };
+        }
+      }
+      
+      // Fallback for unexpected response structure
+      console.warn('Unexpected chapters API response structure:', result);
+      return {
+        data: [],
+        totalPages: 1,
+        total: 0,
+      };
+    } catch (error) {
+      console.error('Error fetching chapters:', error);
+      return {
+        data: [],
+        totalPages: 1,
+        total: 0,
+      };
+    }
   }, []);
 
   // Use the custom hook for common admin page functionality
@@ -78,9 +114,21 @@ export default function ChapterAdminPage() {
   });
 
   useEffect(() => {
-    getLanguages().then((langs) => {
-      setLanguages(langs || []);
-      setLanguageIdMap(Object.fromEntries((langs || []).map(l => [l._id || l.code, l.name])));
+    getLanguages().then((langs: any) => {
+      // Ensure langs is always an array
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+        console.warn('Languages API returned non-array data:', langs);
+      }
+      
+      setLanguages(languagesArray);
+      setLanguageIdMap(Object.fromEntries(languagesArray.map((l: any) => [l._id || l.code, l.name])));
     });
   }, []);
 
@@ -188,7 +236,8 @@ export default function ChapterAdminPage() {
     if (!selectedChapterForTopic) return undefined;
     return { 
       chapter_id: selectedChapterForTopic._id,
-      chapter: selectedChapterForTopic
+      chapter: selectedChapterForTopic,
+      language_id: selectedChapterForTopic.language_id // Inherit parent's language
     };
   }, [selectedChapterForTopic]);
 
@@ -246,12 +295,13 @@ export default function ChapterAdminPage() {
   // CSV schema for chapters
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
-    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, supported_language_ids (comma-separated IDs - optional), title, slug, author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content(HTML - optional), order, is_published",
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "subject_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "author", type: "text", required: false } as FieldSchema,
@@ -277,6 +327,9 @@ export default function ChapterAdminPage() {
           class_id: r.class_id,
           subject_id: r.subject_id,
           language_id: r.language_id,
+          supported_language_ids: r.supported_language_ids 
+            ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+            : [],
           title: r.title,
           slug: r.slug,
           author: r.author || undefined,

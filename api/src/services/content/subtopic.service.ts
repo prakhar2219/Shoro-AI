@@ -27,6 +27,15 @@ export const validateLanguageIds = async (languageIds: string[]): Promise<{ vali
   return { valid, invalid };
 };
 
+// Check for duplicate order within topic
+export const checkDuplicateOrder = async (topic_id: string, order: number, excludeId?: string) => {
+  const query: any = { topic_id, order };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await Subtopic.findOne(query);
+};
+
 export const createSubtopic = async (data: ISubtopic) => Subtopic.create(data);
 
 export const bulkCreateSubtopics = async (rows: ISubtopic[]) => {

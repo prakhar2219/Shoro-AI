@@ -55,7 +55,19 @@ export function DescriptiveQuestionSection({ entityType, entityId, entityName }:
       console.log('Fetching Descriptive Questions with:', { entity_type: entityType, entity_id: entityId });
       const result = await getDescriptiveQuestions({ entity_type: entityType, entity_id: entityId });
       console.log('Descriptive Question API response:', result);
-      setQuestions(result.data || result);
+      // Ensure we always get an array
+      const questionsData = Array.isArray(result.data) 
+        ? result.data 
+        : Array.isArray(result) 
+        ? result 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(result.data) && !Array.isArray(result)) {
+        console.warn('Descriptive Question API returned non-array data:', result);
+      }
+      
+      setQuestions(questionsData);
     } catch (error: any) {
       console.error('Descriptive Question fetch error:', error);
       toast({

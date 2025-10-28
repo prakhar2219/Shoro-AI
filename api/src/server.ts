@@ -10,7 +10,6 @@ import { errorHandler } from './middleware/errorHandler';
 import { limiter, securityHeaders } from './middleware/security';
 import { specs } from './config/swagger';
 import AppError from './utils/appError';
-import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import blogRoutes from './routes/blog.routes';
 import uploadRoutes from './routes/upload.routes';
@@ -44,7 +43,6 @@ connectDB();
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
 // Routes
-app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/v1/blogs', blogRoutes);
 app.use('/api/v1/upload', uploadRoutes);

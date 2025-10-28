@@ -4,8 +4,14 @@ import {
   uploadHandler,
   uploadImageForm,
 } from '../controllers/upload.controller';
+import { clerkProtect, clerkRestrictTo } from '../middleware/clerkAuth';
 
 const router = Router();
+
+// Apply authentication and authorization to upload routes
+// Only authenticated admin users can upload files
+router.use(clerkProtect);
+router.use(clerkRestrictTo('super_admin', 'admin', 'editor'));
 
 router.post('/image', uploadHandler);
 

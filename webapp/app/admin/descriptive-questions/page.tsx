@@ -55,12 +55,50 @@ export default function DescriptiveQuestionsPage() {
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchDescriptiveQuestionsData = useCallback(async (pageNum: number, size: number, search: string) => {
-    const result = await getDescriptiveQuestions({ page: pageNum, limit: size, search });
-    return {
-      data: result.data || [],
-      totalPages: result.totalPages || 1,
-      total: result.total || 0,
-    };
+    try {
+      console.log('Fetching Descriptive Questions with params:', { page: pageNum, limit: size, search });
+      const result = await getDescriptiveQuestions({ page: pageNum, limit: size, search });
+      console.log('Descriptive Question API response:', result);
+      
+      // Handle different response structures from the API
+      if (result && typeof result === 'object') {
+        // If it's a paginated response
+        if (result.data && Array.isArray(result.data)) {
+          console.log('Using paginated response structure');
+          return {
+            data: result.data,
+            totalPages: result.totalPages || Math.ceil((result.total || 0) / size),
+            total: result.total || 0,
+          };
+        }
+        // If it's a direct array response
+        if (Array.isArray(result)) {
+          console.log('Using direct array response structure');
+          return {
+            data: result,
+            totalPages: Math.ceil(result.length / size),
+            total: result.length,
+          };
+        }
+      }
+      
+      // Fallback for unexpected response structure
+      console.warn('Unexpected Descriptive Question API response structure:', result);
+      return {
+        data: [],
+        totalPages: 1,
+        total: 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching Descriptive Questions:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      return {
+        data: [],
+        totalPages: 1,
+        total: 0,
+      };
+    }
   }, []);
 
   // Use the custom hook for common admin page functionality
@@ -332,7 +370,7 @@ export default function DescriptiveQuestionsPage() {
   // CSV schema for Descriptive Questions
   const dqCsvSchema: CsvSchema = {
     title: "Upload Descriptive Questions CSV",
-    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), is_active(optional), content(HTML - optional)",
+    description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), author(optional), source(optional), is_active(optional), content(HTML - optional)",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -340,6 +378,8 @@ export default function DescriptiveQuestionsPage() {
       { name: "answer", type: "text", required: true } as FieldSchema,
       { name: "difficulty", type: "text", required: false } as FieldSchema,
       { name: "tags", type: "text", required: false } as FieldSchema,
+      { name: "author", type: "text", required: false } as FieldSchema,
+      { name: "source", type: "text", required: false } as FieldSchema,
       { name: "is_active", type: "boolean", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
     ],
@@ -359,13 +399,15 @@ export default function DescriptiveQuestionsPage() {
           answer: r.answer,
           difficulty: (r.difficulty || 'medium') as any,
           tags,
+          author: r.author || undefined,
+          source: r.source || undefined,
           is_active,
           content,
         };
       });
       await bulkCreateDescriptiveQuestions(payload);
       toast({ title: 'Success', description: `${payload.length} questions uploaded successfully.` });
-      fetchPaginatedData(page, pageSize, searchTerm);
+      await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload questions.', variant: 'destructive' });
     } finally {
