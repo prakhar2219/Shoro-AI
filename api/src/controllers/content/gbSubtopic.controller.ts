@@ -30,6 +30,25 @@ export const createGBSubtopic = async (
       return;
     }
 
+    // Check for duplicate slug within GB topic
+    const existingSlugSubtopic = await gbSubtopicService.checkDuplicateSlug(gb_topic_id, slug);
+    if (existingSlugSubtopic) {
+      res.status(409).json({ 
+        error: `A GB Subtopic with slug "${slug}" already exists for this GB topic. Please use a different slug.` 
+      });
+      return;
+    }
+
+    // Check for duplicate order within GB topic
+    const orderNum = typeof order === 'number' ? order : Number(order || 0);
+    const existingOrderSubtopic = await gbSubtopicService.checkDuplicateOrder(gb_topic_id, orderNum);
+    if (existingOrderSubtopic) {
+      res.status(409).json({ 
+        error: `A GB Subtopic with order ${orderNum} already exists for this GB topic. Please use a different order number.` 
+      });
+      return;
+    }
+
     const subtopicData: IGBSubtopic = {
       gb_topic_id,
       name,
@@ -150,6 +169,30 @@ export const updateGBSubtopic = async (
   res: Response
 ): Promise<void> => {
   try {
+    const { slug, gb_topic_id, order } = req.body;
+    
+    // Check for duplicate slug if slug is being updated
+    if (slug && gb_topic_id) {
+      const existingSlugSubtopic = await gbSubtopicService.checkDuplicateSlug(gb_topic_id, slug, req.params.id);
+      if (existingSlugSubtopic) {
+        res.status(409).json({ 
+          error: `A GB Subtopic with slug "${slug}" already exists for this GB topic. Please use a different slug.` 
+        });
+        return;
+      }
+    }
+    
+    // Check for duplicate order if order is being updated
+    if (order !== undefined && gb_topic_id) {
+      const existingOrderSubtopic = await gbSubtopicService.checkDuplicateOrder(gb_topic_id, order, req.params.id);
+      if (existingOrderSubtopic) {
+        res.status(409).json({ 
+          error: `A GB Subtopic with order ${order} already exists for this GB topic. Please use a different order number.` 
+        });
+        return;
+      }
+    }
+    
     const updated = await gbSubtopicService.updateGBSubtopic(req.params.id, req.body);
     if (!updated) {
       res.status(404).json({ error: 'GB Subtopic not found' });
@@ -157,7 +200,11 @@ export const updateGBSubtopic = async (
     }
     res.status(200).json(updated);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    if ((error as any).code === 11000) {
+      res.status(409).json({ error: 'Duplicate key error. Please check slug and order uniqueness.' });
+    } else {
+      res.status(500).json({ error: (error as Error).message });
+    }
   }
 };
 

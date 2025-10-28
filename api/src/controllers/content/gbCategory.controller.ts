@@ -21,6 +21,25 @@ export const createGBCategory = async (
       return;
     }
 
+    // Check for duplicate slug globally (since GBCategory has unique slug)
+    const existingSlugCategory = await gbCategoryService.checkDuplicateSlug(slug);
+    if (existingSlugCategory) {
+      res.status(409).json({ 
+        error: `A GB Category with slug "${slug}" already exists. Please use a different slug.` 
+      });
+      return;
+    }
+
+    // Check for duplicate order within language
+    const orderNum = typeof order === 'number' ? order : Number(order || 0);
+    const existingOrderCategory = await gbCategoryService.checkDuplicateOrder(language_id, orderNum);
+    if (existingOrderCategory) {
+      res.status(409).json({ 
+        error: `A GB Category with order ${orderNum} already exists for this language. Please use a different order number.` 
+      });
+      return;
+    }
+
     const categoryData: IGBCategory = {
       name,
       slug,
@@ -128,6 +147,30 @@ export const updateGBCategory = async (
   res: Response
 ): Promise<void> => {
   try {
+    const { slug, language_id, order } = req.body;
+    
+    // Check for duplicate slug if slug is being updated
+    if (slug) {
+      const existingSlugCategory = await gbCategoryService.checkDuplicateSlug(slug, req.params.id);
+      if (existingSlugCategory) {
+        res.status(409).json({ 
+          error: `A GB Category with slug "${slug}" already exists. Please use a different slug.` 
+        });
+        return;
+      }
+    }
+    
+    // Check for duplicate order if order is being updated
+    if (order !== undefined && language_id) {
+      const existingOrderCategory = await gbCategoryService.checkDuplicateOrder(language_id, order, req.params.id);
+      if (existingOrderCategory) {
+        res.status(409).json({ 
+          error: `A GB Category with order ${order} already exists for this language. Please use a different order number.` 
+        });
+        return;
+      }
+    }
+    
     const updated = await gbCategoryService.updateGBCategory(req.params.id, req.body);
     if (!updated) {
       res.status(404).json({ error: 'GB Category not found' });
@@ -135,7 +178,11 @@ export const updateGBCategory = async (
     }
     res.status(200).json(updated);
   } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+    if ((error as any).code === 11000) {
+      res.status(409).json({ error: 'Duplicate key error. Please check slug and order uniqueness.' });
+    } else {
+      res.status(500).json({ error: (error as Error).message });
+    }
   }
 };
 
