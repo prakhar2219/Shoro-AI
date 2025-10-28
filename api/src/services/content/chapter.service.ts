@@ -39,6 +39,15 @@ export const checkDuplicateOrder = async (subject_id: string, order: number, exc
   return await Chapter.findOne(query);
 };
 
+// Check for duplicate slug within subject and language
+export const checkDuplicateSlug = async (subject_id: string, language_id: string, slug: string, excludeId?: string) => {
+  const query: any = { subject_id, language_id, slug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await Chapter.findOne(query);
+};
+
 export const createChapter = async (data: IChapter) => {
   return await Chapter.create(data);
 };

@@ -30,6 +30,15 @@ export const createTopic = async (req: Request, res: Response) => {
       return;
     }
 
+    // Check for duplicate slug
+    const existingSlugTopic = await topicService.checkDuplicateSlug(slug);
+    if (existingSlugTopic) {
+      res.status(409).json({ 
+        error: `A topic with slug "${slug}" already exists. Please use a different slug.` 
+      });
+      return;
+    }
+
     // Check for duplicate order within chapter
     const existingTopic = await topicService.checkDuplicateOrder(chapter_id, finalOrder);
     if (existingTopic) {
@@ -164,6 +173,30 @@ export const getTopic = async (req: Request, res: Response) => {
 
 export const updateTopic = async (req: Request, res: Response) => {
   try {
+    const { slug, chapter_id, order } = req.body;
+    
+    // Check for duplicate slug if slug is being updated
+    if (slug) {
+      const existingSlugTopic = await topicService.checkDuplicateSlug(slug, req.params.id);
+      if (existingSlugTopic) {
+        res.status(409).json({ 
+          error: `A topic with slug "${slug}" already exists. Please use a different slug.` 
+        });
+        return;
+      }
+    }
+    
+    // Check for duplicate order if order is being updated
+    if (order !== undefined && chapter_id) {
+      const existingOrderTopic = await topicService.checkDuplicateOrder(chapter_id, order, req.params.id);
+      if (existingOrderTopic) {
+        res.status(409).json({ 
+          error: `A topic with order ${order} already exists for this chapter. Please use a different order number.` 
+        });
+        return;
+      }
+    }
+    
     const row = await topicService.updateTopic(req.params.id, req.body);
     if (!row) {
       res.status(404).json({ error: 'Topic not found' });
@@ -171,7 +204,11 @@ export const updateTopic = async (req: Request, res: Response) => {
     }
     res.status(200).json(row);
   } catch (e: any) {
-    res.status(500).json({ error: e.message });
+    if (e.code === 11000) {
+      res.status(409).json({ error: 'Duplicate key error. Please check slug and order uniqueness.' });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
   }
 };
 

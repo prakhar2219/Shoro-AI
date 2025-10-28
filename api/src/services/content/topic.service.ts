@@ -36,6 +36,15 @@ export const checkDuplicateOrder = async (chapter_id: string, order: number, exc
   return await Topic.findOne(query);
 };
 
+// Check for duplicate slug
+export const checkDuplicateSlug = async (slug: string, excludeId?: string) => {
+  const query: any = { slug };
+  if (excludeId) {
+    query._id = { $ne: excludeId };
+  }
+  return await Topic.findOne(query);
+};
+
 export const createTopic = async (data: ITopic) => Topic.create(data);
 
 export const bulkCreateTopics = async (rows: ITopic[]) => {
