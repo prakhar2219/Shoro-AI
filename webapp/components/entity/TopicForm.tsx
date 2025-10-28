@@ -67,24 +67,6 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     author: initialData?.author || '',
   });
 
-  // State for translations
-  const [translations, setTranslations] = useState<Record<string, {
-    title: string;
-    slug: string;
-    content: string;
-  }>>(() => {
-    const initialTranslations: Record<string, { title: string; slug: string; content: string }> = {};
-    if (initialData?.translations) {
-      initialData.translations.forEach(translation => {
-        initialTranslations[translation.language_id] = {
-          title: translation.title,
-          slug: translation.slug,
-          content: translation.content || '',
-        };
-      });
-    }
-    return initialTranslations;
-  });
 
   // Check if we're adding from a parent chapter
   const isAddingFromParent = Boolean(initialData?.chapter);
@@ -257,17 +239,6 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     });
   };
 
-  // Handle translation changes
-  const handleTranslationChange = (languageId: string, field: 'title' | 'slug' | 'content', value: string) => {
-    setTranslations(prev => ({
-      ...prev,
-      [languageId]: {
-        ...prev[languageId],
-        [field]: value,
-      }
-    }));
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -305,16 +276,6 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
       return;
     }
     
-    // Prepare translations array
-    const translationsArray = Object.entries(translations)
-      .filter(([_, translation]) => translation.title.trim() && translation.slug.trim())
-      .map(([languageId, translation]) => ({
-        language_id: languageId,
-        title: translation.title,
-        slug: translation.slug,
-        content: translation.content,
-      }));
-
     // Only send chapter_id and language_id to the API, but maintain hierarchy for UX
     onSubmit({ 
       chapter_id: formData.chapter_id,
@@ -327,8 +288,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
       content: formData.content,
       tag: formData.tag ? formData.tag.split(',').map((t: string) => t.trim()) : [],
       source: formData.source,
-      author: formData.author,
-      translations: translationsArray
+      author: formData.author
     });
   };
 
@@ -580,62 +540,6 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
             <Label htmlFor="content">Content</Label>
             <RichTextEditor value={formData.content} onChange={(html) => setFormData({ ...formData, content: html })} />
           </div>
-
-          {/* Translation Fields */}
-          {formData.supported_language_ids.length > 0 && (
-            <div className="space-y-4 border-t pt-4">
-              <Label className="text-lg font-semibold">Translations</Label>
-              {formData.supported_language_ids.map((languageId) => {
-                const language = languages.find(l => l._id === languageId);
-                const translation = translations[languageId] || { title: '', slug: '', content: '' };
-                
-                return (
-                  <Card key={languageId} className="p-4">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm font-medium">{language?.name || 'Unknown Language'}</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor={`translation-title-${languageId}`}>Title</Label>
-                        <Input
-                          id={`translation-title-${languageId}`}
-                          value={translation.title}
-                          onChange={(e) => handleTranslationChange(languageId, 'title', e.target.value)}
-                          placeholder={`Enter title in ${language?.name || 'this language'}`}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`translation-slug-${languageId}`}>Slug</Label>
-                        <Input
-                          id={`translation-slug-${languageId}`}
-                          value={translation.slug}
-                          onChange={(e) => {
-                            const formattedSlug = e.target.value
-                              .trim()
-                              .replace(/\s+/g, '-')
-                              .replace(/[#?&%=+]/g, '')
-                              .replace(/-+/g, '-')
-                              .replace(/^-|-$/g, '');
-                            handleTranslationChange(languageId, 'slug', formattedSlug);
-                          }}
-                          placeholder={`e.g., introduction or परिचय`}
-                        />
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <Label htmlFor={`translation-content-${languageId}`}>Content</Label>
-                        <RichTextEditor 
-                          value={translation.content} 
-                          onChange={(html) => handleTranslationChange(languageId, 'content', html)} 
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Saving..." : initialData?._id ? "Update Topic" : "Create Topic"}
