@@ -216,7 +216,8 @@ export default function GBTopicsPage() {
     if (!selectedTopicForGBSubtopic) return undefined;
     return {
       gb_topic_id: selectedTopicForGBSubtopic._id,
-      gb_topic: selectedTopicForGBSubtopic
+      gb_topic: selectedTopicForGBSubtopic,
+      language_id: selectedTopicForGBSubtopic.language_id // Inherit parent's language
     };
   }, [selectedTopicForGBSubtopic]);
 
@@ -301,7 +302,7 @@ export default function GBTopicsPage() {
   // CSV schema for GB topics - memoized to handle dependencies
   const gbTopicCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Topics CSV",
-    description: "Upload a CSV with columns: gb_category_id, name, slug, description, content, language_id, order, image, tag, source, author, is_published. IMPORTANT: GB Topics belong to GB Categories in the General Blogging hierarchy (GB Category → GB Topic). Make sure your gb_category_id corresponds to an existing GB category. You can find GB category IDs in the GB Categories admin section.",
+    description: "Upload a CSV with columns: gb_category_id, name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published. IMPORTANT: GB Topics belong to GB Categories in the General Blogging hierarchy (GB Category → GB Topic). Make sure your gb_category_id corresponds to an existing GB category. You can find GB category IDs in the GB Categories admin section.",
     fields: [
       { 
         name: "gb_category_id", 
@@ -354,6 +355,7 @@ export default function GBTopicsPage() {
           return isValid ? null : "Invalid language selected";
         }
       } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "description", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
@@ -375,6 +377,9 @@ export default function GBTopicsPage() {
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,
+        supported_language_ids: r.supported_language_ids 
+          ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+          : [],
         order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],

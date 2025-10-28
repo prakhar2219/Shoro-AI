@@ -236,7 +236,8 @@ export default function ChapterAdminPage() {
     if (!selectedChapterForTopic) return undefined;
     return { 
       chapter_id: selectedChapterForTopic._id,
-      chapter: selectedChapterForTopic
+      chapter: selectedChapterForTopic,
+      language_id: selectedChapterForTopic.language_id // Inherit parent's language
     };
   }, [selectedChapterForTopic]);
 
@@ -294,12 +295,13 @@ export default function ChapterAdminPage() {
   // CSV schema for chapters
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
-    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content(HTML - optional), order, is_published",
+    description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, supported_language_ids (comma-separated IDs - optional), title, slug, author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content(HTML - optional), order, is_published",
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "subject_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "author", type: "text", required: false } as FieldSchema,
@@ -325,6 +327,9 @@ export default function ChapterAdminPage() {
           class_id: r.class_id,
           subject_id: r.subject_id,
           language_id: r.language_id,
+          supported_language_ids: r.supported_language_ids 
+            ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+            : [],
           title: r.title,
           slug: r.slug,
           author: r.author || undefined,

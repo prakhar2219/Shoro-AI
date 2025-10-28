@@ -207,7 +207,8 @@ export default function GBCategoriesPage() {
     if (!selectedCategoryForGBTopic) return undefined;
     return {
       gb_category_id: selectedCategoryForGBTopic._id,
-      gb_category: selectedCategoryForGBTopic
+      gb_category: selectedCategoryForGBTopic,
+      language_id: selectedCategoryForGBTopic.language_id // Inherit parent's language
     };
   }, [selectedCategoryForGBTopic]);
 
@@ -285,7 +286,7 @@ export default function GBCategoriesPage() {
   // CSV schema for GB categories - memoized to handle languages dependency
   const gbCategoryCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Categories CSV",
-    description: "Upload a CSV with columns: name, slug, description, content, language_id, order, image, tag, source, author, is_published",
+    description: "Upload a CSV with columns: name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published",
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
@@ -313,6 +314,7 @@ export default function GBCategoriesPage() {
           return isValid ? null : "Invalid language selected";
         }
       } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "description", type: "text", required: false } as FieldSchema,
       { name: "content", type: "text", required: false } as FieldSchema,
       { name: "order", type: "number", required: false } as FieldSchema,
@@ -332,6 +334,9 @@ export default function GBCategoriesPage() {
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,
+        supported_language_ids: r.supported_language_ids 
+          ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+          : [],
         order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],

@@ -13,6 +13,7 @@ import { getClassesByBoard } from "@/lib/api/entities/classes";
 import { getSubjects } from "@/lib/api/entities/subjects";
 import { getChapters } from "@/lib/api/entities/chapters";
 import { getTopics } from "@/lib/api/entities/topics";
+import { getLanguages } from "@/lib/api/entities/language";
 
 interface SubtopicFormProps {
   onSubmit: (data: any) => void;
@@ -26,6 +27,7 @@ interface SubtopicFormProps {
     topic_id?: string;
     topic?: any; // Full topic object for auto-populating hierarchy
     language_id?: string;
+    supported_language_ids?: string[];
     title?: string;
     slug?: string;
     order?: number;
@@ -43,6 +45,8 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
 
   const [formData, setFormData] = useState({
     board_id: initialData?.board_id || "",
@@ -71,6 +75,31 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
 
   // Check if we're editing existing subtopic (has _id) vs adding new subtopic (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
+
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData && initialData._id) {
+      // This is edit mode
+      setFormData({
+        board_id: initialData.board_id || "",
+        class_id: initialData.class_id || "",
+        subject_id: initialData.subject_id || "",
+        chapter_id: initialData.chapter_id || "",
+        topic_id: initialData.topic_id || "",
+        language_id: initialData.language_id || "",
+        title: initialData.title || "",
+        slug: initialData.slug || "",
+        order: initialData.order ?? 0,
+        is_published: initialData.is_published ?? true,
+        content: typeof initialData.content === 'string' ? initialData.content : '',
+        tag: initialData.tag?.join(', ') || '',
+        source: initialData.source || '',
+        author: initialData.author || '',
+      });
+      
+      setSupportedLanguageIds(initialData.supported_language_ids || []);
+    }
+  }, [initialData]);
 
   // Auto-populate formData from parent topic when adding from parent
   useEffect(() => {
@@ -145,9 +174,17 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
     }
   }, [isAddingFromParent, parentTopic, initialData?.topic_id]);
 
-  // Load boards on mount
+  // Load boards and languages on mount
   useEffect(() => {
     getBoards().then(setBoards);
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      setLanguages(languagesArray);
+    }).catch(() => setLanguages([]));
   }, []);
 
   // Load classes when board changes
@@ -305,6 +342,7 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
     onSubmit({ 
       topic_id: formData.topic_id,
       language_id: formData.language_id,
+      supported_language_ids: supportedLanguageIds,
       title: formData.title,
       slug: formData.slug,
       order: Number(formData.order),
@@ -313,6 +351,15 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
       tag: formData.tag ? formData.tag.split(',').map((t: string) => t.trim()) : [],
       source: formData.source,
       author: formData.author
+    });
+  };
+
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => {
+      const exists = prev.includes(value);
+      return exists
+        ? prev.filter((id) => id !== value)
+        : [...prev, value];
     });
   };
 
@@ -472,6 +519,23 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
               placeholder="Select Language"
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <Button
+                  key={lang._id}
+                  type="button"
+                  variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </Button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import { getLanguages } from '@/lib/api/entities/language';
 
 interface SubjectFormProps {
   initialData?: any;
@@ -18,6 +19,8 @@ interface SubjectFormProps {
 export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit, loading }) => {
   const [boards, setBoards] = useState<IBoard[]>([]);
   const [classes, setClasses] = useState<IClass[]>([]);
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
   const [form, setForm] = useState({
     name: initialData?.name || '',
     code: initialData?.code || '',
@@ -41,6 +44,14 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
 
   useEffect(() => {
     getBoards().then(setBoards);
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      setLanguages(languagesArray);
+    }).catch(() => setLanguages([]));
   }, []);
 
   useEffect(() => {
@@ -55,6 +66,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     if (initialData) {
       let boardId = '';
       let classId = '';
+      let languageId = '';
       
       // If adding from parent, extract board and class info
       if (initialData.classItem) {
@@ -72,11 +84,33 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
       } else if (initialData.class_id) {
         classId = initialData.class_id;
       }
+
+      // Extract language_id from potentially populated object
+      if (typeof initialData.language_id === 'object' && initialData.language_id !== null) {
+        languageId = initialData.language_id._id || '';
+      } else {
+        languageId = initialData.language_id || '';
+      }
+
       setForm(f => ({
         ...f,
-        board_id: boardId,
-        class_id: classId,
+        name: initialData.name || f.name,
+        code: initialData.code || f.code,
+        icon: initialData.icon || f.icon,
+        board_id: boardId || f.board_id,
+        class_id: classId || f.class_id,
+        language_id: languageId,
+        downloadNotes: initialData.downloadNotes || f.downloadNotes,
+        downloadPDF: initialData.downloadPDF || f.downloadPDF,
+        downloadQA: initialData.downloadQA || f.downloadQA,
+        content: typeof initialData.content === 'string' ? initialData.content : f.content,
+        tag: initialData.tag?.join(', ') || f.tag,
+        source: initialData.source || f.source,
+        author: initialData.author || f.author,
       }));
+      
+      // Update supported language IDs
+      setSupportedLanguageIds(initialData.supported_language_ids || []);
     }
     // eslint-disable-next-line
   }, [initialData]);
@@ -106,8 +140,18 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     const payload = {
       ...form,
       tag: form.tag ? form.tag.split(',').map((t: string) => t.trim()) : [],
+      supported_language_ids: supportedLanguageIds
     };
     onSubmit(payload);
+  };
+  
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => {
+      const exists = prev.includes(value);
+      return exists
+        ? prev.filter((id) => id !== value)
+        : [...prev, value];
+    });
   };
 
   return (
@@ -174,6 +218,22 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
               placeholder="Select Language"
               required
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <Button
+                  key={lang._id}
+                  type="button"
+                  variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </Button>
+              ))}
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="name">Subject Name</Label>

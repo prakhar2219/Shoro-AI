@@ -5,6 +5,7 @@ export interface ITopic {
   _id?: string;
   chapter_id: string | { _id: string; title: string };
   language_id: string | { _id: string; name: string; code: string; [key: string]: any };
+  supported_language_ids?: string[];
   title: string;
   slug: string;
   order?: number;

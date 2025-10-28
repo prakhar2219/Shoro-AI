@@ -5,6 +5,7 @@ const ClassSchema = new Schema<IClass>(
   {
     board_id: { type: Schema.Types.ObjectId, ref: 'Board', required: true },
     language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
     name: { type: String, required: true },
     grade: { type: Number, required: true },
     content: { type: String, required: false },

@@ -10,6 +10,7 @@ export interface ISubject {
   icon?: string;
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   language_id: string | { _id: string; name: string; code: string; [key: string]: any };
+  supported_language_ids?: string[];
   downloadNotes?: string;
   downloadPDF?: string;
   downloadQA?: string;

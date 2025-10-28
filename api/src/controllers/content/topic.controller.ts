@@ -96,7 +96,7 @@ export const createTopic = async (req: Request, res: Response) => {
         for (const translation of translations) {
           if (translation.language_id && translation.title && translation.slug) {
             await topicService.createTopicTranslation({
-              topic_id: created._id.toString(),
+              topic_id: created._id,
               language_id: translation.language_id,
               title: translation.title,
               slug: translation.slug,
@@ -104,7 +104,7 @@ export const createTopic = async (req: Request, res: Response) => {
               translated_by_ai: translation.translated_by_ai || false,
               needs_review: translation.needs_review || false,
               updated_by: created_by
-            });
+            } as any);
           }
         }
       } catch (translationError: any) {

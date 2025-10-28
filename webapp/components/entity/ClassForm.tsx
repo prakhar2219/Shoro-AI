@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { LanguageSelector } from "@/components/shared/LanguageSelector"
 import { useState, useEffect } from "react"
+import { getLanguages } from "@/lib/api/entities/language"
 
 const classSchema = z.object({
     name: z.string().min(1, "Class name is required"),
@@ -21,8 +22,8 @@ const classSchema = z.object({
 type ClassFormValues = z.infer<typeof classSchema>
 
 type ClassFormProps = {
-    defaultValues?: Partial<ClassFormValues> & { content?: string; board?: any }
-    onSubmit: (data: ClassFormValues & { content: string }) => void
+    defaultValues?: Partial<ClassFormValues> & { content?: string; board?: any; supported_language_ids?: string[] }
+    onSubmit: (data: ClassFormValues & { content: string; supported_language_ids: string[] }) => void
     boards: { id: string; name: string }[]
     loading?: boolean
 }
@@ -31,6 +32,22 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
     const [content, setContent] = useState(
         (typeof defaultValues?.content === 'string' ? defaultValues.content : '')
     )
+    const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(
+        defaultValues?.supported_language_ids || []
+    )
+    const [languages, setLanguages] = useState<any[]>([])
+    
+    // Fetch languages on mount
+    useEffect(() => {
+        getLanguages().then((langs: any) => {
+            const languagesArray = Array.isArray(langs) 
+                ? langs 
+                : Array.isArray(langs?.data) 
+                ? langs.data 
+                : [];
+            setLanguages(languagesArray);
+        }).catch(() => setLanguages([]));
+    }, []);
     
     // Check if we're adding from a parent board
     const isAddingFromParent = Boolean(defaultValues?.board);
@@ -58,6 +75,8 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
     // Reset form when defaultValues change (for editing different classes)
     useEffect(() => {
         console.log('ClassForm useEffect - defaultValues changed:', defaultValues);
+        console.log('ClassForm useEffect - boards:', boards);
+        console.log('ClassForm useEffect - languages loaded:', languages.length);
         if (defaultValues) {
             console.log('Resetting form with defaultValues:', defaultValues);
             const formData = {
@@ -66,9 +85,12 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 board_id: defaultValues.board_id || boards[0]?.id || "",
                 language_id: defaultValues.language_id || "",
             };
-            console.log('Form data to reset with:', formData);
+            console.log('Form data to reset with (including language_id):', formData);
+            console.log('language_id value being set:', formData.language_id);
             reset(formData)
             setContent(typeof defaultValues.content === 'string' ? defaultValues.content : '')
+            setSupportedLanguageIds(defaultValues.supported_language_ids || [])
+            console.log('Form reset complete. Current language_id from watch:', watch('language_id'));
         } else {
             console.log('Resetting form with empty values');
             const emptyFormData = {
@@ -80,6 +102,7 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
             console.log('Empty form data:', emptyFormData);
             reset(emptyFormData)
             setContent('')
+            setSupportedLanguageIds([])
         }
     }, [defaultValues, boards, reset])
 
@@ -151,7 +174,8 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
         const submitData = {
             ...data,
             board_id: data.board_id || boards[0]?.id || "",
-            content
+            content,
+            supported_language_ids: supportedLanguageIds
         };
         
         // Final validation
@@ -164,6 +188,15 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
         console.log('Submitting form data:', submitData);
         onSubmit(submitData)
     }
+    
+    const handleSupportedLanguagesChange = (value: string) => {
+        setSupportedLanguageIds((prev) => {
+            const exists = prev.includes(value);
+            return exists
+                ? prev.filter((id) => id !== value)
+                : [...prev, value];
+        });
+    };
 
     const handleContentChange = (html: string) => {
         setContent(html)
@@ -241,6 +274,23 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
                 {errors.language_id && (
                     <p className="text-sm text-red-500">{errors.language_id.message}</p>
                 )}
+            </div>
+
+            <div className="space-y-2">
+                <Label>Supported Languages</Label>
+                <div className="flex flex-wrap gap-2">
+                    {languages.map((lang) => (
+                        <Button
+                            key={lang._id}
+                            type="button"
+                            variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handleSupportedLanguagesChange(lang._id)}
+                        >
+                            {lang.name}
+                        </Button>
+                    ))}
+                </div>
             </div>
 
             <div>

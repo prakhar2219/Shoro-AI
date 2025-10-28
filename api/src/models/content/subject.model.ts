@@ -5,6 +5,7 @@ const SubjectSchema = new Schema<ISubject>(
   {
     class_id: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
     language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
     code: { type: String, required: true },
     icon: { type: String },
     name: { type: String, required: true },

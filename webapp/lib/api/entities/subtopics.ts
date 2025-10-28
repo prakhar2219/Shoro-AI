@@ -5,6 +5,7 @@ export interface ISubtopic {
   _id?: string;
   topic_id: string | { _id: string; title: string; [key: string]: any };
   language_id: string | { _id: string; name: string; code: string; [key: string]: any };
+  supported_language_ids?: string[];
   title: string;
   slug: string;
   order?: number;

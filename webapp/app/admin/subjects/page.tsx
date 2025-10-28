@@ -267,7 +267,8 @@ export default function SubjectsPage() {
     if (!selectedSubjectForChapter) return undefined;
     return {
       subject_id: selectedSubjectForChapter._id,
-      subject: selectedSubjectForChapter
+      subject: selectedSubjectForChapter,
+      language_id: selectedSubjectForChapter.language_id // Inherit parent's language
     };
   }, [selectedSubjectForChapter]);
 
@@ -280,6 +281,13 @@ export default function SubjectsPage() {
         : typeof subject.class_id === 'string'
           ? subject.class_id
           : '',
+    language_id:
+      typeof subject.language_id === 'object' && subject.language_id !== null && '_id' in subject.language_id && typeof subject.language_id._id === 'string'
+        ? subject.language_id._id
+        : typeof subject.language_id === 'string'
+          ? subject.language_id
+          : '',
+    supported_language_ids: subject.supported_language_ids || [],
   });
 
   // Render translations for expanded row
@@ -347,10 +355,11 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, language_id, code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content (HTML - optional).",
+    description: "Upload a CSV with columns: class_id, language_id, supported_language_ids (comma-separated IDs - optional), code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "icon", type: "text", required: false } as FieldSchema,
@@ -373,6 +382,9 @@ export default function SubjectsPage() {
         return {
           class_id: r.class_id,
           language_id: r.language_id,
+          supported_language_ids: r.supported_language_ids 
+            ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+            : [],
           code: r.code,
           name: r.name,
           icon: r.icon || undefined,

@@ -3,6 +3,7 @@ import mongoose, { Document } from 'mongoose';
 export interface ISubtopic extends Document {
   topic_id: mongoose.Types.ObjectId;
   language_id: mongoose.Types.ObjectId;
+  supported_language_ids?: mongoose.Types.ObjectId[];
   title: string;
   slug: string;
   order: number;

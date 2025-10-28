@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import { getLanguages } from '@/lib/api/entities/language';
 
 interface GBTopicFormProps {
   initialData?: any;
@@ -16,6 +17,9 @@ interface GBTopicFormProps {
 }
 
 export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBTopicFormProps) {
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
+  
   const [formData, setFormData] = useState({
     gb_category_id: '',
     name: '',
@@ -38,6 +42,16 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
   const isAddingFromParent = Boolean(initialData?.gb_category);
 
   useEffect(() => {
+    // Fetch languages
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      setLanguages(languagesArray);
+    }).catch(() => setLanguages([]));
+
     // Fetch GB Categories for dropdown
     const fetchCategories = async () => {
       try {
@@ -74,6 +88,7 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
         author: initialData.author || '',
         is_published: initialData.is_published || false,
       });
+      setSupportedLanguageIds(initialData.supported_language_ids || []);
     }
   }, [initialData?._id, initialData?.gb_category_id]); // Only depend on stable IDs to prevent infinite loops
 
@@ -106,9 +121,19 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
       ...formData,
       tag: formData.tag ? formData.tag.split(',').map(t => t.trim()) : [],
       order: Number(formData.order),
+      supported_language_ids: supportedLanguageIds
     };
 
     await onSubmit(payload);
+  };
+
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => {
+      const exists = prev.includes(value);
+      return exists
+        ? prev.filter((id) => id !== value)
+        : [...prev, value];
+    });
   };
 
   return (
@@ -187,6 +212,23 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
           placeholder="Select Language"
           required
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Supported Languages</Label>
+        <div className="flex flex-wrap gap-2">
+          {languages.map((lang) => (
+            <Button
+              key={lang._id}
+              type="button"
+              variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSupportedLanguagesChange(lang._id)}
+            >
+              {lang.name}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

@@ -78,6 +78,29 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
   // Check if we're editing existing topic (has _id) vs adding new topic (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
 
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData && initialData._id) {
+      // This is edit mode
+      setFormData({
+        board_id: initialData.board_id || "",
+        class_id: initialData.class_id || "",
+        subject_id: initialData.subject_id || "",
+        chapter_id: initialData.chapter_id || "",
+        language_id: initialData.language_id || "",
+        supported_language_ids: initialData.supported_language_ids || [],
+        title: initialData.title || "",
+        slug: initialData.slug || "",
+        order: initialData.order ?? 0,
+        is_published: initialData.is_published ?? true,
+        content: typeof initialData.content === 'string' ? initialData.content : '',
+        tag: initialData.tag?.join(', ') || '',
+        source: initialData.source || '',
+        author: initialData.author || '',
+      });
+    }
+  }, [initialData]);
+
   // Auto-populate formData from parent chapter when adding from parent
   useEffect(() => {
     if (isAddingFromParent && parentChapter) {
@@ -413,13 +436,13 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="language_id">Default Language</Label>
+            <Label htmlFor="language_id">Language</Label>
             <Select
               value={formData.language_id}
               onValueChange={(value) => setFormData(prev => ({ ...prev, language_id: value }))}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select default language" />
+                <SelectValue placeholder="Select Language" />
               </SelectTrigger>
               <SelectContent>
                 {languages.map((lang) => (

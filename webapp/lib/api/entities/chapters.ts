@@ -7,6 +7,7 @@ export interface IChapter {
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   subject_id: string | { _id: string; name: string; grade: number; [key: string]: any };
   language_id: string | { _id: string; name: string; code: string; [key: string]: any };
+  supported_language_ids?: string[];
   order: number;
   is_published: boolean;
   created_by: string;

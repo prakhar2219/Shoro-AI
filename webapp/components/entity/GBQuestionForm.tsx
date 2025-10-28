@@ -9,6 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/rich-text-editor';
+import { getLanguages } from '@/lib/api/entities/language';
 
 interface GBQuestionFormProps {
   initialData?: any;
@@ -17,6 +18,9 @@ interface GBQuestionFormProps {
 }
 
 export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: GBQuestionFormProps) {
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
+  
   const [formData, setFormData] = useState({
     gb_category_id: '',
     gb_topic_id: '',
@@ -42,8 +46,17 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
   // Check if we're editing existing question (has _id) vs adding new question (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
 
-  // Load categories on mount
+  // Load categories and languages on mount
   useEffect(() => {
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      setLanguages(languagesArray);
+    }).catch(() => setLanguages([]));
+
     const fetchCategories = async () => {
       try {
         const response = await fetch('/api/v1/content/gb-categories');
@@ -172,6 +185,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
         difficulty_level: initialData.difficulty_level || 'medium',
         is_published: initialData.is_published || false,
       });
+      setSupportedLanguageIds(initialData.supported_language_ids || []);
     }
   }, [initialData?._id, initialData?.gb_subtopic_id]); // Only depend on stable IDs to prevent infinite loops
 
@@ -219,9 +233,19 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       author: formData.author,
       difficulty_level: formData.difficulty_level,
       is_published: formData.is_published,
+      supported_language_ids: supportedLanguageIds
     };
 
     await onSubmit(payload);
+  };
+
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => {
+      const exists = prev.includes(value);
+      return exists
+        ? prev.filter((id) => id !== value)
+        : [...prev, value];
+    });
   };
 
   return (
@@ -330,6 +354,23 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
           placeholder="Select Language"
           required
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Supported Languages</Label>
+        <div className="flex flex-wrap gap-2">
+          {languages.map((lang) => (
+            <Button
+              key={lang._id}
+              type="button"
+              variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+              size="sm"
+              onClick={() => handleSupportedLanguagesChange(lang._id)}
+            >
+              {lang.name}
+            </Button>
+          ))}
+        </div>
       </div>
 
       <div className="grid grid-cols-3 gap-4">

@@ -218,10 +218,11 @@ export default function SubtopicsPage() {
   // CSV schema for subtopics
   const subtopicCsvSchema: CsvSchema = {
     title: "Upload Subtopics CSV",
-    description: "Upload a CSV with columns: topic_id, language_id, title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id and language_id correspond to existing entities in the system.",
+    description: "Upload a CSV with columns: topic_id, language_id, supported_language_ids (comma-separated IDs - optional), title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id and language_id correspond to existing entities in the system.",
     fields: [
       { name: "topic_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "title", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
       { name: "author", type: "text", required: false } as FieldSchema,
@@ -242,6 +243,9 @@ export default function SubtopicsPage() {
         return {
           topic_id: r.topic_id,
           language_id: r.language_id,
+          supported_language_ids: r.supported_language_ids 
+            ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
+            : [],
           title: r.title,
           slug: r.slug,
           author: r.author || undefined,
@@ -287,12 +291,18 @@ export default function SubtopicsPage() {
       >
         <SubtopicForm
           initialData={selected ? {
+            _id: selected._id,
             topic_id: typeof selected.topic_id === 'string' ? selected.topic_id : (selected.topic_id as any)?._id,
+            language_id: typeof selected.language_id === 'string' ? selected.language_id : (selected.language_id as any)?._id,
+            supported_language_ids: selected.supported_language_ids || [],
             title: selected.title,
             slug: selected.slug,
             order: selected.order,
             is_published: selected.is_published,
-            content: typeof selected.content === 'string' ? selected.content : ''
+            content: typeof selected.content === 'string' ? selected.content : '',
+            tag: selected.tag || [],
+            source: selected.source || '',
+            author: selected.author || ''
           } : undefined}
           onSubmit={handleCreateOrUpdate}
           loading={isDataLoading}

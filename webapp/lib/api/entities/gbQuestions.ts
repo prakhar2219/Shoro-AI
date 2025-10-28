@@ -8,6 +8,7 @@ export interface IGBQuestion {
   answer?: string;
   content?: string;
   language_id: string;
+  supported_language_ids?: string[];
   order: number;
   image?: string;
   tag?: string[];
