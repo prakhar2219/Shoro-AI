@@ -59,7 +59,19 @@ export function MCQSection({ entityType, entityId, entityName }: MCQSectionProps
       console.log('Fetching MCQs with:', { entity_type: entityType, entity_id: entityId });
       const result = await getMCQs({ entity_type: entityType, entity_id: entityId });
       console.log('MCQ API response:', result);
-      setMcqs(result.data || result);
+      // Ensure we always get an array
+      const mcqsData = Array.isArray(result.data) 
+        ? result.data 
+        : Array.isArray(result) 
+        ? result 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(result.data) && !Array.isArray(result)) {
+        console.warn('MCQ API returned non-array data:', result);
+      }
+      
+      setMcqs(mcqsData);
     } catch (error: any) {
       console.error('MCQ fetch error:', error);
       toast({

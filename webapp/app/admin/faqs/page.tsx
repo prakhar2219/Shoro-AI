@@ -55,12 +55,50 @@ export default function FAQsPage() {
 
   // Wrap fetchData in useCallback to prevent infinite loop
   const fetchFAQsData = useCallback(async (pageNum: number, size: number, search: string) => {
-    const result = await getFAQs({ page: pageNum, limit: size, search });
-    return {
-      data: result.data || [],
-      totalPages: result.totalPages || 1,
-      total: result.total || 0,
-    };
+    try {
+      console.log('Fetching FAQs with params:', { page: pageNum, limit: size, search });
+      const result = await getFAQs({ page: pageNum, limit: size, search });
+      console.log('FAQ API response:', result);
+      
+      // Handle different response structures from the API
+      if (result && typeof result === 'object') {
+        // If it's a paginated response
+        if (result.data && Array.isArray(result.data)) {
+          console.log('Using paginated response structure');
+          return {
+            data: result.data,
+            totalPages: result.totalPages || Math.ceil((result.total || 0) / size),
+            total: result.total || 0,
+          };
+        }
+        // If it's a direct array response
+        if (Array.isArray(result)) {
+          console.log('Using direct array response structure');
+          return {
+            data: result,
+            totalPages: Math.ceil(result.length / size),
+            total: result.length,
+          };
+        }
+      }
+      
+      // Fallback for unexpected response structure
+      console.warn('Unexpected FAQ API response structure:', result);
+      return {
+        data: [],
+        totalPages: 1,
+        total: 0,
+      };
+    } catch (error: any) {
+      console.error('Error fetching FAQs:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      return {
+        data: [],
+        totalPages: 1,
+        total: 0,
+      };
+    }
   }, []);
 
   // Use the custom hook for common admin page functionality

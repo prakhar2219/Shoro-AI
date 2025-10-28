@@ -53,7 +53,17 @@ export function DescriptiveQuestionSection({
         limit: maxInitial
       });
 
-      const newQuestions = response.data || response || [];
+      // Ensure we always get an array
+      const newQuestions = Array.isArray(response.data) 
+        ? response.data 
+        : Array.isArray(response) 
+        ? response 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(response.data) && !Array.isArray(response)) {
+        console.warn('Descriptive Question API returned non-array data:', response);
+      }
       
       if (append) {
         setQuestions(prev => [...prev, ...newQuestions]);

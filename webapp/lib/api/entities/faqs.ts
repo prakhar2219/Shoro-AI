@@ -40,14 +40,24 @@ export const getFAQs = async ({ page = 1, limit = 10, search = '', entity_type, 
   entity_id?: string;
   language_id?: string;
 } = {}) => {
-  const params: any = { page, limit };
-  if (search) params.search = search;
-  if (entity_type) params.entity_type = entity_type;
-  if (entity_id) params.entity_id = entity_id;
-  if (language_id) params.language_id = language_id;
-  
-  const res = await api.get(`${API_ENDPOINTS.faqs}/paginated`, { params });
-  return res.data;
+  try {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (entity_type) params.entity_type = entity_type;
+    if (entity_id) params.entity_id = entity_id;
+    if (language_id) params.language_id = language_id;
+    
+    console.log('Fetching FAQs from:', `${api.defaults.baseURL}${API_ENDPOINTS.faqs}/paginated`);
+    console.log('FAQ params:', params);
+    const res = await api.get(`${API_ENDPOINTS.faqs}/paginated`, { params });
+    console.log('FAQ API response:', res);
+    return res.data;
+  } catch (error: any) {
+    console.error('Error fetching FAQs:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw error;
+  }
 };
 
 // Get single FAQ

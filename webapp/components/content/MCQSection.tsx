@@ -54,7 +54,17 @@ export function MCQSection({
         limit: maxInitial
       });
 
-      const newMcqs = response.data || response || [];
+      // Ensure we always get an array
+      const newMcqs = Array.isArray(response.data) 
+        ? response.data 
+        : Array.isArray(response) 
+        ? response 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(response.data) && !Array.isArray(response)) {
+        console.warn('MCQ API returned non-array data:', response);
+      }
       
       if (append) {
         setMcqs(prev => [...prev, ...newMcqs]);
@@ -131,7 +141,8 @@ export function MCQSection({
     );
   }
 
-  if (mcqs.length === 0) {
+  // Safety check to ensure mcqs is always an array
+  if (!Array.isArray(mcqs) || mcqs.length === 0) {
     return (
       <Card className={`bg-white/80 backdrop-blur-sm border-0 shadow-lg rounded-xl ${className}`}>
         <CardHeader>

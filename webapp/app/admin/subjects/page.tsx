@@ -75,16 +75,28 @@ export default function SubjectsPage() {
     pageSize: 15
   });
 
-  // Map for class and language display
-  const classMap = Object.fromEntries(classes.map(c => [c._id, c.name]));
-  const languageMap = Object.fromEntries(languages.map(l => [l._id || l.code, l.name]));
-  const languageIdMap = Object.fromEntries(languages.map(l => [l._id, l.name]));
+  // Map for class and language display - ensure arrays are always valid
+  const classMap = Object.fromEntries((Array.isArray(classes) ? classes : []).map(c => [c._id, c.name]));
+  const languageMap = Object.fromEntries((Array.isArray(languages) ? languages : []).map(l => [l._id || l.code, l.name]));
+  const languageIdMap = Object.fromEntries((Array.isArray(languages) ? languages : []).map(l => [l._id, l.name]));
 
   // Fetch classes and languages for dropdowns and display
   const fetchClasses = async () => {
     try {
       const res = await getClasses();
-      setClasses(res || []);
+      // Ensure we always get an array
+      const classesArray = Array.isArray(res) 
+        ? res 
+        : Array.isArray(res?.data) 
+        ? res.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+        console.warn('Classes API returned non-array data:', res);
+      }
+      
+      setClasses(classesArray);
     } catch {
       setClasses([]);
     }
@@ -93,7 +105,19 @@ export default function SubjectsPage() {
   const fetchLanguages = async () => {
     try {
       const res = await getLanguages();
-      setLanguages(res || []);
+      // Ensure we always get an array
+      const languagesArray = Array.isArray(res) 
+        ? res 
+        : Array.isArray(res?.data) 
+        ? res.data 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+        console.warn('Languages API returned non-array data:', res);
+      }
+      
+      setLanguages(languagesArray);
     } catch {
       setLanguages([]);
     }

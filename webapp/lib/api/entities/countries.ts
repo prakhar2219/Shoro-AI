@@ -71,11 +71,22 @@ export const getCountriesWithPagination = async (
   search?: string,
   language_code?: string
 ): Promise<IPaginationResponse<ICountry>> => {
-  const params: any = { page, limit };
-  if (search) params.search = search;
-  if (language_code) params.language_code = language_code;
-  const res = await api.get(`${API_ENDPOINTS.countries}/paginated`, { params });
-  return res.data;
+  try {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (language_code) params.language_code = language_code;
+    
+    console.log('Fetching Countries from:', `${api.defaults.baseURL}${API_ENDPOINTS.countries}/paginated`);
+    console.log('Country params:', params);
+    const res = await api.get(`${API_ENDPOINTS.countries}/paginated`, { params });
+    console.log('Country API response:', res);
+    return res.data;
+  } catch (error: any) {
+    console.error('Error fetching Countries:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw error;
+  }
 };
 
 export const searchCountries = async (query: string, language_code?: string): Promise<ICountry[]> => {
@@ -91,8 +102,17 @@ export const bulkCreateCountries = async (countries: ICreateCountryRequest[]): P
 };
 
 export const getCountryStats = async (): Promise<ICountryStats> => {
-  const res = await api.get(`${API_ENDPOINTS.countries}/stats`);
-  return res.data;
+  try {
+    console.log('Fetching Country Stats from:', `${api.defaults.baseURL}${API_ENDPOINTS.countries}/stats`);
+    const res = await api.get(`${API_ENDPOINTS.countries}/stats`);
+    console.log('Country Stats API response:', res);
+    return res.data;
+  } catch (error: any) {
+    console.error('Error fetching Country Stats:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw error;
+  }
 };
 
 // Country Translation Types

@@ -67,9 +67,11 @@ export default function CountriesPage() {
     totalPages,
     isLoading: isDataLoading,
     stats,
+    setStats,
     handleSearchInputChange,
     handlePageSizeChange,
     fetchPaginatedData,
+    fetchStatsData,
     toast: hookToast
   } = useAdminPage<ICountry>({
     fetchData: getCountriesWithPagination,
@@ -109,7 +111,10 @@ export default function CountriesPage() {
       }
       setOpenForm(false);
       setEditing(null);
+      // Refresh both data and stats after creating/updating
       fetchPaginatedData(page, pageSize, searchTerm);
+      // Force refresh stats
+      await fetchStatsData();
     } catch (error: any) {
       toast({
         title: "Error",
@@ -132,6 +137,8 @@ export default function CountriesPage() {
         });
         setDeleteTarget(null);
         fetchPaginatedData(page, pageSize, searchTerm);
+        // Force refresh stats after deletion
+        await fetchStatsData();
       } catch (error: any) {
         toast({
           title: "Error",
@@ -163,6 +170,8 @@ export default function CountriesPage() {
         description: `${countriesData.length} countries uploaded successfully.`,
       });
       fetchPaginatedData(page, pageSize, searchTerm);
+      // Force refresh stats after bulk upload
+      await fetchStatsData();
     } catch (error: any) {
       toast({
         title: "Error",

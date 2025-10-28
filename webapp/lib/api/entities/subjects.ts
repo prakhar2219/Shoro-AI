@@ -37,11 +37,22 @@ export interface ISubjectTranslation {
 
 // Paginated fetch
 export const getSubjectsWithPagination = async (page = 1, limit = 15, search = '', language_id?: string) => {
-  const params: any = { page, limit };
-  if (search) params.search = search;
-  if (language_id) params.language_id = language_id;
-  const res = await api.get(`${API_ENDPOINTS.subjects}/paginated`, { params });
-  return res.data;
+  try {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (language_id) params.language_id = language_id;
+    
+    console.log('Fetching Subjects from:', `${api.defaults.baseURL}${API_ENDPOINTS.subjects}/paginated`);
+    console.log('Subject params:', params);
+    const res = await api.get(`${API_ENDPOINTS.subjects}/paginated`, { params });
+    console.log('Subject API response:', res);
+    return res.data;
+  } catch (error: any) {
+    console.error('Error fetching Subjects:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw error;
+  }
 };
 
 export const getSubjects = async (language_id?: string): Promise<ISubject[]> => {

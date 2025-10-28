@@ -69,10 +69,14 @@ export interface ILanguageStats {
 // Get all languages
 export const getLanguages = async (): Promise<ILanguage[]> => {
   try {
+    console.log('Fetching languages from:', `${api.defaults.baseURL}${API_ENDPOINTS.languages}`);
     const response = await api.get(API_ENDPOINTS.languages);
+    console.log('Languages API response:', response);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching languages:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
     throw error;
   }
 };
@@ -134,10 +138,15 @@ export const getLanguagesWithPagination = async (
     if (direction) params.direction = direction;
     if (ai_supported !== undefined) params.ai_supported = ai_supported;
 
+    console.log('Fetching languages with pagination from:', `${api.defaults.baseURL}${API_ENDPOINTS.languages}/paginated`);
+    console.log('Pagination params:', params);
     const response = await api.get(`${API_ENDPOINTS.languages}/paginated`, { params });
+    console.log('Languages pagination API response:', response);
     return response.data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching languages with pagination:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
     throw error;
   }
 };

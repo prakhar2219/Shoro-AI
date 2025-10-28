@@ -25,11 +25,22 @@ export const getTopicsWithPagination = async (
   chapter_id?: string,
   search?: string
 ) => {
-  const params: any = { page, limit };
-  if (chapter_id) params.chapter_id = chapter_id;
-  if (search) params.search = search;
-  const res = await api.get(`${API_ENDPOINTS.topics}/paginated`, { params });
-  return res.data;
+  try {
+    const params: any = { page, limit };
+    if (chapter_id) params.chapter_id = chapter_id;
+    if (search) params.search = search;
+    
+    console.log('Fetching Topics from:', `${api.defaults.baseURL}${API_ENDPOINTS.topics}/paginated`);
+    console.log('Topic params:', params);
+    const res = await api.get(`${API_ENDPOINTS.topics}/paginated`, { params });
+    console.log('Topic API response:', res);
+    return res.data;
+  } catch (error: any) {
+    console.error('Error fetching Topics:', error);
+    console.error('Error details:', error.response?.data);
+    console.error('Error status:', error.response?.status);
+    throw error;
+  }
 };
 
 export const getTopics = async (chapter_id?: string): Promise<ITopic[]> => {

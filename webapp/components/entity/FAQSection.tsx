@@ -55,7 +55,19 @@ export function FAQSection({ entityType, entityId, entityName }: FAQSectionProps
       console.log('Fetching FAQs with:', { entity_type: entityType, entity_id: entityId });
       const result = await getFAQs({ entity_type: entityType, entity_id: entityId });
       console.log('FAQ API response:', result);
-      setFaqs(result.data || result);
+      // Ensure we always get an array
+      const faqsData = Array.isArray(result.data) 
+        ? result.data 
+        : Array.isArray(result) 
+        ? result 
+        : [];
+      
+      // Log for debugging if we get unexpected data
+      if (!Array.isArray(result.data) && !Array.isArray(result)) {
+        console.warn('FAQ API returned non-array data:', result);
+      }
+      
+      setFaqs(faqsData);
     } catch (error: any) {
       console.error('FAQ fetch error:', error);
       toast({
