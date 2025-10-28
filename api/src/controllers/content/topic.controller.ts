@@ -2,7 +2,21 @@ import { Request, Response } from 'express';
 import * as topicService from '../../services/content/topic.service';
 
 export const createTopic = async (req: Request, res: Response) => {
-  const { chapter_id, language_id, title, slug, order, is_published, created_by, content, tag, source, author } = req.body;
+  const { 
+    chapter_id, 
+    language_id, 
+    supported_language_ids,
+    title, 
+    slug, 
+    order, 
+    is_published, 
+    created_by, 
+    content, 
+    tag, 
+    source, 
+    author,
+    translations // New field for multilingual data
+  } = req.body;
   
   if (!chapter_id || !language_id || !title || !slug) {
     res.status(400).json({ error: 'Missing required fields: chapter_id, language_id, title, slug' });
@@ -30,6 +44,17 @@ export const createTopic = async (req: Request, res: Response) => {
       return;
     }
 
+    // Validate supported language IDs if provided
+    if (supported_language_ids && Array.isArray(supported_language_ids) && supported_language_ids.length > 0) {
+      const supportedLanguageValidation = await topicService.validateLanguageIds(supported_language_ids.map(id => id.toString()));
+      if (supportedLanguageValidation.invalid.length > 0) {
+        res.status(400).json({ 
+          error: `Invalid supported_language_ids: ${supportedLanguageValidation.invalid.join(', ')}. Please ensure all language IDs exist in the database.` 
+        });
+        return;
+      }
+    }
+
     // Check for duplicate slug
     const existingSlugTopic = await topicService.checkDuplicateSlug(slug);
     if (existingSlugTopic) {
@@ -51,6 +76,7 @@ export const createTopic = async (req: Request, res: Response) => {
     const topic = {
       chapter_id,
       language_id,
+      supported_language_ids: supported_language_ids || [],
       title,
       slug,
       content,
@@ -63,6 +89,30 @@ export const createTopic = async (req: Request, res: Response) => {
     };
 
     const created = await topicService.createTopic(topic as any);
+    
+    // Handle translations if provided
+    if (translations && Array.isArray(translations) && translations.length > 0) {
+      try {
+        for (const translation of translations) {
+          if (translation.language_id && translation.title && translation.slug) {
+            await topicService.createTopicTranslation({
+              topic_id: created._id.toString(),
+              language_id: translation.language_id,
+              title: translation.title,
+              slug: translation.slug,
+              content: translation.content,
+              translated_by_ai: translation.translated_by_ai || false,
+              needs_review: translation.needs_review || false,
+              updated_by: created_by
+            });
+          }
+        }
+      } catch (translationError: any) {
+        console.warn('Failed to create some translations:', translationError.message);
+        // Don't fail the entire request if translations fail
+      }
+    }
+    
     res.status(201).json(created);
   } catch (e: any) {
     if (e.code === 11000 && e.keyPattern?.order) {
@@ -220,6 +270,94 @@ export const deleteTopic = async (req: Request, res: Response) => {
       return;
     }
     res.status(204).send();
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+// Translation management endpoints
+export const createTopicTranslation = async (req: Request, res: Response) => {
+  try {
+    const { topic_id, language_id, title, slug, content, translated_by_ai, needs_review, updated_by } = req.body;
+    
+    if (!topic_id || !language_id || !title || !slug) {
+      res.status(400).json({ error: 'Missing required fields: topic_id, language_id, title, slug' });
+      return;
+    }
+
+    const translation = await topicService.createTopicTranslation({
+      topic_id,
+      language_id,
+      title,
+      slug,
+      content,
+      translated_by_ai: translated_by_ai || false,
+      needs_review: needs_review || false,
+      updated_by
+    });
+
+    res.status(201).json(translation);
+  } catch (e: any) {
+    if (e.code === 11000) {
+      res.status(409).json({ error: 'Translation already exists for this topic and language' });
+    } else {
+      res.status(500).json({ error: e.message });
+    }
+  }
+};
+
+export const updateTopicTranslation = async (req: Request, res: Response) => {
+  try {
+    const { topic_id, language_id } = req.params;
+    const updateData = req.body;
+
+    const translation = await topicService.updateTopicTranslation(topic_id, language_id, updateData);
+    if (!translation) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+
+    res.status(200).json(translation);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+export const deleteTopicTranslation = async (req: Request, res: Response) => {
+  try {
+    const { topic_id, language_id } = req.params;
+
+    const translation = await topicService.deleteTopicTranslation(topic_id, language_id);
+    if (!translation) {
+      res.status(404).json({ error: 'Translation not found' });
+      return;
+    }
+
+    res.status(204).send();
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+export const getTopicTranslations = async (req: Request, res: Response) => {
+  try {
+    const { topic_id } = req.params;
+    const translations = await topicService.getTopicTranslations(topic_id);
+    res.status(200).json(translations);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
+export const getTopicWithTranslations = async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    const topic = await topicService.getTopicWithTranslations(id);
+    if (!topic) {
+      res.status(404).json({ error: 'Topic not found' });
+      return;
+    }
+    res.status(200).json(topic);
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }

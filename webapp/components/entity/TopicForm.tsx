@@ -12,6 +12,7 @@ import { getBoards } from "@/lib/api/entities/boards";
 import { getClassesByBoard } from "@/lib/api/entities/classes";
 import { getSubjects } from "@/lib/api/entities/subjects";
 import { getChapters } from "@/lib/api/entities/chapters";
+import { getLanguages } from "@/lib/api/entities/language";
 
 interface TopicFormProps {
   onSubmit: (data: any) => void;
@@ -24,6 +25,7 @@ interface TopicFormProps {
     chapter_id?: string;
     chapter?: any; // Full chapter object for auto-populating hierarchy
     language_id?: string;
+    supported_language_ids?: string[];
     title?: string;
     slug?: string;
     order?: number;
@@ -32,6 +34,12 @@ interface TopicFormProps {
     tag?: string[];
     source?: string;
     author?: string;
+    translations?: Array<{
+      language_id: string;
+      title: string;
+      slug: string;
+      content?: string;
+    }>;
   };
 }
 
@@ -40,6 +48,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<any[]>([]);
 
   const [formData, setFormData] = useState({
     board_id: initialData?.board_id || "",
@@ -47,6 +56,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     subject_id: initialData?.subject_id || "",
     chapter_id: initialData?.chapter_id || "",
     language_id: initialData?.language_id || "",
+    supported_language_ids: initialData?.supported_language_ids || [],
     title: initialData?.title || "",
     slug: initialData?.slug || "",
     order: initialData?.order ?? 0,
@@ -55,6 +65,25 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     tag: initialData?.tag?.join(', ') || '',
     source: initialData?.source || '',
     author: initialData?.author || '',
+  });
+
+  // State for translations
+  const [translations, setTranslations] = useState<Record<string, {
+    title: string;
+    slug: string;
+    content: string;
+  }>>(() => {
+    const initialTranslations: Record<string, { title: string; slug: string; content: string }> = {};
+    if (initialData?.translations) {
+      initialData.translations.forEach(translation => {
+        initialTranslations[translation.language_id] = {
+          title: translation.title,
+          slug: translation.slug,
+          content: translation.content || '',
+        };
+      });
+    }
+    return initialTranslations;
   });
 
   // Check if we're adding from a parent chapter
@@ -116,9 +145,23 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     }
   }, [isAddingFromParent, parentChapter, initialData?.chapter_id]);
 
-  // Load boards on mount
+  // Load boards and languages on mount
   useEffect(() => {
     getBoards().then(setBoards);
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs)
+        ? langs
+        : Array.isArray(langs?.data)
+        ? langs.data
+        : [];
+      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+        console.warn('Languages API returned non-array data:', langs);
+      }
+      setLanguages(languagesArray);
+    }).catch(error => {
+      console.error('Error fetching languages:', error);
+      setLanguages([]);
+    });
   }, []);
 
   // Load classes when board changes
@@ -201,6 +244,30 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
     }
   }, [initialData, boards]);
 
+  // Handle supported languages change
+  const handleSupportedLanguagesChange = (value: string) => {
+    setFormData((prev) => {
+      const exists = prev.supported_language_ids.includes(value);
+      return {
+        ...prev,
+        supported_language_ids: exists
+          ? prev.supported_language_ids.filter((id) => id !== value)
+          : [...prev.supported_language_ids, value],
+      };
+    });
+  };
+
+  // Handle translation changes
+  const handleTranslationChange = (languageId: string, field: 'title' | 'slug' | 'content', value: string) => {
+    setTranslations(prev => ({
+      ...prev,
+      [languageId]: {
+        ...prev[languageId],
+        [field]: value,
+      }
+    }));
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -238,10 +305,21 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
       return;
     }
     
+    // Prepare translations array
+    const translationsArray = Object.entries(translations)
+      .filter(([_, translation]) => translation.title.trim() && translation.slug.trim())
+      .map(([languageId, translation]) => ({
+        language_id: languageId,
+        title: translation.title,
+        slug: translation.slug,
+        content: translation.content,
+      }));
+
     // Only send chapter_id and language_id to the API, but maintain hierarchy for UX
     onSubmit({ 
       chapter_id: formData.chapter_id,
       language_id: formData.language_id,
+      supported_language_ids: formData.supported_language_ids,
       title: formData.title,
       slug: formData.slug,
       order: Number(formData.order),
@@ -249,7 +327,8 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
       content: formData.content,
       tag: formData.tag ? formData.tag.split(',').map((t: string) => t.trim()) : [],
       source: formData.source,
-      author: formData.author
+      author: formData.author,
+      translations: translationsArray
     });
   };
 
@@ -374,13 +453,42 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
           )}
 
           <div className="space-y-2">
-            <Label htmlFor="language_id">Language</Label>
-            <LanguageSelector
+            <Label htmlFor="language_id">Default Language</Label>
+            <Select
               value={formData.language_id}
               onValueChange={(value) => setFormData(prev => ({ ...prev, language_id: value }))}
-              placeholder="Select Language"
-              required
-            />
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select default language" />
+              </SelectTrigger>
+              <SelectContent>
+                {languages.map((lang) => (
+                  <SelectItem key={lang._id} value={lang._id}>
+                    {lang.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <button
+                  type="button"
+                  key={lang._id}
+                  className={`px-2 py-1 rounded border text-xs ${
+                    formData.supported_language_ids.includes(lang._id) 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-zinc-100 dark:bg-zinc-800"
+                  }`}
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -472,6 +580,62 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
             <Label htmlFor="content">Content</Label>
             <RichTextEditor value={formData.content} onChange={(html) => setFormData({ ...formData, content: html })} />
           </div>
+
+          {/* Translation Fields */}
+          {formData.supported_language_ids.length > 0 && (
+            <div className="space-y-4 border-t pt-4">
+              <Label className="text-lg font-semibold">Translations</Label>
+              {formData.supported_language_ids.map((languageId) => {
+                const language = languages.find(l => l._id === languageId);
+                const translation = translations[languageId] || { title: '', slug: '', content: '' };
+                
+                return (
+                  <Card key={languageId} className="p-4">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">{language?.name || 'Unknown Language'}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor={`translation-title-${languageId}`}>Title</Label>
+                        <Input
+                          id={`translation-title-${languageId}`}
+                          value={translation.title}
+                          onChange={(e) => handleTranslationChange(languageId, 'title', e.target.value)}
+                          placeholder={`Enter title in ${language?.name || 'this language'}`}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`translation-slug-${languageId}`}>Slug</Label>
+                        <Input
+                          id={`translation-slug-${languageId}`}
+                          value={translation.slug}
+                          onChange={(e) => {
+                            const formattedSlug = e.target.value
+                              .trim()
+                              .replace(/\s+/g, '-')
+                              .replace(/[#?&%=+]/g, '')
+                              .replace(/-+/g, '-')
+                              .replace(/^-|-$/g, '');
+                            handleTranslationChange(languageId, 'slug', formattedSlug);
+                          }}
+                          placeholder={`e.g., introduction or परिचय`}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor={`translation-content-${languageId}`}>Content</Label>
+                        <RichTextEditor 
+                          value={translation.content} 
+                          onChange={(html) => handleTranslationChange(languageId, 'content', html)} 
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Saving..." : initialData?._id ? "Update Topic" : "Create Topic"}
