@@ -16,12 +16,24 @@ import uploadRoutes from './routes/upload.routes';
 import contentRoutes from './routes/content/index.routes';
 import ratingRoutes from './routes/rating.routes';
 
+const allowedOrigins = process.env.CLIENT_URL
+  ? process.env.CLIENT_URL.split(',').map(o => o.trim())
+  : ['http://localhost:3000'];
+
 const corsConfig = {
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 };
+
 
 const app = express();
 
