@@ -13,11 +13,25 @@ export const bulkCreateSubjects = async (
       res.status(400).json({ error: 'subjects array is required' });
       return;
     }
-    // Basic field validation
+    // Resolve language identifiers and basic field validation
     for (const s of subjects) {
       if (!s.class_id || !s.language_id || !s.code || !s.name) {
         res.status(400).json({ error: 'Each subject must have class_id, language_id, code, and name' });
         return;
+      }
+      const resolvedLang = await subjectService.resolveLanguageIdentifier((s as any).language_id?.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${s.language_id}. Use ObjectId, code, or language name.` });
+        return;
+      }
+      (s as any).language_id = resolvedLang;
+      if ((s as any).supported_language_ids && Array.isArray((s as any).supported_language_ids)) {
+        const resolved: string[] = [];
+        for (const lid of (s as any).supported_language_ids) {
+          const r = await subjectService.resolveLanguageIdentifier(lid.toString());
+          if (r) resolved.push(r);
+        }
+        (s as any).supported_language_ids = resolved;
       }
     }
     

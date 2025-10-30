@@ -343,7 +343,12 @@ export default function ChapterAdminPage() {
           is_published,
         };
       });
-      await bulkCreateChapters(payload);
+      // Upload in chunks to avoid oversized requests/timeouts
+      const chunkSize = 500;
+      for (let i = 0; i < payload.length; i += chunkSize) {
+        const chunk = payload.slice(i, i + chunkSize);
+        await bulkCreateChapters(chunk);
+      }
       toast({ title: 'Success', description: `${payload.length} chapters uploaded successfully.` });
       await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {

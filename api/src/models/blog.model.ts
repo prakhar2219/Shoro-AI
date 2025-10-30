@@ -21,7 +21,6 @@ const blogSchema = new Schema<IBlog>(
     slug: {
       type: String,
       required: true,
-      unique: true,
       lowercase: true,
       trim: true,
     },

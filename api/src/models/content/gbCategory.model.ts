@@ -4,7 +4,7 @@ import { IGBCategory } from '../../types/content/gbCategory.types';
 const GBCategorySchema = new Schema<IGBCategory>(
   {
     name: { type: String, required: true, trim: true },
-    slug: { type: String, required: true, unique: true, trim: true },
+    slug: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
     content: { type: String, required: false },
     language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },

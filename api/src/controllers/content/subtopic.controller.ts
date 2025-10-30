@@ -72,11 +72,25 @@ export const bulkCreateSubtopics = async (req: Request, res: Response) => {
       return;
     }
     
-    // Validate and normalize each subtopic
+    // Resolve language identifiers and normalize each subtopic
     for (const s of subtopics) {
       if (!s.topic_id || !s.language_id || !s.title || !s.slug) {
         res.status(400).json({ error: 'Each subtopic must have topic_id, language_id, title, and slug' });
         return;
+      }
+      const resolvedLang = await subtopicService.resolveLanguageIdentifier(s.language_id.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${s.language_id}. Use ObjectId, code, or language name.` });
+        return;
+      }
+      s.language_id = resolvedLang;
+      if (s.supported_language_ids && Array.isArray(s.supported_language_ids)) {
+        const resolvedList: string[] = [];
+        for (const lid of s.supported_language_ids) {
+          const r = await subtopicService.resolveLanguageIdentifier(lid.toString());
+          if (r) resolvedList.push(r);
+        }
+        s.supported_language_ids = resolvedList;
       }
       s.order = typeof s.order === 'number' ? s.order : Number(s.order || 0);
       s.is_published = !!s.is_published;

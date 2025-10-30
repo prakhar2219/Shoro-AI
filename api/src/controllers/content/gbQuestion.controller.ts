@@ -30,14 +30,7 @@ export const createGBQuestion = async (
       return;
     }
 
-    // Check for duplicate slug within GB subtopic
-    const existingSlugQuestion = await gbQuestionService.checkDuplicateSlug(gb_subtopic_id, slug);
-    if (existingSlugQuestion) {
-      res.status(409).json({ 
-        error: `A GB Question with slug "${slug}" already exists for this GB subtopic. Please use a different slug.` 
-      });
-      return;
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     // Check for duplicate order within GB subtopic
     const orderNum = typeof order === 'number' ? order : Number(order || 0);
@@ -85,12 +78,18 @@ export const bulkCreateGBQuestions = async (
       return;
     }
     
-    // Basic field validation
+    // Resolve language identifiers and basic field validation
     for (const q of questions) {
       if (!q.gb_subtopic_id || !q.question || !q.slug || !q.language_id) {
         res.status(400).json({ error: 'Each question must have gb_subtopic_id, question, slug, and language_id' });
         return;
       }
+      const resolvedLang = await gbQuestionService.resolveLanguageIdentifier((q as any).language_id?.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${q.language_id}. Use ObjectId, code, or language name.` });
+        return;
+      }
+      (q as any).language_id = resolvedLang;
       // Normalize types
       (q as any).order = typeof q.order === 'number' ? q.order : Number(q.order || 0);
       (q as any).is_published = !!q.is_published;
@@ -174,16 +173,7 @@ export const updateGBQuestion = async (
   try {
     const { slug, gb_subtopic_id, order } = req.body;
     
-    // Check for duplicate slug if slug is being updated
-    if (slug && gb_subtopic_id) {
-      const existingSlugQuestion = await gbQuestionService.checkDuplicateSlug(gb_subtopic_id, slug, req.params.id);
-      if (existingSlugQuestion) {
-        res.status(409).json({ 
-          error: `A GB Question with slug "${slug}" already exists for this GB subtopic. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
     if (order !== undefined && gb_subtopic_id) {

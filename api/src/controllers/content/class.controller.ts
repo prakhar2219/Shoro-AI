@@ -68,12 +68,18 @@ export const bulkCreateClasses = async (
       return;
     }
     
-    // Basic field validation
+    // Resolve language identifiers and basic field validation
     for (const c of classes) {
       if (!c.board_id || !c.language_id || !c.name || !c.grade) {
         res.status(400).json({ error: 'Each class must have board_id, language_id, name, and grade' });
         return;
       }
+      const resolvedLang = await classService.resolveLanguageIdentifier((c as any).language_id?.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${c.language_id}. Use ObjectId, code, or language name.` });
+        return;
+      }
+      (c as any).language_id = resolvedLang;
       // Normalize types
       (c as any).grade = typeof c.grade === 'number' ? c.grade : Number(c.grade);
     }

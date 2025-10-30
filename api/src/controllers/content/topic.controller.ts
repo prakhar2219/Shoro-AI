@@ -55,14 +55,7 @@ export const createTopic = async (req: Request, res: Response) => {
       }
     }
 
-    // Check for duplicate slug
-    const existingSlugTopic = await topicService.checkDuplicateSlug(slug);
-    if (existingSlugTopic) {
-      res.status(409).json({ 
-        error: `A topic with slug "${slug}" already exists. Please use a different slug.` 
-      });
-      return;
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     // Check for duplicate order within chapter
     const existingTopic = await topicService.checkDuplicateOrder(chapter_id, finalOrder);
@@ -131,11 +124,27 @@ export const bulkCreateTopics = async (req: Request, res: Response) => {
       return;
     }
     
-    // Validate and normalize each topic
+    // Resolve language identifiers and normalize each topic
     for (const t of topics) {
       if (!t.chapter_id || !t.language_id || !t.title || !t.slug) {
         res.status(400).json({ error: 'Each topic must have chapter_id, language_id, title, and slug' });
         return;
+      }
+      // Resolve language_id from id/code/name
+      const resolvedLang = await topicService.resolveLanguageIdentifier(t.language_id.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${t.language_id}. Use ObjectId, code (e.g. hi), or language name.` });
+        return;
+      }
+      t.language_id = resolvedLang;
+      // Resolve supported_language_ids if present
+      if (t.supported_language_ids && Array.isArray(t.supported_language_ids)) {
+        const resolvedList: string[] = [];
+        for (const lid of t.supported_language_ids) {
+          const r = await topicService.resolveLanguageIdentifier(lid.toString());
+          if (r) resolvedList.push(r);
+        }
+        t.supported_language_ids = resolvedList;
       }
       t.order = typeof t.order === 'number' ? t.order : Number(t.order || 0);
       t.is_published = !!t.is_published;
@@ -225,16 +234,7 @@ export const updateTopic = async (req: Request, res: Response) => {
   try {
     const { slug, chapter_id, order } = req.body;
     
-    // Check for duplicate slug if slug is being updated
-    if (slug) {
-      const existingSlugTopic = await topicService.checkDuplicateSlug(slug, req.params.id);
-      if (existingSlugTopic) {
-        res.status(409).json({ 
-          error: `A topic with slug "${slug}" already exists. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
     if (order !== undefined && chapter_id) {

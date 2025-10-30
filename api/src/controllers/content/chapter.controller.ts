@@ -16,11 +16,27 @@ export const bulkCreateChapters = async (
       return;
     }
     
-    // Basic field validation
+    // Resolve language identifiers (allow code or name) and basic validation
     for (const c of chapters) {
       if (!c.board_id || !c.class_id || !c.subject_id || !c.language_id || !c.title || !c.slug) {
         res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, language_id, title, and slug' });
         return;
+      }
+      // Resolve language_id if not an ObjectId
+      const resolvedLang = await chapterService.resolveLanguageIdentifier(c.language_id as unknown as string);
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${c.language_id}. Use ObjectId, code (e.g. hi), or language name.` });
+        return;
+      }
+      (c as any).language_id = resolvedLang;
+      // Resolve supported_language_ids if provided
+      if ((c as any).supported_language_ids && Array.isArray((c as any).supported_language_ids)) {
+        const resolvedList: string[] = [];
+        for (const lid of (c as any).supported_language_ids) {
+          const r = await chapterService.resolveLanguageIdentifier(lid.toString());
+          if (r) resolvedList.push(r);
+        }
+        (c as any).supported_language_ids = resolvedList;
       }
       // Normalize types
       (c as any).order = typeof c.order === 'number' ? c.order : Number((c as any).order || 0);
@@ -49,16 +65,7 @@ export const bulkCreateChapters = async (
       return;
     }
     
-    // Check for duplicate slugs within subject and language combinations
-    for (const chapter of chapters) {
-      const existingSlugChapter = await chapterService.checkDuplicateSlug(chapter.subject_id.toString(), chapter.language_id.toString(), chapter.slug);
-      if (existingSlugChapter) {
-        res.status(409).json({ 
-          error: `A chapter with slug "${chapter.slug}" already exists for subject ${chapter.subject_id} and language ${chapter.language_id}. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
     
     const created = await chapterService.bulkCreateChapters(chapters);
     res.status(201).json(created);
@@ -97,14 +104,7 @@ export const createChapter = async (
       return;
     }
 
-    // Check for duplicate slug within subject and language
-    const existingSlugChapter = await chapterService.checkDuplicateSlug(subject_id, language_id, slug);
-    if (existingSlugChapter) {
-      res.status(409).json({ 
-        error: `A chapter with slug "${slug}" already exists for this subject and language. Please use a different slug.` 
-      });
-      return;
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     // Check for duplicate order within subject
     const orderNum = typeof order === 'number' ? order : Number(order);
@@ -250,16 +250,7 @@ export const updateChapter = async (
   try {
     const { slug, subject_id, language_id, order } = req.body;
     
-    // Check for duplicate slug if slug is being updated
-    if (slug && subject_id && language_id) {
-      const existingSlugChapter = await chapterService.checkDuplicateSlug(subject_id, language_id, slug, req.params.id);
-      if (existingSlugChapter) {
-        res.status(409).json({ 
-          error: `A chapter with slug "${slug}" already exists for this subject and language. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
     if (order !== undefined && subject_id) {

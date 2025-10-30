@@ -30,6 +30,23 @@ export const validateLanguageIds = async (languageIds: string[]): Promise<{ vali
   return { valid, invalid };
 };
 
+// Resolve a language identifier that may be an ObjectId, code ("hi"), or name ("Hindi")
+export const resolveLanguageIdentifier = async (identifier: string): Promise<string | null> => {
+  if (!identifier) return null;
+  const id = identifier.toString().trim();
+  // Fast path: looks like an ObjectId
+  if (id.match(/^[a-fA-F0-9]{24}$/)) return id;
+  // Try by code (case-insensitive)
+  const byCode = await LanguageModel.findOne({ code: new RegExp(`^${id}$`, 'i') }).select('_id');
+  if (byCode) return byCode._id.toString();
+  // Try by name or native_name (case-insensitive)
+  const byName = await LanguageModel.findOne({ $or: [
+    { name: new RegExp(`^${id}$`, 'i') },
+    { native_name: new RegExp(`^${id}$`, 'i') }
+  ] }).select('_id');
+  return byName ? byName._id.toString() : null;
+};
+
 // Check for duplicate order within subject
 export const checkDuplicateOrder = async (subject_id: string, order: number, excludeId?: string) => {
   const query: any = { subject_id, order };

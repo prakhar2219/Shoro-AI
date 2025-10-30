@@ -398,7 +398,11 @@ export default function FAQsPage() {
           content,
         };
       });
-      await bulkCreateFAQs(payload);
+      const chunkSize = 500;
+      for (let i = 0; i < payload.length; i += chunkSize) {
+        const chunk = payload.slice(i, i + chunkSize);
+        await bulkCreateFAQs(chunk);
+      }
       toast({ title: 'Success', description: `${payload.length} FAQs uploaded successfully.` });
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {

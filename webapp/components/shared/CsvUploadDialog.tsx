@@ -207,6 +207,7 @@ export function CsvUploadDialog({
             header: true,
             skipEmptyLines: true,
             encoding: "UTF-8",
+            worker: true,
             complete: (result) => {
                 const rows = result.data as any[]
                 if (rows.length === 0) {

@@ -123,17 +123,17 @@ export default function MCQsPage() {
   const fetchLanguages = async () => {
     try {
       console.log('Fetching languages for MCQ page...');
-      const languagesData = await getLanguages();
+      const languagesData: any = await getLanguages();
       console.log('Languages fetched for MCQ page:', languagesData);
       
       // Ensure we always get an array
-      const languagesArray = Array.isArray(languagesData)
+      const languagesArray: ILanguage[] = Array.isArray(languagesData)
         ? languagesData
-        : Array.isArray(languagesData?.data)
+        : Array.isArray((languagesData as any)?.data)
         ? languagesData.data
         : [];
       
-      if (!Array.isArray(languagesData) && !Array.isArray(languagesData?.data)) {
+      if (!Array.isArray(languagesData) && !Array.isArray((languagesData as any)?.data)) {
         console.warn('Languages API returned non-array data:', languagesData);
       }
       
@@ -413,12 +413,15 @@ export default function MCQsPage() {
   // CSV schema for MCQs
   const mcqCsvSchema: CsvSchema = {
     title: "Upload MCQs CSV",
-    description: "CSV columns: entity_type, entity_id, question, options(JSON array of {key,text}), correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false), content(HTML - optional)",
+    description: "CSV columns: entity_type, entity_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false), content(HTML - optional). Note: legacy 'options' JSON is still accepted.",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
       { name: "question", type: "text", required: true } as FieldSchema,
-      { name: "options", type: "text", required: true } as FieldSchema,
+      { name: "option_a", type: "text", required: true } as FieldSchema,
+      { name: "option_b", type: "text", required: true } as FieldSchema,
+      { name: "option_c", type: "text", required: true } as FieldSchema,
+      { name: "option_d", type: "text", required: true } as FieldSchema,
       { name: "correct_answer", type: "text", required: true } as FieldSchema,
       { name: "explanation", type: "text", required: false } as FieldSchema,
       { name: "difficulty", type: "text", required: false } as FieldSchema,
@@ -433,7 +436,19 @@ export default function MCQsPage() {
       startLoading();
       const payload = rows.map((r: any) => {
         let options: any[] = [];
-        if (r.options) { try { options = JSON.parse(r.options); } catch { options = []; } }
+        // Prefer new columns option_a .. option_d; fallback to legacy 'options' JSON
+        const oa = r.option_a, ob = r.option_b, oc = r.option_c, od = r.option_d;
+        if (oa || ob || oc || od) {
+          const candidates = [
+            { key: 'A', text: (oa ?? '').toString() },
+            { key: 'B', text: (ob ?? '').toString() },
+            { key: 'C', text: (oc ?? '').toString() },
+            { key: 'D', text: (od ?? '').toString() },
+          ];
+          options = candidates.filter(c => c.text !== '');
+        } else if (r.options) {
+          try { options = JSON.parse(r.options); } catch { options = []; }
+        }
         const content = r.content || undefined
         const is_active = String(r.is_active).toLowerCase() === 'true';
         const tags = typeof r.tags === 'string' && r.tags.trim() ? r.tags.split(',').map((t: string) => t.trim()) : [];
@@ -450,7 +465,11 @@ export default function MCQsPage() {
           content,
         };
       });
-      await bulkCreateMCQs(payload);
+      const chunkSize = 500;
+      for (let i = 0; i < payload.length; i += chunkSize) {
+        const chunk = payload.slice(i, i + chunkSize);
+        await bulkCreateMCQs(chunk);
+      }
       toast({ title: 'Success', description: `${payload.length} MCQs uploaded successfully.` });
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {

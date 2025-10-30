@@ -21,14 +21,7 @@ export const createGBCategory = async (
       return;
     }
 
-    // Check for duplicate slug globally (since GBCategory has unique slug)
-    const existingSlugCategory = await gbCategoryService.checkDuplicateSlug(slug);
-    if (existingSlugCategory) {
-      res.status(409).json({ 
-        error: `A GB Category with slug "${slug}" already exists. Please use a different slug.` 
-      });
-      return;
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     // Check for duplicate order within language
     const orderNum = typeof order === 'number' ? order : Number(order || 0);
@@ -74,11 +67,25 @@ export const bulkCreateGBCategories = async (
       return;
     }
     
-    // Basic field validation
+    // Resolve language identifiers and basic field validation
     for (const c of categories) {
       if (!c.name || !c.slug || !c.language_id) {
         res.status(400).json({ error: 'Each category must have name, slug, and language_id' });
         return;
+      }
+      const resolvedLang = await gbCategoryService.resolveLanguageIdentifier((c as any).language_id?.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${c.language_id}. Use ObjectId, code, or language name.` });
+        return;
+      }
+      (c as any).language_id = resolvedLang;
+      if ((c as any).supported_language_ids && Array.isArray((c as any).supported_language_ids)) {
+        const resolved: string[] = [];
+        for (const lid of (c as any).supported_language_ids) {
+          const r = await gbCategoryService.resolveLanguageIdentifier(lid.toString());
+          if (r) resolved.push(r);
+        }
+        (c as any).supported_language_ids = resolved;
       }
       // Normalize types
       (c as any).order = typeof c.order === 'number' ? c.order : Number(c.order || 0);
@@ -149,16 +156,7 @@ export const updateGBCategory = async (
   try {
     const { slug, language_id, order } = req.body;
     
-    // Check for duplicate slug if slug is being updated
-    if (slug) {
-      const existingSlugCategory = await gbCategoryService.checkDuplicateSlug(slug, req.params.id);
-      if (existingSlugCategory) {
-        res.status(409).json({ 
-          error: `A GB Category with slug "${slug}" already exists. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
     if (order !== undefined && language_id) {
