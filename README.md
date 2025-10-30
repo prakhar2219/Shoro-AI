@@ -1,6 +1,6 @@
 # Kridhax Education-AI Platform
 
-A comprehensive multi-language educational content management system with hierarchical content structure, built as a modern full-stack applicatio.
+A comprehensive multi-language educational content management system with hierarchical content structure, built as a modern full-stack application.
 
 ## 📋 Table of Contents
 
