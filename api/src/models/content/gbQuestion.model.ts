@@ -30,8 +30,7 @@ const GBQuestionSchema = new Schema<IGBQuestion>(
 GBQuestionSchema.virtual('translation');
 GBQuestionSchema.virtual('translations');
 
-// Compound unique index: slug must be unique within each GB subtopic
-GBQuestionSchema.index({ gb_subtopic_id: 1, slug: 1 }, { unique: true });
+// Allow duplicate slugs: removed unique index on slug within GB subtopic
 
 // Compound unique index: order must be unique within each GB subtopic
 GBQuestionSchema.index({ gb_subtopic_id: 1, order: 1 }, { unique: true });

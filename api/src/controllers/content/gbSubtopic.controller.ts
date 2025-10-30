@@ -30,14 +30,7 @@ export const createGBSubtopic = async (
       return;
     }
 
-    // Check for duplicate slug within GB topic
-    const existingSlugSubtopic = await gbSubtopicService.checkDuplicateSlug(gb_topic_id, slug);
-    if (existingSlugSubtopic) {
-      res.status(409).json({ 
-        error: `A GB Subtopic with slug "${slug}" already exists for this GB topic. Please use a different slug.` 
-      });
-      return;
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     // Check for duplicate order within GB topic
     const orderNum = typeof order === 'number' ? order : Number(order || 0);
@@ -84,11 +77,25 @@ export const bulkCreateGBSubtopics = async (
       return;
     }
     
-    // Basic field validation
+    // Resolve language identifiers and basic field validation
     for (const s of subtopics) {
       if (!s.gb_topic_id || !s.name || !s.slug || !s.language_id) {
         res.status(400).json({ error: 'Each subtopic must have gb_topic_id, name, slug, and language_id' });
         return;
+      }
+      const resolvedLang = await gbSubtopicService.resolveLanguageIdentifier((s as any).language_id?.toString());
+      if (!resolvedLang) {
+        res.status(400).json({ error: `Unable to resolve language_id: ${s.language_id}. Use ObjectId, code, or language name.` });
+        return;
+      }
+      (s as any).language_id = resolvedLang;
+      if ((s as any).supported_language_ids && Array.isArray((s as any).supported_language_ids)) {
+        const resolved: string[] = [];
+        for (const lid of (s as any).supported_language_ids) {
+          const r = await gbSubtopicService.resolveLanguageIdentifier(lid.toString());
+          if (r) resolved.push(r);
+        }
+        (s as any).supported_language_ids = resolved;
       }
       // Normalize types
       (s as any).order = typeof s.order === 'number' ? s.order : Number(s.order || 0);
@@ -171,16 +178,7 @@ export const updateGBSubtopic = async (
   try {
     const { slug, gb_topic_id, order } = req.body;
     
-    // Check for duplicate slug if slug is being updated
-    if (slug && gb_topic_id) {
-      const existingSlugSubtopic = await gbSubtopicService.checkDuplicateSlug(gb_topic_id, slug, req.params.id);
-      if (existingSlugSubtopic) {
-        res.status(409).json({ 
-          error: `A GB Subtopic with slug "${slug}" already exists for this GB topic. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
     if (order !== undefined && gb_topic_id) {

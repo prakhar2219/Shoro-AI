@@ -304,7 +304,11 @@ export default function TopicsPage() {
           is_published,
         };
       });
-      await bulkCreateTopics(payload);
+      const chunkSize = 500;
+      for (let i = 0; i < payload.length; i += chunkSize) {
+        const chunk = payload.slice(i, i + chunkSize);
+        await bulkCreateTopics(chunk);
+      }
       toast({ title: 'Success', description: `${payload.length} topics uploaded successfully.` });
       await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
@@ -385,7 +389,7 @@ export default function TopicsPage() {
         }}
       >
         <SubtopicForm
-          initialData={subtopicInitialData}
+          initialData={subtopicInitialData as any}
           onSubmit={handleSubtopicSubmit}
           loading={isDataLoading}
         />

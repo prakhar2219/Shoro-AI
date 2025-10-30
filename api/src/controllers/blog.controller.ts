@@ -23,14 +23,7 @@ export const createBlog = async (
       return;
     }
 
-    // Check for duplicate slug globally (since Blog has unique slug)
-    const existingSlugBlog = await blogService.checkDuplicateSlug(slug);
-    if (existingSlugBlog) {
-      res.status(409).json({ 
-        error: `A blog with slug "${slug}" already exists. Please use a different slug.` 
-      });
-      return;
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     const blog: BlogInput = {
       title,
@@ -69,16 +62,7 @@ export const updateBlog = async (
       published,
     } = req.body;
 
-    // Check for duplicate slug if slug is being updated
-    if (slug) {
-      const existingSlugBlog = await blogService.checkDuplicateSlug(slug, req.params.id);
-      if (existingSlugBlog) {
-        res.status(409).json({ 
-          error: `A blog with slug "${slug}" already exists. Please use a different slug.` 
-        });
-        return;
-      }
-    }
+    // Allow duplicate slugs: removed duplicate slug checks
 
     const data: Partial<BlogInput> = {
       ...(title && { title }),

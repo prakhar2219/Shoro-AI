@@ -21,7 +21,7 @@ const TopicTranslationSchema = new Schema<ITopicTranslation>(
 
 // Indexes for performance and uniqueness
 TopicTranslationSchema.index({ topic_id: 1, language_id: 1 }, { unique: true });
-TopicTranslationSchema.index({ topic_id: 1, slug: 1 }, { unique: true });
+// Allow duplicate slugs: removed unique index on slug within topic
 
 export default mongoose.model<ITopicTranslation>(
   'TopicTranslation',

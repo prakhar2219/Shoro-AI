@@ -28,6 +28,19 @@ export const validateLanguageIds = async (languageIds: string[]): Promise<{ vali
   return { valid, invalid };
 };
 
+export const resolveLanguageIdentifier = async (identifier: string): Promise<string | null> => {
+  if (!identifier) return null;
+  const id = identifier.toString().trim();
+  if (id.match(/^[a-fA-F0-9]{24}$/)) return id;
+  const byCode = await LanguageModel.findOne({ code: new RegExp(`^${id}$`, 'i') }).select('_id');
+  if (byCode) return byCode._id.toString();
+  const byName = await LanguageModel.findOne({ $or: [
+    { name: new RegExp(`^${id}$`, 'i') },
+    { native_name: new RegExp(`^${id}$`, 'i') }
+  ] }).select('_id');
+  return byName ? byName._id.toString() : null;
+};
+
 // Check for duplicate subject (class_id + code + language_id)
 export const checkDuplicateSubject = async (class_id: string, code: string, language_id: string) => {
   return await SubjectModel.findOne({ class_id, code, language_id });
