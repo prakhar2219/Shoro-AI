@@ -7,6 +7,7 @@ export interface ISubject extends Document {
   code: string;
   icon?: string;
   name: string;
+  book_name?: string;
   downloadNotes?: string;
   downloadPDF?: string;
   downloadQA?: string;

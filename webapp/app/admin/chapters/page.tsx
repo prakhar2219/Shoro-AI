@@ -114,19 +114,11 @@ export default function ChapterAdminPage() {
   });
 
   useEffect(() => {
-    getLanguages().then((langs: any) => {
-      // Ensure langs is always an array
-      const languagesArray = Array.isArray(langs) 
-        ? langs 
-        : Array.isArray(langs?.data) 
-        ? langs.data 
-        : [];
-      
-      // Log for debugging if we get unexpected data
-      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+    getLanguages().then((langs) => {
+      const languagesArray = Array.isArray(langs) ? langs : [];
+      if (!Array.isArray(langs)) {
         console.warn('Languages API returned non-array data:', langs);
       }
-      
       setLanguages(languagesArray);
       setLanguageIdMap(Object.fromEntries(languagesArray.map((l: any) => [l._id || l.code, l.name])));
     });
@@ -345,11 +337,16 @@ export default function ChapterAdminPage() {
       });
       // Upload in chunks to avoid oversized requests/timeouts
       const chunkSize = 500;
+      let totalInserted = 0;
       for (let i = 0; i < payload.length; i += chunkSize) {
         const chunk = payload.slice(i, i + chunkSize);
-        await bulkCreateChapters(chunk);
+        const res = await bulkCreateChapters(chunk);
+        // API returns { insertedCount }
+        if (res && typeof res.insertedCount === 'number') {
+          totalInserted += res.insertedCount;
+        }
       }
-      toast({ title: 'Success', description: `${payload.length} chapters uploaded successfully.` });
+      toast({ title: 'Success', description: `${totalInserted} chapters uploaded successfully.` });
       await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload chapters.', variant: 'destructive' });

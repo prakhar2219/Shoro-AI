@@ -14,6 +14,7 @@ const DescriptiveQuestionSchema = new Schema<IDescriptiveQuestion>(
     content: { type: String, required: false },
     author: { type: String, trim: true },
     source: { type: String, trim: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
   },
   { timestamps: true }
 );

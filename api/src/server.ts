@@ -45,7 +45,7 @@ app.options('*', cors(corsConfig));
 // app.use(limiter); // Commented out for now
 app.use(securityHeaders);
 app.use(cookieParser()); // Parse cookies for refresh tokens
-app.use(express.json({ limit: '3mb' }));
+app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Database

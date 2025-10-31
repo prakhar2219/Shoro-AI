@@ -40,6 +40,8 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
 
   // Check if we're in "add from parent" mode (when gb_category is passed)
   const isAddingFromParent = Boolean(initialData?.gb_category);
+  // Edit mode flag
+  const isEditMode = Boolean(initialData && initialData._id);
 
   useEffect(() => {
     // Fetch languages
@@ -91,6 +93,22 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
       setSupportedLanguageIds(initialData.supported_language_ids || []);
     }
   }, [initialData?._id, initialData?.gb_category_id]); // Only depend on stable IDs to prevent infinite loops
+
+  // Ensure language is preselected on edit if missing in the form state
+  useEffect(() => {
+    if (initialData) {
+      const current = formData.language_id as any;
+      let initialLang = '' as any;
+      if (typeof initialData.language_id === 'object' && initialData.language_id) {
+        initialLang = initialData.language_id._id || '';
+      } else if (typeof initialData.language_id === 'string') {
+        initialLang = initialData.language_id;
+      }
+      if (!current && initialLang) {
+        setFormData(prev => ({ ...prev, language_id: initialLang }));
+      }
+    }
+  }, [initialData, formData.language_id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +191,19 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
           <Label>GB Category</Label>
           <Input
             value={selectedCategory.name}
+            disabled
+            className="bg-gray-100"
+          />
+        </div>
+      ) : isEditMode ? (
+        <div>
+          <Label>GB Category</Label>
+          <Input
+            value={
+              (typeof initialData.gb_category_id === 'object' && initialData.gb_category_id?.name) ||
+              categories.find((c: any) => c._id === formData.gb_category_id)?.name ||
+              '-'
+            }
             disabled
             className="bg-gray-100"
           />

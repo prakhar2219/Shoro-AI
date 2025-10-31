@@ -69,7 +69,7 @@ export const createSubject = async (
   res: Response
 ): Promise<void> => {
   try {
-    const { class_id, language_id, code, icon, name, downloadNotes, downloadPDF, downloadQA, content, tag, source, author } = req.body;
+    const { class_id, language_id, code, icon, name, book_name, downloadNotes, downloadPDF, downloadQA, content, tag, source, author } = req.body;
 
     if (!class_id || !language_id || !code || !name) {
       res.status(400).json({ error: 'Missing required fields: class_id, language_id, code, name' });
@@ -109,6 +109,7 @@ export const createSubject = async (
       code,
       icon,
       name,
+      book_name,
       downloadNotes,
       downloadPDF,
       downloadQA,

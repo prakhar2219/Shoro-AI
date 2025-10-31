@@ -87,12 +87,10 @@ export default function SubjectsPage() {
       // Ensure we always get an array
       const classesArray = Array.isArray(res) 
         ? res 
-        : Array.isArray(res?.data) 
-        ? res.data 
         : [];
       
       // Log for debugging if we get unexpected data
-      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+      if (!Array.isArray(res)) {
         console.warn('Classes API returned non-array data:', res);
       }
       
@@ -108,12 +106,10 @@ export default function SubjectsPage() {
       // Ensure we always get an array
       const languagesArray = Array.isArray(res) 
         ? res 
-        : Array.isArray(res?.data) 
-        ? res.data 
         : [];
       
       // Log for debugging if we get unexpected data
-      if (!Array.isArray(res) && !Array.isArray(res?.data)) {
+      if (!Array.isArray(res)) {
         console.warn('Languages API returned non-array data:', res);
       }
       
@@ -355,13 +351,14 @@ export default function SubjectsPage() {
   // CSV schema for subjects
   const subjectCsvSchema: CsvSchema = {
     title: "Upload Subjects CSV",
-    description: "Upload a CSV with columns: class_id, language_id, supported_language_ids (comma-separated IDs - optional), code, name, icon (optional), author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content (HTML - optional).",
+    description: "Upload a CSV with columns: class_id, language_id, supported_language_ids (comma-separated IDs - optional), code, name, book_name(optional), icon (optional), author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content (HTML - optional).",
     fields: [
       { name: "class_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
       { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "code", type: "text", required: true } as FieldSchema,
       { name: "name", type: "text", required: true } as FieldSchema,
+      { name: "book_name", type: "text", required: false } as FieldSchema,
       { name: "icon", type: "text", required: false } as FieldSchema,
       { name: "author", type: "text", required: false } as FieldSchema,
       { name: "tag", type: "text", required: false } as FieldSchema,
@@ -387,6 +384,7 @@ export default function SubjectsPage() {
             : [],
           code: r.code,
           name: r.name,
+          book_name: r.book_name || undefined,
           icon: r.icon || undefined,
           author: r.author || undefined,
           tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],

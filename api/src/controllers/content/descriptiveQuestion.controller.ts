@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as descriptiveQuestionService from '../../services/content/descriptiveQuestion.service';
+import { resolveLanguageIdentifier } from '../../services/content/chapter.service';
 import { IDescriptiveQuestion } from '@/types/content/descriptiveQuestion.types';
 import DescriptiveQuestionTranslation from '../../models/content/descriptiveQuestionTranslation.model';
 import { IDescriptiveQuestionTranslation } from '@/types/content/descriptiveQuestionTranslation.types';
@@ -19,6 +20,15 @@ export const bulkCreateDescriptiveQuestions = async (
       if (!q.entity_type || !q.entity_id || !q.question || !q.answer) {
         res.status(400).json({ error: 'Each item must have entity_type, entity_id, question, and answer' });
         return;
+      }
+      // Resolve supported_language_ids if provided
+      if ((q as any).supported_language_ids && Array.isArray((q as any).supported_language_ids)) {
+        const resolvedList: string[] = [];
+        for (const lid of (q as any).supported_language_ids) {
+          const r = await resolveLanguageIdentifier(lid.toString());
+          if (r) resolvedList.push(r);
+        }
+        (q as any).supported_language_ids = resolvedList;
       }
     }
     const created = await descriptiveQuestionService.bulkCreateDescriptiveQuestions(descriptive_questions);

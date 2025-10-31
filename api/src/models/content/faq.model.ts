@@ -12,6 +12,7 @@ const FAQSchema = new Schema<IFAQ>(
     is_active: { type: Boolean, default: true },
     created_by: { type: Schema.Types.ObjectId, ref: 'User' },
     content: { type: String, required: false },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
   },
   { timestamps: true }
 );

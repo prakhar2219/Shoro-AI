@@ -70,12 +70,28 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
     fetchCategories();
   }, []);
 
+  // Ensure language is preselected on edit if missing in the form state
+  useEffect(() => {
+    if (initialData) {
+      const current = formData.language_id as any;
+      let initialLang = '' as any;
+      if (typeof initialData.language_id === 'object' && initialData.language_id) {
+        initialLang = (initialData.language_id as any)._id || '';
+      } else if (typeof initialData.language_id === 'string') {
+        initialLang = initialData.language_id;
+      }
+      if (!current && initialLang) {
+        setFormData(prev => ({ ...prev, language_id: initialLang }));
+      }
+    }
+  }, [initialData, formData.language_id]);
+
   // Load topics when category changes
   useEffect(() => {
     if (formData.gb_category_id) {
       const fetchTopics = async () => {
         try {
-          const response = await fetch('/api/v1/content/gb-topics');
+          const response = await fetch('/api/v1/content/gb-topics?limit=10000&page=1');
           const data = await response.json();
           if (response.ok) {
             const allTopics = data.data || data || [];
@@ -97,13 +113,21 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
     }
   }, [formData.gb_category_id, isEditMode]);
 
+  // When categories are loaded, resolve and store the selected category for display
+  useEffect(() => {
+    if (categories.length > 0 && formData.gb_category_id) {
+      const found = categories.find((c: any) => c._id === formData.gb_category_id);
+      if (found) setSelectedCategory(found);
+    }
+  }, [categories, formData.gb_category_id]);
+
   // Auto-populate hierarchy in edit mode
   useEffect(() => {
     if (initialData && initialData.gb_topic_id && categories.length > 0) {
       // Find the topic and populate the hierarchy
       const fetchTopicDetails = async () => {
         try {
-          const response = await fetch('/api/v1/content/gb-topics');
+          const response = await fetch('/api/v1/content/gb-topics?limit=10000&page=1');
           const data = await response.json();
           if (response.ok) {
             const allTopics = data.data || data || [];
@@ -114,6 +138,14 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
                 ...prev,
                 gb_category_id: categoryId || prev.gb_category_id,
               }));
+              // Keep local selections for display in edit mode
+              setSelectedTopic(topic);
+              if (typeof topic.gb_category_id === 'object') {
+                setSelectedCategory(topic.gb_category_id);
+              } else {
+                const foundCat = categories.find((c: any) => c._id === categoryId);
+                if (foundCat) setSelectedCategory(foundCat);
+              }
             }
           }
         } catch (error) {
@@ -167,12 +199,17 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validate required fields
-    if (!formData.gb_category_id) {
-      alert('Please select a GB Category');
-      return;
-    }
-    if (!formData.gb_topic_id) {
+    // Derive effective IDs for edit mode where selects can be read-only
+    const effectiveCategoryId = formData.gb_category_id 
+      || (selectedTopic && (typeof selectedTopic.gb_category_id === 'object' ? selectedTopic.gb_category_id?._id : selectedTopic.gb_category_id))
+      || (selectedCategory as any)?._id
+      || (typeof (initialData as any)?.gb_topic?.gb_category_id === 'object' ? (initialData as any).gb_topic.gb_category_id?._id : (initialData as any)?.gb_topic?.gb_category_id)
+      || (typeof (initialData as any)?.gb_category_id === 'object' ? (initialData as any).gb_category_id?._id : (initialData as any)?.gb_category_id);
+    const effectiveTopicId = formData.gb_topic_id 
+      || (typeof (initialData as any)?.gb_topic_id === 'object' ? (initialData as any).gb_topic_id?._id : (initialData as any)?.gb_topic_id)
+      || (selectedTopic && selectedTopic._id);
+
+    if (!effectiveTopicId) {
       alert('Please select a GB Topic');
       return;
     }
@@ -195,7 +232,7 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
     
     // Only send gb_topic_id to the API, but maintain hierarchy for UX
     const payload = {
-      gb_topic_id: formData.gb_topic_id,
+      gb_topic_id: effectiveTopicId,
       name: formData.name,
       slug: formData.slug,
       description: formData.description,
@@ -279,7 +316,14 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
             <Label htmlFor="gb_category_id">GB Category</Label>
             {isEditMode ? (
               <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
+                {(
+                  selectedCategory?.name ||
+                  // Prefer initialData nested objects if available, then categories list
+                  (initialData?.gb_topic && typeof initialData.gb_topic.gb_category_id === 'object' && initialData.gb_topic.gb_category_id?.name) ||
+                  (typeof initialData?.gb_category_id === 'object' && (initialData.gb_category_id as any)?.name) ||
+                  categories.find((c) => c._id === formData.gb_category_id)?.name ||
+                  '-'
+                )}
               </div>
             ) : (
               <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
@@ -299,18 +343,24 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
 
           <div>
             <Label htmlFor="gb_topic_id">GB Topic *</Label>
-            <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select GB Topic" />
-              </SelectTrigger>
-              <SelectContent>
-                {topics.map((topic) => (
-                  <SelectItem key={topic._id} value={topic._id}>
-                    {topic.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {isEditMode ? (
+              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                {(selectedTopic?.name) || (typeof initialData?.gb_topic_id === 'object' && (initialData.gb_topic_id as any)?.name) || topics.find((t: any) => t._id === formData.gb_topic_id)?.name || '-'}
+              </div>
+            ) : (
+              <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select GB Topic" />
+                </SelectTrigger>
+                <SelectContent>
+                  {topics.map((topic) => (
+                    <SelectItem key={topic._id} value={topic._id}>
+                      {topic.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </>
       )}

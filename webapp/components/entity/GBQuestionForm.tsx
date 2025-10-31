@@ -42,6 +42,8 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
   const [categories, setCategories] = useState<any[]>([]);
   const [topics, setTopics] = useState<any[]>([]);
   const [subtopics, setSubtopics] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<any>(null);
+  const [selectedTopic, setSelectedTopic] = useState<any>(null);
 
   // Check if we're editing existing question (has _id) vs adding new question (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
@@ -76,14 +78,20 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
     if (formData.gb_category_id) {
       const fetchTopics = async () => {
         try {
-          const response = await fetch('/api/v1/content/gb-topics');
+          const response = await fetch('/api/v1/content/gb-topics?limit=10000&page=1');
           const data = await response.json();
           if (response.ok) {
             const allTopics = data.data || data || [];
-            setTopics(allTopics.filter((t: any) => {
+            const filtered = allTopics.filter((t: any) => {
               const tCategoryId = typeof t.gb_category_id === 'object' ? t.gb_category_id._id : t.gb_category_id;
               return tCategoryId === formData.gb_category_id;
-            }));
+            });
+            setTopics(filtered);
+            // If we already know a topic id (edit mode), set selectedTopic for display
+            if (formData.gb_topic_id) {
+              const t = filtered.find((x: any) => x._id === formData.gb_topic_id);
+              if (t) setSelectedTopic(t);
+            }
           }
         } catch (error) {
           console.error('Error fetching topics:', error);
@@ -104,14 +112,15 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
     if (formData.gb_topic_id) {
       const fetchSubtopics = async () => {
         try {
-          const response = await fetch('/api/v1/content/gb-subtopics');
+          const response = await fetch('/api/v1/content/gb-subtopics?limit=10000&page=1');
           const data = await response.json();
           if (response.ok) {
             const allSubtopics = data.data || data || [];
-            setSubtopics(allSubtopics.filter((s: any) => {
+            const filtered = allSubtopics.filter((s: any) => {
               const sTopicId = typeof s.gb_topic_id === 'object' ? s.gb_topic_id._id : s.gb_topic_id;
               return sTopicId === formData.gb_topic_id;
-            }));
+            });
+            setSubtopics(filtered);
           }
         } catch (error) {
           console.error('Error fetching subtopics:', error);
@@ -132,7 +141,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       // Find the subtopic and populate the hierarchy
       const fetchHierarchy = async () => {
         try {
-          const subtopicResponse = await fetch('/api/v1/content/gb-subtopics');
+          const subtopicResponse = await fetch('/api/v1/content/gb-subtopics?limit=10000&page=1');
           const subtopicData = await subtopicResponse.json();
           if (subtopicResponse.ok) {
             const allSubtopics = subtopicData.data || subtopicData || [];
@@ -141,7 +150,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
               const topicId = typeof subtopic.gb_topic_id === 'object' ? subtopic.gb_topic_id._id : subtopic.gb_topic_id;
               
               // Get topic to find category
-              const topicResponse = await fetch('/api/v1/content/gb-topics');
+              const topicResponse = await fetch('/api/v1/content/gb-topics?limit=10000&page=1');
               const topicData = await topicResponse.json();
               if (topicResponse.ok) {
                 const allTopics = topicData.data || topicData || [];
@@ -154,6 +163,13 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
                     gb_category_id: categoryId || prev.gb_category_id,
                     gb_topic_id: topicId || prev.gb_topic_id,
                   }));
+                  setSelectedTopic(topic);
+                  if (typeof topic.gb_category_id === 'object') {
+                    setSelectedCategory(topic.gb_category_id);
+                  } else {
+                    const cat = categories.find((c: any) => c._id === categoryId);
+                    if (cat) setSelectedCategory(cat);
+                  }
                 }
               }
             }
@@ -165,6 +181,25 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       fetchHierarchy();
     }
   }, [initialData?._id, initialData?.gb_subtopic_id, categories]); // Only depend on stable IDs to prevent infinite loops
+
+  // Ensure subtopics load in edit mode even if formData.gb_topic_id was set before hooks ran
+  useEffect(() => {
+    const loadSubtopicsForEdit = async () => {
+      if (!isEditMode) return;
+      const topicId = formData.gb_topic_id;
+      if (!topicId) return;
+      try {
+        const response = await fetch(`/api/v1/content/gb-subtopics?limit=10000&page=1`);
+        const data = await response.json();
+        if (response.ok) {
+          const all = data.data || data || [];
+          const filtered = all.filter((s: any) => (typeof s.gb_topic_id === 'object' ? s.gb_topic_id._id : s.gb_topic_id) === topicId);
+          setSubtopics(filtered);
+        }
+      } catch {}
+    };
+    loadSubtopicsForEdit();
+  }, [isEditMode, formData.gb_topic_id]);
 
   useEffect(() => {
     if (initialData) {
@@ -285,7 +320,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
         <Label htmlFor="gb_category_id">GB Category</Label>
         {isEditMode ? (
           <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-            {categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
+            {selectedCategory?.name || (initialData as any)?.gb_category?.name || categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
           </div>
         ) : (
           <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
@@ -307,7 +342,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
         <Label htmlFor="gb_topic_id">GB Topic</Label>
         {isEditMode ? (
           <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-            {topics.find((t) => t._id === formData.gb_topic_id)?.name || '-'}
+            {selectedTopic?.name || (initialData as any)?.gb_topic?.name || topics.find((t) => t._id === formData.gb_topic_id)?.name || '-'}
           </div>
         ) : (
           <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
@@ -327,7 +362,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
 
       <div>
         <Label htmlFor="gb_subtopic_id">GB Subtopic *</Label>
-        <Select value={formData.gb_subtopic_id} onValueChange={(value) => setFormData({ ...formData, gb_subtopic_id: value })} disabled={!formData.gb_topic_id} required>
+        <Select value={formData.gb_subtopic_id} onValueChange={(value) => setFormData({ ...formData, gb_subtopic_id: value })} disabled={!formData.gb_topic_id && !isEditMode} required>
           <SelectTrigger>
             <SelectValue placeholder="Select GB Subtopic" />
           </SelectTrigger>

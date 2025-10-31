@@ -19,6 +19,7 @@ import { getGBTopics } from "@/lib/api/entities/gbTopics";
 import { getGBSubtopics } from "@/lib/api/entities/gbSubtopics";
 import { getTopics } from "@/lib/api/entities/topics";
 import { getSubtopics } from "@/lib/api/entities/subtopics";
+import { getLanguages } from "@/lib/api/entities/language";
 
 interface MCQFormProps {
   onSubmit: (data: any) => void;
@@ -74,18 +75,21 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
   const [gbTopics, setGbTopics] = useState<any[]>([]);
   const [selectedGbCategoryId, setSelectedGbCategoryId] = useState<string>("");
   const [selectedGbTopicId, setSelectedGbTopicId] = useState<string>("");
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
 
   // Prefetch lightweight lists for filters
   useEffect(() => {
     const prefetch = async () => {
       try {
-        const [b, c, s, ch, gbc, gbt] = await Promise.all([
+        const [b, c, s, ch, gbc, gbt, langs] = await Promise.all([
           getBoards().catch(() => []),
           getClasses().catch(() => []),
           getSubjects().catch(() => []),
           getChapters({ page: 1, limit: 100 } as any).catch(() => ({ data: [] })),
           getGBCategories({ page: 1, limit: 100 }).catch(() => ({ data: [] })),
           getGBTopics({ page: 1, limit: 100 }).catch(() => ({ data: [] })),
+          getLanguages().catch(() => ([] as any[])),
         ] as any);
         setBoards(Array.isArray(b) ? b : []);
         setClasses(Array.isArray(c) ? c : (c?.data || []));
@@ -93,6 +97,7 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
         setChapters(Array.isArray(ch) ? ch : (ch?.data || []));
         setGbCategories((gbc as any).data || []);
         setGbTopics((gbt as any).data || []);
+        setLanguages(Array.isArray(langs) ? langs : (langs?.data || []));
       } catch {}
     };
     prefetch();
@@ -246,7 +251,11 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
       return;
     }
 
-    onSubmit(form);
+    onSubmit({ ...form, supported_language_ids: supportedLanguageIds });
+  };
+
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => (prev.includes(value) ? prev.filter((id) => id !== value) : [...prev, value]));
   };
 
   return (
@@ -489,6 +498,23 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
           )}
 
           <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <Button
+                  key={lang._id}
+                  type="button"
+                  variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="question">Question</Label>
             <Input
               id="question"
@@ -610,6 +636,8 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
             <Label htmlFor="content">Content</Label>
             <RichTextEditor value={form.content} onChange={handleContentChange} />
           </div>
+
+          
 
           <Button type="submit" disabled={loading} className="w-full">
             {loading ? "Saving..." : initialData ? "Update MCQ" : "Create MCQ"}

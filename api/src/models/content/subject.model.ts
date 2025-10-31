@@ -9,6 +9,7 @@ const SubjectSchema = new Schema<ISubject>(
     code: { type: String, required: true },
     icon: { type: String },
     name: { type: String, required: true },
+    book_name: { type: String, trim: true },
     downloadNotes: { type: String, trim: true },
     downloadPDF: { type: String, trim: true },
     downloadQA: { type: String, trim: true },

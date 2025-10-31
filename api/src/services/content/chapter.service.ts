@@ -4,7 +4,10 @@ import Chapter from '../../models/content/chapter.model';
 import ChapterTranslation from '../../models/content/chapterTranslation.model';
 import SubjectModel from '../../models/content/subject.model';
 import LanguageModel from '../../models/content/language.model';
+import BoardModel from '../../models/content/board.model';
+import ClassModel from '../../models/content/class.model';
 import { IChapter } from '../../types/content/chapter.types';
+import mongoose from 'mongoose';
 
 // Helper function to validate if subject IDs exist
 export const validateSubjectIds = async (subjectIds: string[]): Promise<{ valid: string[], invalid: string[] }> => {
@@ -47,6 +50,49 @@ export const resolveLanguageIdentifier = async (identifier: string): Promise<str
   return byName ? byName._id.toString() : null;
 };
 
+// Resolve a board identifier that may be an ObjectId or short_code
+export const resolveBoardIdentifier = async (identifier: string): Promise<string | null> => {
+  if (!identifier) return null;
+  const id = identifier.toString().trim();
+  if (id.match(/^[a-fA-F0-9]{24}$/)) return id;
+  const byShort = await BoardModel.findOne({ short_code: new RegExp(`^${id}$`, 'i') }).select('_id');
+  return byShort ? byShort._id.toString() : null;
+};
+
+// Resolve a class identifier that may be an ObjectId or grade (requires board)
+export const resolveClassIdentifier = async (identifier: string, boardIdOrIdentifier?: string): Promise<string | null> => {
+  if (!identifier) return null;
+  const id = identifier.toString().trim();
+  if (id.match(/^[a-fA-F0-9]{24}$/)) return id;
+  const grade = Number(id);
+  if (!Number.isNaN(grade)) {
+    let boardId: string | null = null;
+    if (boardIdOrIdentifier) {
+      boardId = await resolveBoardIdentifier(boardIdOrIdentifier) || (boardIdOrIdentifier.match(/^[a-fA-F0-9]{24}$/) ? boardIdOrIdentifier : null);
+    }
+    const query: any = { grade };
+    if (boardId) query.board_id = boardId;
+    const cls = await ClassModel.findOne(query).select('_id');
+    return cls ? cls._id.toString() : null;
+  }
+  return null;
+};
+
+// Resolve a subject identifier that may be an ObjectId or code (requires class)
+export const resolveSubjectIdentifier = async (identifier: string, classIdOrIdentifier?: string): Promise<string | null> => {
+  if (!identifier) return null;
+  const id = identifier.toString().trim();
+  if (id.match(/^[a-fA-F0-9]{24}$/)) return id;
+  let classId: string | null = null;
+  if (classIdOrIdentifier) {
+    classId = await resolveClassIdentifier(classIdOrIdentifier) || (classIdOrIdentifier.match(/^[a-fA-F0-9]{24}$/) ? classIdOrIdentifier : null);
+  }
+  const query: any = { code: new RegExp(`^${id}$`, 'i') };
+  if (classId) query.class_id = classId;
+  const subj = await SubjectModel.findOne(query).select('_id');
+  return subj ? subj._id.toString() : null;
+};
+
 // Check for duplicate order within subject
 export const checkDuplicateOrder = async (subject_id: string, order: number, excludeId?: string) => {
   const query: any = { subject_id, order };
@@ -79,6 +125,26 @@ export const bulkCreateChapters = async (chapters: IChapter[]) => {
     }
     throw error;
   }
+};
+
+// Get current max order for each subject id
+export const getMaxOrderBySubjectIds = async (subjectIds: string[]): Promise<Record<string, number>> => {
+  const unique = Array.from(new Set(subjectIds));
+  const result: Record<string, number> = {};
+  if (unique.length === 0) return result;
+  // Fetch max per subject using aggregation
+  const agg = await Chapter.aggregate([
+    { $match: { subject_id: { $in: unique.map((id) => new mongoose.Types.ObjectId(id)) } } },
+    { $group: { _id: '$subject_id', maxOrder: { $max: '$order' } } },
+  ]);
+  for (const row of agg) {
+    result[row._id.toString()] = typeof row.maxOrder === 'number' ? row.maxOrder : 0;
+  }
+  // Ensure every subject id appears
+  for (const id of unique) {
+    if (result[id] === undefined) result[id] = 0;
+  }
+  return result;
 };
 
 export const getAllChapters = async () => {

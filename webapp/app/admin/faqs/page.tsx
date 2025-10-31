@@ -371,6 +371,7 @@ export default function FAQsPage() {
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "question", type: "text", required: true } as FieldSchema,
       { name: "answer", type: "text", required: true } as FieldSchema,
       { name: "category", type: "text", required: false } as FieldSchema,
@@ -390,6 +391,7 @@ export default function FAQsPage() {
         return {
           entity_type: r.entity_type,
           entity_id: r.entity_id,
+          supported_language_ids: r.supported_language_ids ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
           question: r.question,
           answer: r.answer,
           category: r.category || undefined,
