@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { getBoards, IBoard } from '@/lib/api/entities/boards';
-import { getClassesByBoard, IClass } from '@/lib/api/entities/classes';
+import { getClassesByBoard, getClass, IClass } from '@/lib/api/entities/classes';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +23,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
   const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
   const [form, setForm] = useState({
     name: initialData?.name || '',
+    book_name: initialData?.book_name || '',
     code: initialData?.code || '',
     icon: initialData?.icon || '',
     board_id: initialData?.board_id || '',
@@ -62,6 +63,42 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     }
   }, [form.board_id]);
 
+  // Ensure language is preselected on edit if missing in the form state
+  useEffect(() => {
+    if (initialData) {
+      const current = form.language_id;
+      let initialLang = '';
+      if (typeof initialData.language_id === 'object' && initialData.language_id) {
+        initialLang = initialData.language_id._id || '';
+      } else if (typeof initialData.language_id === 'string') {
+        initialLang = initialData.language_id;
+      }
+      if (!current && initialLang) {
+        setForm(f => ({ ...f, language_id: initialLang }));
+      }
+    }
+  }, [initialData, form.language_id]);
+
+  // When editing: if class_id is known but board_id is empty, resolve board from class
+  useEffect(() => {
+    const resolveBoardFromClass = async () => {
+      if (!initialData) return;
+      if (!form.board_id && form.class_id) {
+        try {
+          const cls = await getClass(form.class_id);
+          const resolvedBoardId = (cls.board_id as any)?._id || (cls.board_id as any) || '';
+          if (resolvedBoardId) {
+            setForm(f => ({ ...f, board_id: resolvedBoardId }));
+            const list = await getClassesByBoard(resolvedBoardId);
+            setClasses(list);
+          }
+        } catch {}
+      }
+    };
+    resolveBoardFromClass();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialData, form.class_id]);
+
   useEffect(() => {
     if (initialData) {
       let boardId = '';
@@ -95,6 +132,7 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
       setForm(f => ({
         ...f,
         name: initialData.name || f.name,
+        book_name: initialData.book_name || f.book_name,
         code: initialData.code || f.code,
         icon: initialData.icon || f.icon,
         board_id: boardId || f.board_id,
@@ -244,6 +282,16 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
               onChange={handleChange}
               placeholder="Enter subject name"
               required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="book_name">Book Name</Label>
+            <Input
+              id="book_name"
+              name="book_name"
+              value={form.book_name}
+              onChange={handleChange}
+              placeholder="Enter book name"
             />
           </div>
           <div className="space-y-2">

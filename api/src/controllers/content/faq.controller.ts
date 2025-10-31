@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as faqService from '../../services/content/faq.service';
+import { resolveLanguageIdentifier } from '../../services/content/chapter.service';
 import { IFAQ } from '@/types/content/faq.types';
 import FAQTranslation from '../../models/content/faqTranslation.model';
 import { IFAQTranslation } from '@/types/content/faqTranslation.types';
@@ -21,6 +22,15 @@ export const bulkCreateFAQs = async (
         return;
       }
       (f as any).order = typeof (f as any).order === 'number' ? (f as any).order : Number((f as any).order || 0);
+      // Resolve supported_language_ids if provided
+      if ((f as any).supported_language_ids && Array.isArray((f as any).supported_language_ids)) {
+        const resolvedList: string[] = [];
+        for (const lid of (f as any).supported_language_ids) {
+          const r = await resolveLanguageIdentifier(lid.toString());
+          if (r) resolvedList.push(r);
+        }
+        (f as any).supported_language_ids = resolvedList;
+      }
     }
     const created = await faqService.bulkCreateFAQs(faqs);
     res.status(201).json(created);

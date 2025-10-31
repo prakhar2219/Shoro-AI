@@ -81,20 +81,12 @@ export default function GBSubtopicsPage() {
   });
 
   useEffect(() => {
-    getGBTopics().then((topics) => setTopics(Array.isArray(topics) ? topics : topics?.data || []));
-    getLanguages().then((langs: any) => {
-      // Ensure langs is always an array
-      const languagesArray = Array.isArray(langs) 
-        ? langs 
-        : Array.isArray(langs?.data) 
-        ? langs.data 
-        : [];
-      
-      // Log for debugging if we get unexpected data
-      if (!Array.isArray(langs) && !Array.isArray(langs?.data)) {
+    getGBTopics().then((topics) => setTopics(Array.isArray(topics) ? topics : []));
+    getLanguages().then((langs) => {
+      const languagesArray = Array.isArray(langs) ? langs : [];
+      if (!Array.isArray(langs)) {
         console.warn('Languages API returned non-array data:', langs);
       }
-      
       setLanguages(languagesArray);
       setLanguageIdMap(Object.fromEntries(languagesArray.map((l: any) => [l._id || l.code, l.name])));
     });

@@ -368,12 +368,13 @@ export default function DescriptiveQuestionsPage() {
   ];
 
   // CSV schema for Descriptive Questions
-  const dqCsvSchema: CsvSchema = {
+const dqCsvSchema: CsvSchema = {
     title: "Upload Descriptive Questions CSV",
     description: "CSV columns: entity_type, entity_id, question, answer, difficulty(optional), tags(comma-separated), author(optional), source(optional), is_active(optional), content(HTML - optional)",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "question", type: "text", required: true } as FieldSchema,
       { name: "answer", type: "text", required: true } as FieldSchema,
       { name: "difficulty", type: "text", required: false } as FieldSchema,
@@ -395,6 +396,7 @@ export default function DescriptiveQuestionsPage() {
         return {
           entity_type: r.entity_type,
           entity_id: r.entity_id,
+          supported_language_ids: r.supported_language_ids ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
           question: r.question,
           answer: r.answer,
           difficulty: (r.difficulty || 'medium') as any,

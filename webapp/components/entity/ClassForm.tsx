@@ -137,6 +137,14 @@ export const ClassForm = ({ defaultValues, onSubmit, boards, loading = false }: 
         }
     }, [boards, defaultValues, watchedBoardId, setValue]);
 
+    // Ensure language is preselected on edit if missing in the form state
+    useEffect(() => {
+        const currentLang = watch('language_id');
+        if (!currentLang && defaultValues?.language_id) {
+            setValue('language_id', defaultValues.language_id);
+        }
+    }, [defaultValues?.language_id, setValue, watch]);
+
     // Ensure board_id is always valid
     useEffect(() => {
         if (watchedBoardId && boards.length > 0 && !boards.some(b => b.id === watchedBoardId)) {

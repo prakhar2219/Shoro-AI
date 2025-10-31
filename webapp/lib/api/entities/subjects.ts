@@ -6,6 +6,7 @@ import { getCookie } from '../../utils/cookie';
 export interface ISubject {
   _id?: string;
   name: string;
+  book_name?: string;
   code: string;
   icon?: string;
   class_id: string | { _id: string; name: string; grade: number; [key: string]: any };

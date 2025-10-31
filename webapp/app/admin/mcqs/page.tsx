@@ -417,6 +417,7 @@ export default function MCQsPage() {
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
+      { name: "supported_language_ids", type: "text", required: false } as FieldSchema,
       { name: "question", type: "text", required: true } as FieldSchema,
       { name: "option_a", type: "text", required: true } as FieldSchema,
       { name: "option_b", type: "text", required: true } as FieldSchema,
@@ -455,6 +456,7 @@ export default function MCQsPage() {
         return {
           entity_type: r.entity_type,
           entity_id: r.entity_id,
+          supported_language_ids: r.supported_language_ids ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
           question: r.question,
           options,
           correct_answer: r.correct_answer,

@@ -45,6 +45,7 @@ export const subjectColumns: ColumnDef<ISubject>[] = [
     }
   },
   { accessorKey: "name", header: "Name" },
+  { accessorKey: "book_name", header: "Book Name" },
   { accessorKey: "code", header: "Code" },
    {
     accessorKey: "class_id",

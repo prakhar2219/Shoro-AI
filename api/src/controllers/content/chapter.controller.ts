@@ -16,12 +16,33 @@ export const bulkCreateChapters = async (
       return;
     }
     
-    // Resolve language identifiers (allow code or name) and basic validation
+    // Resolve identifiers (allow codes/names where supported) and basic validation
     for (const c of chapters) {
       if (!c.board_id || !c.class_id || !c.subject_id || !c.language_id || !c.title || !c.slug) {
         res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, language_id, title, and slug' });
         return;
       }
+      // Resolve board_id if not an ObjectId (accept short_code)
+      const resolvedBoard = await chapterService.resolveBoardIdentifier((c.board_id as unknown as string));
+      if (!resolvedBoard) {
+        res.status(400).json({ error: `Unable to resolve board_id: ${c.board_id}. Use ObjectId or board short_code.` });
+        return;
+      }
+      (c as any).board_id = resolvedBoard;
+      // Resolve class_id if not an ObjectId (accept grade, optionally scoped by board)
+      const resolvedClass = await chapterService.resolveClassIdentifier((c.class_id as unknown as string), resolvedBoard);
+      if (!resolvedClass) {
+        res.status(400).json({ error: `Unable to resolve class_id: ${c.class_id}. Use ObjectId or grade (optionally with board).` });
+        return;
+      }
+      (c as any).class_id = resolvedClass;
+      // Resolve subject_id if not an ObjectId (accept subject code, scoped by class)
+      const resolvedSubject = await chapterService.resolveSubjectIdentifier((c.subject_id as unknown as string), resolvedClass);
+      if (!resolvedSubject) {
+        res.status(400).json({ error: `Unable to resolve subject_id: ${c.subject_id}. Use ObjectId or subject code (scoped by class).` });
+        return;
+      }
+      (c as any).subject_id = resolvedSubject;
       // Resolve language_id if not an ObjectId
       const resolvedLang = await chapterService.resolveLanguageIdentifier(c.language_id as unknown as string);
       if (!resolvedLang) {
@@ -38,14 +59,37 @@ export const bulkCreateChapters = async (
         }
         (c as any).supported_language_ids = resolvedList;
       }
-      // Normalize types
-      (c as any).order = typeof c.order === 'number' ? c.order : Number((c as any).order || 0);
+      // Normalize types (temporary; may be reassigned after computing max orders)
+      (c as any).order = typeof c.order === 'number' ? c.order : Number((c as any).order ?? NaN);
       (c as any).is_published = !!(c as any).is_published;
+    }
+
+    // Auto-assign unique order per subject when missing/invalid or duplicated in CSV batch
+    const subjectIds = chapters.map((c) => (c.subject_id as any).toString());
+    const currentMaxBySubject = await chapterService.getMaxOrderBySubjectIds(subjectIds);
+    const usedOrdersInBatch: Record<string, Set<number>> = {};
+    for (const sid of subjectIds) {
+      usedOrdersInBatch[sid] = new Set<number>();
+    }
+    for (const c of chapters) {
+      const sid = (c.subject_id as any).toString();
+      const orderNum = Number((c as any).order);
+      const isValidOrder = Number.isInteger(orderNum) && orderNum > 0 && !usedOrdersInBatch[sid].has(orderNum);
+      if (isValidOrder) {
+        usedOrdersInBatch[sid].add(orderNum);
+      } else {
+        const start = (currentMaxBySubject[sid] ?? 0) + 1;
+        let next = start;
+        while (usedOrdersInBatch[sid].has(next)) next += 1;
+        (c as any).order = next;
+        usedOrdersInBatch[sid].add(next);
+        currentMaxBySubject[sid] = next;
+      }
     }
     
     // Validate all subject IDs exist
-    const subjectIds = chapters.map(c => c.subject_id.toString());
-    const subjectValidation = await chapterService.validateSubjectIds(subjectIds);
+    const subjectIdsForValidation = chapters.map(c => c.subject_id.toString());
+    const subjectValidation = await chapterService.validateSubjectIds(subjectIdsForValidation);
     
     if (subjectValidation.invalid.length > 0) {
       res.status(400).json({ 
@@ -68,7 +112,12 @@ export const bulkCreateChapters = async (
     // Allow duplicate slugs: removed duplicate slug checks
     
     const created = await chapterService.bulkCreateChapters(chapters);
-    res.status(201).json(created);
+    const insertedCount = Array.isArray(created)
+      ? created.length
+      : created && typeof created === 'object'
+      ? Object.keys(created).length
+      : 0;
+    res.status(201).json({ insertedCount, attemptedCount: chapters.length });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

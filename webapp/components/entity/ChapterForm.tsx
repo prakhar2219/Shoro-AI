@@ -64,6 +64,22 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
     }).catch(() => setLanguages([]));
   }, []);
 
+  // Ensure language is preselected on edit if missing in the form state
+  useEffect(() => {
+    if (initialData) {
+      const current = form.language_id as any;
+      let initialLang = '' as any;
+      if (typeof initialData.language_id === 'object' && initialData.language_id) {
+        initialLang = initialData.language_id._id || '';
+      } else if (typeof initialData.language_id === 'string') {
+        initialLang = initialData.language_id;
+      }
+      if (!current && initialLang) {
+        setForm(f => ({ ...f, language_id: initialLang }));
+      }
+    }
+  }, [initialData, form.language_id]);
+
   // Update form when initialData changes (for editing)
   useEffect(() => {
     if (initialData) {

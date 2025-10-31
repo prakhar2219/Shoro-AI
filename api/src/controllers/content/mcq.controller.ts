@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as mcqService from '../../services/content/mcq.service';
+import { resolveLanguageIdentifier } from '../../services/content/chapter.service';
 import { IMCQ } from '@/types/content/mcq.types';
 import MCQTranslation from '../../models/content/mcqTranslation.model';
 import { IMCQTranslation } from '@/types/content/mcqTranslation.types';
@@ -23,6 +24,15 @@ export const bulkCreateMCQs = async (
       if (!Array.isArray((m as any).options) || (m as any).options.length < 2) {
         res.status(400).json({ error: 'Each MCQ must have at least 2 options' });
         return;
+      }
+      // Resolve supported_language_ids if provided
+      if ((m as any).supported_language_ids && Array.isArray((m as any).supported_language_ids)) {
+        const resolvedList: string[] = [];
+        for (const lid of (m as any).supported_language_ids) {
+          const r = await resolveLanguageIdentifier(lid.toString());
+          if (r) resolvedList.push(r);
+        }
+        (m as any).supported_language_ids = resolvedList;
       }
     }
     const created = await mcqService.bulkCreateMCQs(mcqs);

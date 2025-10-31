@@ -187,6 +187,22 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
     }).catch(() => setLanguages([]));
   }, []);
 
+  // Ensure language is preselected on edit if missing in the form state
+  useEffect(() => {
+    if (initialData) {
+      const current = formData.language_id as any;
+      let initialLang = '' as any;
+      if (typeof initialData.language_id === 'object' && initialData.language_id) {
+        initialLang = (initialData.language_id as any)._id || '';
+      } else if (typeof initialData.language_id === 'string') {
+        initialLang = initialData.language_id;
+      }
+      if (!current && initialLang) {
+        setFormData(prev => ({ ...prev, language_id: initialLang }));
+      }
+    }
+  }, [initialData, formData.language_id]);
+
   // Load classes when board changes
   useEffect(() => {
     if (formData.board_id) {

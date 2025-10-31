@@ -17,6 +17,7 @@ export interface IMCQ {
   is_active: boolean;
   created_by?: Schema.Types.ObjectId;
   content?: string;
+  supported_language_ids?: string[];
   translation?: any; // Single translation (for FE/BE consistency)
   translations?: any[]; // All translations (for FE/BE consistency)
   createdAt?: Date;
