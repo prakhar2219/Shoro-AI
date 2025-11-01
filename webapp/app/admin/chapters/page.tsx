@@ -288,6 +288,11 @@ export default function ChapterAdminPage() {
   const chapterCsvSchema: CsvSchema = {
     title: "Upload Chapters CSV",
     description: "Upload a CSV with columns: board_id, class_id, subject_id, language_id, supported_language_ids (comma-separated IDs - optional), title, slug, author (optional), tag (optional - comma separated), source (optional), downloadNotes (optional - URL), downloadPDF (optional - URL), downloadQA (optional - URL), content(HTML - optional), order, is_published",
+    orderConfig: {
+      parentField: 'subject_id',
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { name: "board_id", type: "text", required: true } as FieldSchema,
       { name: "class_id", type: "text", required: true } as FieldSchema,
@@ -312,7 +317,10 @@ export default function ChapterAdminPage() {
     try {
       const payload = rows.map(r => {
         const content = r.content || undefined
-        const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
+        // Standardized order validation: non-negative integer, default 0
+        const order = (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
         return {
           board_id: r.board_id,
@@ -338,15 +346,53 @@ export default function ChapterAdminPage() {
       // Upload in chunks to avoid oversized requests/timeouts
       const chunkSize = 500;
       let totalInserted = 0;
+      let totalFailed = 0;
+      const allFailures: any[] = [];
+      
       for (let i = 0; i < payload.length; i += chunkSize) {
         const chunk = payload.slice(i, i + chunkSize);
         const res = await bulkCreateChapters(chunk);
-        // API returns { insertedCount }
-        if (res && typeof res.insertedCount === 'number') {
-          totalInserted += res.insertedCount;
+        
+        // Handle enhanced error reporting (backward compatible)
+        if (res && typeof res === 'object') {
+          if (typeof res.insertedCount === 'number') {
+            totalInserted += res.insertedCount;
+          } else if (Array.isArray(res)) {
+            // Old format: array of inserted documents
+            totalInserted += res.length;
+          } else if (typeof res === 'object' && Object.keys(res).length > 0) {
+            // Old format: object with inserted IDs
+            totalInserted += Object.keys(res).length;
+          }
+          
+          if (typeof res.failedCount === 'number') {
+            totalFailed += res.failedCount;
+            if (Array.isArray(res.failures)) {
+              // Adjust index to account for chunk offset
+              const adjustedFailures = res.failures.map((f: any) => ({
+                ...f,
+                index: f.index + i
+              }));
+              allFailures.push(...adjustedFailures);
+            }
+          }
         }
       }
-      toast({ title: 'Success', description: `${totalInserted} chapters uploaded successfully.` });
+      
+      if (totalFailed > 0) {
+        const failureMessages = allFailures.slice(0, 5).map((f: any) => 
+          `Row ${f.index + 1}: ${f.error}`
+        ).join('; ');
+        const moreCount = allFailures.length > 5 ? ` (+${allFailures.length - 5} more)` : '';
+        toast({ 
+          title: 'Partial Success', 
+          description: `${totalInserted} chapters uploaded, ${totalFailed} failed. ${failureMessages}${moreCount}`,
+          variant: 'default'
+        });
+      } else {
+        toast({ title: 'Success', description: `${totalInserted} chapters uploaded successfully.` });
+      }
+      
       await fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload chapters.', variant: 'destructive' });

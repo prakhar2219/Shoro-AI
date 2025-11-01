@@ -14,6 +14,7 @@ import { getSubjects } from "@/lib/api/entities/subjects";
 import { getChapters } from "@/lib/api/entities/chapters";
 import { getTopics } from "@/lib/api/entities/topics";
 import { getLanguages } from "@/lib/api/entities/language";
+import { formatSlug } from "@/lib/utils";
 
 interface SubtopicFormProps {
   onSubmit: (data: any) => void;
@@ -571,12 +572,7 @@ export function SubtopicForm({ onSubmit, loading = false, initialData }: Subtopi
               id="slug"
               value={formData.slug}
               onChange={(e) => {
-                const formattedSlug = e.target.value
-                  .trim()
-                  .replace(/\s+/g, '-')  // Replace spaces with hyphens
-                  .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
-                  .replace(/-+/g, '-')  // Replace multiple hyphens with single
-                  .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+                const formattedSlug = formatSlug(e.target.value);
                 setFormData({ ...formData, slug: formattedSlug });
               }}
               placeholder="e.g., basics or मूल बातें"

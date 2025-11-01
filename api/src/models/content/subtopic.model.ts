@@ -22,8 +22,8 @@ const SubtopicSchema = new Schema<ISubtopic>(
 SubtopicSchema.virtual('translation');
 SubtopicSchema.virtual('translations');
 
-// Compound unique index: order must be unique within each topic
-SubtopicSchema.index({ topic_id: 1, order: 1 }, { unique: true });
+// Compound unique index: order must be unique within each topic and language
+SubtopicSchema.index({ topic_id: 1, language_id: 1, order: 1 }, { unique: true });
 
 export default mongoose.model<ISubtopic>('Subtopic', SubtopicSchema);
 

@@ -295,6 +295,11 @@ export default function GBTopicsPage() {
   const gbTopicCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Topics CSV",
     description: "Upload a CSV with columns: gb_category_id, name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published. IMPORTANT: GB Topics belong to GB Categories in the General Blogging hierarchy (GB Category → GB Topic). Make sure your gb_category_id corresponds to an existing GB category. You can find GB category IDs in the GB Categories admin section.",
+    orderConfig: {
+      parentField: 'gb_category_id',
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { 
         name: "gb_category_id", 
@@ -372,7 +377,10 @@ export default function GBTopicsPage() {
         supported_language_ids: r.supported_language_ids 
           ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
           : [],
-        order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
+        // Standardized order validation: non-negative integer, default 0
+        order: (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0,
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
         source: r.source || undefined,

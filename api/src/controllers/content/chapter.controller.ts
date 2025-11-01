@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import * as chapterService from '../../services/content/chapter.service';
 import { IChapter } from '@/types/content/chapter.types';
 import ChapterTranslation from '../../models/content/chapterTranslation.model';
+import { formatSlug, validateSlugFormat } from '../../utils/validators';
 
 // Bulk create chapters
 export const bulkCreateChapters = async (
@@ -22,6 +23,15 @@ export const bulkCreateChapters = async (
         res.status(400).json({ error: 'Each chapter must have board_id, class_id, subject_id, language_id, title, and slug' });
         return;
       }
+      
+      // Format and validate slug format (ensure no spaces, use hyphens)
+      const slugError = validateSlugFormat(c.slug);
+      if (slugError) {
+        res.status(400).json({ error: `Chapter slug validation failed: ${slugError}. Slug: "${c.slug}"` });
+        return;
+      }
+      // Auto-format slug to ensure proper format
+      (c as any).slug = formatSlug(c.slug);
       // Resolve board_id if not an ObjectId (accept short_code)
       const resolvedBoard = await chapterService.resolveBoardIdentifier((c.board_id as unknown as string));
       if (!resolvedBoard) {
@@ -64,26 +74,33 @@ export const bulkCreateChapters = async (
       (c as any).is_published = !!(c as any).is_published;
     }
 
-    // Auto-assign unique order per subject when missing/invalid or duplicated in CSV batch
-    const subjectIds = chapters.map((c) => (c.subject_id as any).toString());
-    const currentMaxBySubject = await chapterService.getMaxOrderBySubjectIds(subjectIds);
-    const usedOrdersInBatch: Record<string, Set<number>> = {};
-    for (const sid of subjectIds) {
-      usedOrdersInBatch[sid] = new Set<number>();
-    }
+    // Auto-assign unique order per subject+language when missing/invalid or duplicated in CSV batch
+    // Note: Frontend handles auto-increment now, but this provides backend safety
+    const scopeMap = new Map<string, number>(); // key: subjectId_languageId, value: nextOrder
+    const usedOrdersInBatch: Map<string, Set<number>> = new Map();
+    
     for (const c of chapters) {
       const sid = (c.subject_id as any).toString();
+      const lid = (c.language_id as any).toString();
+      const scopeKey = `${sid}_${lid}`;
+      
+      if (!usedOrdersInBatch.has(scopeKey)) {
+        usedOrdersInBatch.set(scopeKey, new Set());
+      }
+      
       const orderNum = Number((c as any).order);
-      const isValidOrder = Number.isInteger(orderNum) && orderNum > 0 && !usedOrdersInBatch[sid].has(orderNum);
+      const isValidOrder = Number.isInteger(orderNum) && orderNum >= 0 && !usedOrdersInBatch.get(scopeKey)!.has(orderNum);
+      
       if (isValidOrder) {
-        usedOrdersInBatch[sid].add(orderNum);
+        usedOrdersInBatch.get(scopeKey)!.add(orderNum);
+        const currentMax = scopeMap.get(scopeKey) || 0;
+        scopeMap.set(scopeKey, Math.max(currentMax, orderNum + 1));
       } else {
-        const start = (currentMaxBySubject[sid] ?? 0) + 1;
-        let next = start;
-        while (usedOrdersInBatch[sid].has(next)) next += 1;
-        (c as any).order = next;
-        usedOrdersInBatch[sid].add(next);
-        currentMaxBySubject[sid] = next;
+        // Auto-increment: get next available order for this scope
+        const nextOrder = scopeMap.get(scopeKey) || 0;
+        (c as any).order = nextOrder;
+        usedOrdersInBatch.get(scopeKey)!.add(nextOrder);
+        scopeMap.set(scopeKey, nextOrder + 1);
       }
     }
     
@@ -111,13 +128,29 @@ export const bulkCreateChapters = async (
     
     // Allow duplicate slugs: removed duplicate slug checks
     
-    const created = await chapterService.bulkCreateChapters(chapters);
-    const insertedCount = Array.isArray(created)
-      ? created.length
-      : created && typeof created === 'object'
-      ? Object.keys(created).length
-      : 0;
-    res.status(201).json({ insertedCount, attemptedCount: chapters.length });
+    const result = await chapterService.bulkCreateChapters(chapters);
+    
+    // Enhanced error reporting
+    if (result.failedCount > 0) {
+      const errorMessages = result.failed.map(f => 
+        `Row ${f.index + 1}: ${f.error}`
+      ).join('; ');
+      
+      res.status(207).json({ // 207 Multi-Status for partial success
+        insertedCount: result.insertedCount,
+        failedCount: result.failedCount,
+        attemptedCount: chapters.length,
+        inserted: result.inserted,
+        failures: result.failed,
+        message: `${result.insertedCount} chapters inserted successfully, ${result.failedCount} failed. Errors: ${errorMessages}`
+      });
+    } else {
+      res.status(201).json({
+        insertedCount: result.insertedCount,
+        attemptedCount: chapters.length,
+        inserted: result.inserted
+      });
+    }
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
@@ -134,6 +167,14 @@ export const createChapter = async (
       res.status(400).json({ error: 'Missing required fields: board_id, class_id, subject_id, language_id, title, slug' });
       return;
     }
+
+    // Format and validate slug format (ensure no spaces, use hyphens)
+    const slugError = validateSlugFormat(slug);
+    if (slugError) {
+      res.status(400).json({ error: `Chapter slug validation failed: ${slugError}. Slug: "${slug}"` });
+      return;
+    }
+    const formattedSlug = formatSlug(slug);
 
     // Validate subject ID exists
     const subjectValidation = await chapterService.validateSubjectIds([subject_id.toString()]);
@@ -171,7 +212,7 @@ export const createChapter = async (
       subject_id,
       language_id,
       title,
-      slug,
+      slug: formattedSlug,
       downloadNotes,
       downloadPDF,
       downloadQA,
@@ -299,6 +340,16 @@ export const updateChapter = async (
   try {
     const { slug, subject_id, language_id, order } = req.body;
     
+    // Format and validate slug format if slug is being updated
+    if (slug !== undefined) {
+      const slugError = validateSlugFormat(slug);
+      if (slugError) {
+        res.status(400).json({ error: `Chapter slug validation failed: ${slugError}. Slug: "${slug}"` });
+        return;
+      }
+      (req.body as any).slug = formatSlug(slug);
+    }
+    
     // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
@@ -352,6 +403,15 @@ export const addChapterTranslation = async (req: Request, res: Response): Promis
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
+    
+    // Format and validate slug format (ensure no spaces, use hyphens)
+    const slugError = validateSlugFormat(slug);
+    if (slugError) {
+      res.status(400).json({ error: `Chapter translation slug validation failed: ${slugError}. Slug: "${slug}"` });
+      return;
+    }
+    const formattedSlug = formatSlug(slug);
+    
     // Prevent duplicate translation for same chapter/language
     const exists = await ChapterTranslation.findOne({ chapter_id: id, language_id });
     if (exists) {
@@ -362,7 +422,7 @@ export const addChapterTranslation = async (req: Request, res: Response): Promis
       chapter_id: id,
       language_id,
       title,
-      slug,
+      slug: formattedSlug,
       seo_title,
       seo_description,
       content,

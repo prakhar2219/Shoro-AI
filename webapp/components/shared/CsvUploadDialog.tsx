@@ -40,6 +40,11 @@ export type CsvSchema = {
     required?: string[]
     optional?: string[]
   }
+  orderConfig?: {
+    parentField?: string // e.g., 'subject_id', 'chapter_id', 'gb_category_id', null for top-level
+    languageField?: string // e.g., 'language_id' (default)
+    autoIncrement?: boolean // Whether to auto-increment missing orders
+  }
 }
 
 export type ParsedRow = {
@@ -71,6 +76,7 @@ export function CsvUploadDialog({
     const [error, setError] = useState<string | null>(null)
     const [editingIndex, setEditingIndex] = useState<number | null>(null)
     const [editingRow, setEditingRow] = useState<ParsedRow | null>(null)
+    const [autoIncrementOrders, setAutoIncrementOrders] = useState(true) // Default to enabled
 
     // Reset state when dialog opens/closes
     useEffect(() => {
@@ -118,12 +124,31 @@ export function CsvUploadDialog({
                 break
                 
             case 'number':
-                if (isNaN(Number(value))) {
+                const numValue = Number(value);
+                if (isNaN(numValue)) {
                     errors.push({ 
                         row: rowIndex, 
                         field: field.name, 
                         message: `${field.name} must be a number` 
                     })
+                } else {
+                    // Special validation for order field: must be non-negative integer
+                    if (field.name === 'order') {
+                        if (numValue < 0) {
+                            errors.push({ 
+                                row: rowIndex, 
+                                field: field.name, 
+                                message: `${field.name} must be a non-negative number (0 or greater)` 
+                            })
+                        }
+                        if (!Number.isInteger(numValue)) {
+                            errors.push({ 
+                                row: rowIndex, 
+                                field: field.name, 
+                                message: `${field.name} must be an integer (whole number)` 
+                            })
+                        }
+                    }
                 }
                 break
                 
@@ -186,7 +211,13 @@ export function CsvUploadDialog({
                         field.defaultValue ?? false
                     break
                 case 'number':
-                    validatedRow[field.name] = value !== undefined ? Number(value) : (field.defaultValue ?? 0)
+                    const numVal = value !== undefined ? Number(value) : (field.defaultValue ?? 0);
+                    // Special handling for order field: ensure non-negative integer
+                    if (field.name === 'order') {
+                        validatedRow[field.name] = Math.max(0, Math.floor(Math.abs(numVal)));
+                    } else {
+                        validatedRow[field.name] = numVal;
+                    }
                     break
                 default:
                     validatedRow[field.name] = (value?.toString().trim()) || (field.defaultValue ?? '')
@@ -197,6 +228,108 @@ export function CsvUploadDialog({
         validatedRow._isValid = errors.length === 0
 
         return validatedRow
+    }
+
+    // Detect duplicate orders within CSV for same parent+language scope
+    const detectDuplicateOrders = (rows: ParsedRow[]): ValidationError[] => {
+        const errors: ValidationError[] = []
+        if (!schema.orderConfig || !schema.fields.find(f => f.name === 'order')) {
+            return errors // No order field or no config, skip
+        }
+
+        const parentField = schema.orderConfig.parentField || null
+        const languageField = schema.orderConfig.languageField
+        const seen = new Map<string, Set<number>>()
+
+        rows.forEach((row, index) => {
+            // Build key matching backend unique index scope
+            let key: string
+            if (languageField) {
+                // Standard case: parent + language (matches backend { parent_id: 1, language_id: 1, order: 1 })
+                // For top-level entities (GB Categories): just language_id (matches backend { language_id: 1, order: 1 })
+                const parentId = parentField ? (row[parentField] || '') : ''
+                const languageId = row[languageField] || ''
+                key = parentId ? `${parentId}_${languageId}` : (languageId || 'root')
+            } else {
+                // FAQs: entity_type + entity_id (matches backend { entity_type: 1, entity_id: 1, order: 1 })
+                const entityType = row.entity_type || ''
+                const entityId = parentField ? (row[parentField] || '') : ''
+                key = entityType && entityId ? `${entityType}_${entityId}` : entityId || 'root'
+            }
+            const order = row.order
+
+            if (order === undefined || order === null || order === '') {
+                return // Skip rows without order for duplicate detection
+            }
+
+            const orderNum = Number(order)
+
+            if (!seen.has(key)) {
+                seen.set(key, new Set())
+            }
+            const orders = seen.get(key)!
+
+            if (orders.has(orderNum)) {
+                errors.push({
+                    row: index,
+                    field: 'order',
+                    message: `Duplicate order ${orderNum} for same ${parentField || 'root'} + ${languageField}. Row ${index + 1} conflicts with a previous row.`
+                })
+            } else {
+                orders.add(orderNum)
+            }
+        })
+
+        return errors
+    }
+
+    // Auto-increment missing orders within each parent+language scope
+    const applyAutoIncrement = (rows: ParsedRow[]): ParsedRow[] => {
+        if (!schema.orderConfig || !schema.fields.find(f => f.name === 'order')) {
+            return rows // No order field or no config, return as-is
+        }
+
+        if (!autoIncrementOrders) {
+            return rows // Auto-increment disabled, return as-is
+        }
+
+        const parentField = schema.orderConfig.parentField || null
+        const languageField = schema.orderConfig.languageField
+        const scopeMap = new Map<string, number>() // key: parent_language, value: nextOrder
+
+        return rows.map((row, index) => {
+            // Build key matching backend unique index scope
+            let key: string
+            if (languageField) {
+                // Standard case: parent + language (matches backend { parent_id: 1, language_id: 1, order: 1 })
+                // For top-level entities (GB Categories): just language_id (matches backend { language_id: 1, order: 1 })
+                const parentId = parentField ? (row[parentField] || '') : ''
+                const languageId = row[languageField] || ''
+                key = parentId ? `${parentId}_${languageId}` : (languageId || 'root')
+            } else {
+                // FAQs: entity_type + entity_id (matches backend { entity_type: 1, entity_id: 1, order: 1 })
+                const entityType = row.entity_type || ''
+                const entityId = parentField ? (row[parentField] || '') : ''
+                key = entityType && entityId ? `${entityType}_${entityId}` : entityId || 'root'
+            }
+            const hasOrder = row.order !== undefined && row.order !== null && row.order !== ''
+
+            if (!hasOrder) {
+                // Auto-increment: get next available order for this scope
+                const nextOrder = scopeMap.get(key) || 0
+                row.order = nextOrder
+                scopeMap.set(key, nextOrder + 1)
+            } else {
+                // User-specified order: use it and update counter
+                const userOrder = Math.max(0, Math.floor(Math.abs(Number(row.order))))
+                row.order = userOrder
+                // Update counter to be max of (current counter, userOrder + 1)
+                const currentMax = scopeMap.get(key) || 0
+                scopeMap.set(key, Math.max(currentMax, userOrder + 1))
+            }
+
+            return row
+        })
     }
 
     const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -215,9 +348,44 @@ export function CsvUploadDialog({
                     return
                 }
 
-                const validatedRows = rows.map((row, index) => validateRow(row, index))
+                let validatedRows = rows.map((row, index) => validateRow(row, index))
+                
+                // Apply auto-increment if enabled
+                if (autoIncrementOrders && schema.orderConfig) {
+                    validatedRows = applyAutoIncrement(validatedRows)
+                    // Re-validate orders after auto-increment
+                    validatedRows = validatedRows.map((row, index) => {
+                        const field = schema.fields.find(f => f.name === 'order')
+                        if (field && row.order !== undefined) {
+                            const fieldErrors = validateField(field, row.order, index)
+                            return {
+                                ...row,
+                                _errors: [...(row._errors || []), ...fieldErrors],
+                                _isValid: row._isValid && fieldErrors.length === 0
+                            }
+                        }
+                        return row
+                    })
+                }
+                
+                // Detect duplicate orders
+                const duplicateErrors = detectDuplicateOrders(validatedRows)
+                if (duplicateErrors.length > 0) {
+                    validatedRows = validatedRows.map((row, index) => {
+                        const dupError = duplicateErrors.find(e => e.row === index)
+                        if (dupError) {
+                            return {
+                                ...row,
+                                _errors: [...(row._errors || []), dupError],
+                                _isValid: false
+                            }
+                        }
+                        return row
+                    })
+                }
+                
                 setParsedRows(validatedRows)
-                        setError(null)
+                setError(null)
                 setCurrentStep('preview')
             },
             error: () => {
@@ -235,7 +403,42 @@ export function CsvUploadDialog({
     const handleSaveEdit = () => {
         if (editingRow && editingIndex !== null) {
             const updatedRows = [...parsedRows]
-            const validatedRow = validateRow(editingRow, editingIndex)
+            let validatedRow = validateRow(editingRow, editingIndex)
+            
+            // Re-apply auto-increment and duplicate detection if order changed
+            if (schema.orderConfig && schema.fields.find(f => f.name === 'order')) {
+                // Apply auto-increment to all rows if enabled
+                if (autoIncrementOrders) {
+                    const allRows = updatedRows.map((r, idx) => idx === editingIndex ? validatedRow : r)
+                    const autoIncremented = applyAutoIncrement(allRows)
+                    validatedRow = autoIncremented[editingIndex]
+                    updatedRows[editingIndex] = validatedRow
+                    
+                    // Check for duplicates
+                    const duplicateErrors = detectDuplicateOrders(autoIncremented)
+                    const dupError = duplicateErrors.find(e => e.row === editingIndex)
+                    if (dupError) {
+                        validatedRow = {
+                            ...validatedRow,
+                            _errors: [...(validatedRow._errors || []), dupError],
+                            _isValid: false
+                        }
+                    }
+                } else {
+                    // Just check for duplicates
+                    updatedRows[editingIndex] = validatedRow
+                    const duplicateErrors = detectDuplicateOrders(updatedRows)
+                    const dupError = duplicateErrors.find(e => e.row === editingIndex)
+                    if (dupError) {
+                        validatedRow = {
+                            ...validatedRow,
+                            _errors: [...(validatedRow._errors || []), dupError],
+                            _isValid: false
+                        }
+                    }
+                }
+            }
+            
             updatedRows[editingIndex] = validatedRow
             setParsedRows(updatedRows)
             setEditingIndex(null)
@@ -397,11 +600,23 @@ export function CsvUploadDialog({
                 )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
                 <Button variant="outline" size="sm" onClick={handleDownloadBlankTemplate}>
                     <Download className="h-4 w-4 mr-2" />
                     Download blank template
                 </Button>
+                {schema.orderConfig && schema.fields.find(f => f.name === 'order') && (
+                    <div className="flex items-center gap-2 ml-4">
+                        <Switch
+                            checked={autoIncrementOrders}
+                            onCheckedChange={setAutoIncrementOrders}
+                            id="auto-increment-orders"
+                        />
+                        <Label htmlFor="auto-increment-orders" className="text-sm cursor-pointer">
+                            Auto-increment missing orders
+                        </Label>
+                    </div>
+                )}
             </div>
         </div>
         )

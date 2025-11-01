@@ -211,6 +211,11 @@ export default function SubtopicsPage() {
   const subtopicCsvSchema: CsvSchema = {
     title: "Upload Subtopics CSV",
     description: "Upload a CSV with columns: topic_id, language_id, supported_language_ids (comma-separated IDs - optional), title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published. IMPORTANT: Subtopics belong to Topics in the complete educational hierarchy (Board → Class → Subject → Chapter → Topic → Subtopic). Make sure your topic_id and language_id correspond to existing entities in the system.",
+    orderConfig: {
+      parentField: 'topic_id',
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { name: "topic_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
@@ -230,7 +235,10 @@ export default function SubtopicsPage() {
     try {
       const payload = rows.map(r => {
         const content = r.content || undefined;
-        const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
+        // Standardized order validation: non-negative integer, default 0
+        const order = (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
         return {
           topic_id: r.topic_id,
