@@ -271,6 +271,11 @@ export default function GBQuestionsPage() {
   const gbQuestionCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Questions CSV",
     description: "Upload a CSV with columns: gb_subtopic_id, question, slug, answer, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, difficulty_level, is_published. IMPORTANT: GB Questions belong to GB Subtopics in the complete General Blogging hierarchy (GB Category → GB Topic → GB Subtopic → GB Question). Make sure your gb_subtopic_id corresponds to an existing GB subtopic. You can find GB subtopic IDs in the GB Subtopics admin section.",
+    orderConfig: {
+      parentField: 'gb_subtopic_id',
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { 
         name: "gb_subtopic_id", 
@@ -357,7 +362,10 @@ export default function GBQuestionsPage() {
         supported_language_ids: r.supported_language_ids 
           ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
           : [],
-        order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
+        // Standardized order validation: non-negative integer, default 0
+        order: (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0,
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
         source: r.source || undefined,

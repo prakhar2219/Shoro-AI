@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as topicService from '../../services/content/topic.service';
+import { formatSlug, validateSlugFormat } from '../../utils/validators';
 
 export const createTopic = async (req: Request, res: Response) => {
   const { 
@@ -22,6 +23,14 @@ export const createTopic = async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Missing required fields: chapter_id, language_id, title, slug' });
     return;
   }
+
+  // Format and validate slug format (ensure no spaces, use hyphens)
+  const slugError = validateSlugFormat(slug);
+  if (slugError) {
+    res.status(400).json({ error: `Topic slug validation failed: ${slugError}. Slug: "${slug}"` });
+    return;
+  }
+  const formattedSlug = formatSlug(slug);
 
   const finalOrder = typeof order === 'number' ? order : Number(order || 0);
   
@@ -71,7 +80,7 @@ export const createTopic = async (req: Request, res: Response) => {
       language_id,
       supported_language_ids: supported_language_ids || [],
       title,
-      slug,
+      slug: formattedSlug,
       content,
       order: finalOrder,
       is_published: !!is_published,
@@ -88,11 +97,19 @@ export const createTopic = async (req: Request, res: Response) => {
       try {
         for (const translation of translations) {
           if (translation.language_id && translation.title && translation.slug) {
+            // Format and validate translation slug
+            const transSlugError = validateSlugFormat(translation.slug);
+            if (transSlugError) {
+              // Skip translation with invalid slug - log but don't fail entire request
+              continue;
+            }
+            const formattedTransSlug = formatSlug(translation.slug);
+            
             await topicService.createTopicTranslation({
               topic_id: created._id,
               language_id: translation.language_id,
               title: translation.title,
-              slug: translation.slug,
+              slug: formattedTransSlug,
               content: translation.content,
               translated_by_ai: translation.translated_by_ai || false,
               needs_review: translation.needs_review || false,
@@ -130,6 +147,14 @@ export const bulkCreateTopics = async (req: Request, res: Response) => {
         res.status(400).json({ error: 'Each topic must have chapter_id, language_id, title, and slug' });
         return;
       }
+      
+      // Format and validate slug format (ensure no spaces, use hyphens)
+      const slugError = validateSlugFormat(t.slug);
+      if (slugError) {
+        res.status(400).json({ error: `Topic slug validation failed: ${slugError}. Slug: "${t.slug}"` });
+        return;
+      }
+      (t as any).slug = formatSlug(t.slug);
       // Resolve language_id from id/code/name
       const resolvedLang = await topicService.resolveLanguageIdentifier(t.language_id.toString());
       if (!resolvedLang) {
@@ -234,6 +259,16 @@ export const updateTopic = async (req: Request, res: Response) => {
   try {
     const { slug, chapter_id, order } = req.body;
     
+    // Format and validate slug format if slug is being updated
+    if (slug !== undefined) {
+      const slugError = validateSlugFormat(slug);
+      if (slugError) {
+        res.status(400).json({ error: `Topic slug validation failed: ${slugError}. Slug: "${slug}"` });
+        return;
+      }
+      (req.body as any).slug = formatSlug(slug);
+    }
+    
     // Allow duplicate slugs: removed duplicate slug checks
     
     // Check for duplicate order if order is being updated
@@ -284,12 +319,20 @@ export const createTopicTranslation = async (req: Request, res: Response) => {
       res.status(400).json({ error: 'Missing required fields: topic_id, language_id, title, slug' });
       return;
     }
+    
+    // Format and validate slug format (ensure no spaces, use hyphens)
+    const slugError = validateSlugFormat(slug);
+    if (slugError) {
+      res.status(400).json({ error: `Topic translation slug validation failed: ${slugError}. Slug: "${slug}"` });
+      return;
+    }
+    const formattedSlug = formatSlug(slug);
 
     const translation = await topicService.createTopicTranslation({
       topic_id,
       language_id,
       title,
-      slug,
+      slug: formattedSlug,
       content,
       translated_by_ai: translated_by_ai || false,
       needs_review: needs_review || false,

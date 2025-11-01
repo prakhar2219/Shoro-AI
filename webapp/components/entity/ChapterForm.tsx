@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { getLanguages } from '@/lib/api/entities/language';
+import { formatSlug } from '@/lib/utils';
 
 interface ChapterFormProps {
   initialData?: any;
@@ -201,14 +202,9 @@ export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit,
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     
-    // Special handling for slug field - Allow Unicode characters for multilingual support
+    // Special handling for slug field - Format properly with hyphens instead of spaces
     if (name === 'slug') {
-      const formattedSlug = value
-        .trim()
-        .replace(/\s+/g, '-')  // Replace spaces with hyphens
-        .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters only
-        .replace(/-+/g, '-')  // Replace multiple hyphens with single hyphen
-        .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+      const formattedSlug = formatSlug(value);
       setForm({ ...form, [name]: formattedSlug });
     } else {
       setForm({ ...form, [name]: value });

@@ -259,6 +259,11 @@ export default function TopicsPage() {
   const topicCsvSchema: CsvSchema = {
     title: "Upload Topics CSV",
     description: "Upload a CSV with columns: chapter_id, language_id, supported_language_ids (comma-separated IDs - optional), title, slug, author (optional), tag (optional - comma separated), source (optional), content(HTML - optional), order, is_published. IMPORTANT: Topics belong to Chapters in the educational hierarchy (Board → Class → Subject → Chapter → Topic). Make sure your chapter_id and language_id correspond to existing entities in the system.",
+    orderConfig: {
+      parentField: 'chapter_id',
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { name: "chapter_id", type: "text", required: true } as FieldSchema,
       { name: "language_id", type: "text", required: true } as FieldSchema,
@@ -278,7 +283,10 @@ export default function TopicsPage() {
     try {
       const payload = rows.map(r => {
         const content = r.content || undefined;
-        const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
+        // Standardized order validation: non-negative integer, default 0
+        const order = (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0;
         const is_published = String(r.is_published).toLowerCase() === 'true';
         return {
           chapter_id: r.chapter_id,

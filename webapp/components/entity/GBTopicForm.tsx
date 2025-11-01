@@ -9,6 +9,7 @@ import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { getLanguages } from '@/lib/api/entities/language';
+import { formatSlug } from '@/lib/utils';
 
 interface GBTopicFormProps {
   initialData?: any;
@@ -172,12 +173,7 @@ export function GBTopicForm({ initialData = {}, onSubmit, loading = false }: GBT
             id="slug"
             value={formData.slug}
             onChange={(e) => {
-              const formattedSlug = e.target.value
-                .trim()
-                .replace(/\s+/g, '-')  // Replace spaces with hyphens
-                .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
-                .replace(/-+/g, '-')  // Replace multiple hyphens with single
-                .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+              const formattedSlug = formatSlug(e.target.value);
               setFormData({ ...formData, slug: formattedSlug });
             }}
             placeholder="e.g., ai-basics or कृत्रिम-बुद्धिमत्ता"

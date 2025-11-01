@@ -46,10 +46,19 @@ export function GBQuestionTranslationForm({ initialData, onSubmit, loading = fal
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    // Format slug field to replace spaces with hyphens
+    if (name === 'slug') {
+      const formattedSlug = formatSlug(value);
+      setForm((prev) => ({
+        ...prev,
+        [name]: formattedSlug,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleContentChange = (html: string) => {

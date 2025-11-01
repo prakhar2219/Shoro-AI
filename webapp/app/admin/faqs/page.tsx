@@ -368,6 +368,11 @@ export default function FAQsPage() {
   const faqCsvSchema: CsvSchema = {
     title: "Upload FAQs CSV",
     description: "CSV columns: entity_type, entity_id, question, answer, category(optional), order(optional), is_active(optional true/false), content(HTML - optional)",
+    orderConfig: {
+      parentField: 'entity_id', // FAQs use entity_type + entity_id as parent
+      languageField: null, // FAQs don't have language_id at root, but have supported_language_ids
+      autoIncrement: true
+    },
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -386,7 +391,10 @@ export default function FAQsPage() {
       startLoading();
       const payload = rows.map((r: any) => {
         const content = r.content || undefined
-        const order = r.order !== undefined && r.order !== '' ? Number(r.order) : 0;
+        // Standardized order validation: non-negative integer, default 0
+        const order = (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0;
         const is_active = String(r.is_active).toLowerCase() === 'true';
         return {
           entity_type: r.entity_type,

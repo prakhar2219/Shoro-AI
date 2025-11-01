@@ -22,8 +22,8 @@ const TopicSchema = new Schema<ITopic>(
 TopicSchema.virtual('translation');
 TopicSchema.virtual('translations');
 
-// Compound unique index: order must be unique within each chapter
-TopicSchema.index({ chapter_id: 1, order: 1 }, { unique: true });
+// Compound unique index: order must be unique within each chapter and language
+TopicSchema.index({ chapter_id: 1, language_id: 1, order: 1 }, { unique: true });
 
 export default mongoose.model<ITopic>('Topic', TopicSchema);
 

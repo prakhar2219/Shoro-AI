@@ -259,6 +259,11 @@ export default function GBSubtopicsPage() {
   const gbSubtopicCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Subtopics CSV",
     description: "Upload a CSV with columns: gb_topic_id, name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published. IMPORTANT: GB Subtopics belong to GB Topics in the General Blogging hierarchy (GB Category → GB Topic → GB Subtopic). Make sure your gb_topic_id corresponds to an existing GB topic. You can find GB topic IDs in the GB Topics admin section.",
+    orderConfig: {
+      parentField: 'gb_topic_id',
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { 
         name: "gb_topic_id", 
@@ -337,7 +342,10 @@ export default function GBSubtopicsPage() {
         supported_language_ids: r.supported_language_ids 
           ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
           : [],
-        order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
+        // Standardized order validation: non-negative integer, default 0
+        order: (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0,
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
         source: r.source || undefined,

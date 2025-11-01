@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { LanguageSelector } from '@/components/shared/LanguageSelector';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { getLanguages } from '@/lib/api/entities/language';
+import { formatSlug } from '@/lib/utils';
 
 interface GBCategoryFormProps {
   initialData?: any;
@@ -137,12 +138,7 @@ export function GBCategoryForm({ initialData = {}, onSubmit, loading = false }: 
             id="slug"
             value={formData.slug}
             onChange={(e) => {
-              const formattedSlug = e.target.value
-                .trim()
-                .replace(/\s+/g, '-')  // Replace spaces with hyphens
-                .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
-                .replace(/-+/g, '-')  // Replace multiple hyphens with single
-                .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+              const formattedSlug = formatSlug(e.target.value);
               setFormData({ ...formData, slug: formattedSlug });
             }}
             placeholder="e.g., technology or प्रौद्योगिकी"

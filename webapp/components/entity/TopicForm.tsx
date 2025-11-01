@@ -13,6 +13,7 @@ import { getClassesByBoard } from "@/lib/api/entities/classes";
 import { getSubjects } from "@/lib/api/entities/subjects";
 import { getChapters } from "@/lib/api/entities/chapters";
 import { getLanguages } from "@/lib/api/entities/language";
+import { formatSlug } from "@/lib/utils";
 
 interface TopicFormProps {
   onSubmit: (data: any) => void;
@@ -491,12 +492,7 @@ export function TopicForm({ onSubmit, loading = false, initialData }: TopicFormP
               id="slug"
               value={formData.slug}
               onChange={(e) => {
-                const formattedSlug = e.target.value
-                  .trim()
-                  .replace(/\s+/g, '-')  // Replace spaces with hyphens
-                  .replace(/[#?&%=+]/g, '')  // Remove URL problematic characters
-                  .replace(/-+/g, '-')  // Replace multiple hyphens with single
-                  .replace(/^-|-$/g, '');  // Remove leading/trailing hyphens
+                const formattedSlug = formatSlug(e.target.value);
                 setFormData({ ...formData, slug: formattedSlug });
               }}
               placeholder="e.g., introduction or परिचय"

@@ -3,6 +3,7 @@ import { catchAsync } from '../utils/catchAsync';
 import User from '../models/user.model';
 import AppError from '../utils/appError';
 import * as userService from '../services/user.service';
+import logger from '../config/logger';
 
 // Current user operations
 export const getMe = catchAsync(async (req: Request, res: Response) => {
@@ -55,8 +56,8 @@ export const deleteMe = catchAsync(async (req: Request, res: Response) => {
 export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const { page, limit, role, active, search } = req.query;
 
-  console.log('getAllUsers called with params:', { page, limit, role, active, search });
-  console.log('Requesting user:', req.user?.email, 'Role:', req.user?.role);
+  logger.debug('getAllUsers called with params:', { page, limit, role, active, search });
+  logger.debug('Requesting user:', req.user?.email, 'Role:', req.user?.role);
 
   const result = await userService.getAllUsers({
     page: page ? parseInt(page as string) : undefined,
@@ -66,7 +67,7 @@ export const getAllUsers = catchAsync(async (req: Request, res: Response) => {
     search: search as string,
   });
 
-  console.log('Query result:', { total: result.total, usersCount: result.users.length });
+  logger.debug('Query result:', { total: result.total, usersCount: result.users.length });
 
   res.status(200).json({
     status: 'success',

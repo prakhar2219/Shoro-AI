@@ -279,6 +279,11 @@ export default function GBCategoriesPage() {
   const gbCategoryCsvSchema: CsvSchema = useMemo(() => ({
     title: "Upload GB Categories CSV",
     description: "Upload a CSV with columns: name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published",
+    orderConfig: {
+      parentField: null, // Top-level, no parent
+      languageField: 'language_id',
+      autoIncrement: true
+    },
     fields: [
       { name: "name", type: "text", required: true } as FieldSchema,
       { name: "slug", type: "text", required: true } as FieldSchema,
@@ -329,7 +334,10 @@ export default function GBCategoriesPage() {
         supported_language_ids: r.supported_language_ids 
           ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
           : [],
-        order: typeof r.order === 'number' ? r.order : Number(r.order || 0),
+        // Standardized order validation: non-negative integer, default 0
+        order: (r.order !== undefined && r.order !== '') 
+          ? Math.max(0, Math.floor(Math.abs(Number(r.order)))) 
+          : 0,
         image: r.image || undefined,
         tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
         source: r.source || undefined,

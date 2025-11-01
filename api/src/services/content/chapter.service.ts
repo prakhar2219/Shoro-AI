@@ -115,14 +115,56 @@ export const createChapter = async (data: IChapter) => {
   return await Chapter.create(data);
 };
 
-// Bulk create chapters (with duplicate handling)
+// Bulk create chapters (with enhanced error reporting)
 export const bulkCreateChapters = async (chapters: IChapter[]) => {
+  const results = {
+    inserted: [] as any[],
+    failed: [] as Array<{ index: number; data: Partial<IChapter>; error: string }>,
+    insertedCount: 0,
+    failedCount: 0
+  };
+
   try {
-    return await Chapter.insertMany(chapters as any[], { ordered: false });
+    const bulkResult = await Chapter.insertMany(chapters as any[], { ordered: false });
+    results.inserted = Array.isArray(bulkResult) ? bulkResult : [];
+    results.insertedCount = results.inserted.length;
+    return results;
   } catch (error: any) {
+    // Handle bulk write errors with detailed reporting
     if (error?.writeErrors && error?.insertedIds) {
-      return error.insertedIds;
+      const insertedIds = Object.values(error.insertedIds || {});
+      results.inserted = insertedIds.map((id: any) => ({ _id: id }));
+      results.insertedCount = insertedIds.length;
+
+      // Process write errors for detailed reporting
+      error.writeErrors.forEach((writeError: any) => {
+        const index = writeError.index;
+        const failedChapter = chapters[index];
+        let errorMessage = writeError.errmsg || 'Unknown error';
+        
+        // Enhance error messages for common cases
+        if (writeError.code === 11000) {
+          if (writeError.errmsg.includes('order')) {
+            errorMessage = `Duplicate order ${failedChapter.order} for subject_id ${failedChapter.subject_id} + language_id ${failedChapter.language_id}`;
+          } else if (writeError.errmsg.includes('slug')) {
+            errorMessage = `Duplicate slug "${failedChapter.slug}" for subject_id ${failedChapter.subject_id}`;
+          } else {
+            errorMessage = `Duplicate key violation: ${writeError.errmsg}`;
+          }
+        }
+
+        results.failed.push({
+          index,
+          data: failedChapter,
+          error: errorMessage
+        });
+      });
+
+      results.failedCount = results.failed.length;
+      return results;
     }
+    
+    // If it's not a bulk write error, throw it
     throw error;
   }
 };
