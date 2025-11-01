@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as gbQuestionService from '../../services/content/gbQuestion.service';
 import { IGBQuestion } from '@/types/content/gbQuestion.types';
+import { formatSlug, validateSlugFormat } from '../../utils/validators';
 
 export const createGBQuestion = async (
   req: Request,
@@ -13,6 +14,14 @@ export const createGBQuestion = async (
       res.status(400).json({ error: 'Missing required fields: gb_subtopic_id, question, slug, language_id' });
       return;
     }
+
+    // Format and validate slug format (ensure no spaces, use hyphens)
+    const slugError = validateSlugFormat(slug);
+    if (slugError) {
+      res.status(400).json({ error: `GB Question slug validation failed: ${slugError}. Slug: "${slug}"` });
+      return;
+    }
+    const formattedSlug = formatSlug(slug);
 
     // Validate GB subtopic ID exists
     const { invalid: invalidSubtopics } = await gbQuestionService.validateGBSubtopicIds([gb_subtopic_id.toString()]);
@@ -45,7 +54,7 @@ export const createGBQuestion = async (
     const questionData: IGBQuestion = {
       gb_subtopic_id,
       question,
-      slug,
+      slug: formattedSlug,
       answer,
       content,
       language_id,
@@ -84,6 +93,14 @@ export const bulkCreateGBQuestions = async (
         res.status(400).json({ error: 'Each question must have gb_subtopic_id, question, slug, and language_id' });
         return;
       }
+      
+      // Format and validate slug format (ensure no spaces, use hyphens)
+      const slugError = validateSlugFormat(q.slug);
+      if (slugError) {
+        res.status(400).json({ error: `GB Question slug validation failed: ${slugError}. Slug: "${q.slug}"` });
+        return;
+      }
+      (q as any).slug = formatSlug(q.slug);
       const resolvedLang = await gbQuestionService.resolveLanguageIdentifier((q as any).language_id?.toString());
       if (!resolvedLang) {
         res.status(400).json({ error: `Unable to resolve language_id: ${q.language_id}. Use ObjectId, code, or language name.` });
@@ -172,6 +189,16 @@ export const updateGBQuestion = async (
 ): Promise<void> => {
   try {
     const { slug, gb_subtopic_id, order } = req.body;
+    
+    // Format and validate slug format if slug is being updated
+    if (slug !== undefined) {
+      const slugError = validateSlugFormat(slug);
+      if (slugError) {
+        res.status(400).json({ error: `GB Question slug validation failed: ${slugError}. Slug: "${slug}"` });
+        return;
+      }
+      (req.body as any).slug = formatSlug(slug);
+    }
     
     // Allow duplicate slugs: removed duplicate slug checks
     

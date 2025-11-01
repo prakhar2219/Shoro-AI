@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import * as subtopicService from '../../services/content/subtopic.service';
+import { formatSlug, validateSlugFormat } from '../../utils/validators';
 
 export const createSubtopic = async (req: Request, res: Response) => {
   const { topic_id, language_id, title, slug, order, is_published, created_by, content, tag, source, author } = req.body;
@@ -8,6 +9,14 @@ export const createSubtopic = async (req: Request, res: Response) => {
     res.status(400).json({ error: 'Missing required fields: topic_id, language_id, title, slug' });
     return;
   }
+
+  // Format and validate slug format (ensure no spaces, use hyphens)
+  const slugError = validateSlugFormat(slug);
+  if (slugError) {
+    res.status(400).json({ error: `Subtopic slug validation failed: ${slugError}. Slug: "${slug}"` });
+    return;
+  }
+  const formattedSlug = formatSlug(slug);
 
   const finalOrder = typeof order === 'number' ? order : Number(order || 0);
   
@@ -43,7 +52,7 @@ export const createSubtopic = async (req: Request, res: Response) => {
       topic_id,
       language_id,
       title,
-      slug,
+      slug: formattedSlug,
       content,
       order: finalOrder,
       is_published: !!is_published,
@@ -78,6 +87,14 @@ export const bulkCreateSubtopics = async (req: Request, res: Response) => {
         res.status(400).json({ error: 'Each subtopic must have topic_id, language_id, title, and slug' });
         return;
       }
+      
+      // Format and validate slug format (ensure no spaces, use hyphens)
+      const slugError = validateSlugFormat(s.slug);
+      if (slugError) {
+        res.status(400).json({ error: `Subtopic slug validation failed: ${slugError}. Slug: "${s.slug}"` });
+        return;
+      }
+      (s as any).slug = formatSlug(s.slug);
       const resolvedLang = await subtopicService.resolveLanguageIdentifier(s.language_id.toString());
       if (!resolvedLang) {
         res.status(400).json({ error: `Unable to resolve language_id: ${s.language_id}. Use ObjectId, code, or language name.` });
@@ -178,6 +195,16 @@ export const getSubtopic = async (req: Request, res: Response) => {
 
 export const updateSubtopic = async (req: Request, res: Response) => {
   try {
+    // Format and validate slug format if slug is being updated
+    if (req.body.slug !== undefined) {
+      const slugError = validateSlugFormat(req.body.slug);
+      if (slugError) {
+        res.status(400).json({ error: `Subtopic slug validation failed: ${slugError}. Slug: "${req.body.slug}"` });
+        return;
+      }
+      (req.body as any).slug = formatSlug(req.body.slug);
+    }
+    
     const row = await subtopicService.updateSubtopic(req.params.id, req.body);
     if (!row) {
       res.status(404).json({ error: 'Subtopic not found' });

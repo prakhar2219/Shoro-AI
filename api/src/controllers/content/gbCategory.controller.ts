@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import * as gbCategoryService from '../../services/content/gbCategory.service';
 import { IGBCategory } from '@/types/content/gbCategory.types';
+import { formatSlug, validateSlugFormat } from '../../utils/validators';
 
 export const createGBCategory = async (
   req: Request,
@@ -13,6 +14,14 @@ export const createGBCategory = async (
       res.status(400).json({ error: 'Missing required fields: name, slug, language_id' });
       return;
     }
+
+    // Format and validate slug format (ensure no spaces, use hyphens)
+    const slugError = validateSlugFormat(slug);
+    if (slugError) {
+      res.status(400).json({ error: `GB Category slug validation failed: ${slugError}. Slug: "${slug}"` });
+      return;
+    }
+    const formattedSlug = formatSlug(slug);
 
     // Validate language_id exists
     const { valid, invalid } = await gbCategoryService.validateLanguageIds([language_id]);
@@ -35,7 +44,7 @@ export const createGBCategory = async (
 
     const categoryData: IGBCategory = {
       name,
-      slug,
+      slug: formattedSlug,
       description,
       content,
       language_id,
@@ -73,6 +82,15 @@ export const bulkCreateGBCategories = async (
         res.status(400).json({ error: 'Each category must have name, slug, and language_id' });
         return;
       }
+      
+      // Format and validate slug format (ensure no spaces, use hyphens)
+      const slugError = validateSlugFormat(c.slug);
+      if (slugError) {
+        res.status(400).json({ error: `GB Category slug validation failed: ${slugError}. Slug: "${c.slug}"` });
+        return;
+      }
+      (c as any).slug = formatSlug(c.slug);
+      
       const resolvedLang = await gbCategoryService.resolveLanguageIdentifier((c as any).language_id?.toString());
       if (!resolvedLang) {
         res.status(400).json({ error: `Unable to resolve language_id: ${c.language_id}. Use ObjectId, code, or language name.` });
@@ -155,6 +173,16 @@ export const updateGBCategory = async (
 ): Promise<void> => {
   try {
     const { slug, language_id, order } = req.body;
+    
+    // Format and validate slug format if slug is being updated
+    if (slug !== undefined) {
+      const slugError = validateSlugFormat(slug);
+      if (slugError) {
+        res.status(400).json({ error: `GB Category slug validation failed: ${slugError}. Slug: "${slug}"` });
+        return;
+      }
+      (req.body as any).slug = formatSlug(slug);
+    }
     
     // Allow duplicate slugs: removed duplicate slug checks
     

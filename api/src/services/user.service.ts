@@ -1,6 +1,7 @@
 import User from '../models/user.model';
 import AppError from '../utils/appError';
 import { IUser } from '../interfaces/user.interface';
+import logger from '../config/logger';
 
 interface QueryOptions {
   page?: number;
@@ -25,8 +26,8 @@ export const getAllUsers = async (options: QueryOptions) => {
     ];
   }
 
-  console.log('User Service - Query filter:', JSON.stringify(filter));
-  console.log('User Service - Skip:', skip, 'Limit:', limit);
+  logger.debug('User Service - Query filter:', JSON.stringify(filter));
+  logger.debug('User Service - Skip:', skip, 'Limit:', limit);
 
   const [users, total] = await Promise.all([
     User.find(filter)
@@ -37,7 +38,7 @@ export const getAllUsers = async (options: QueryOptions) => {
     User.countDocuments(filter),
   ]);
 
-  console.log('User Service - Found users:', users.length, 'Total in DB:', total);
+  logger.debug('User Service - Found users:', users.length, 'Total in DB:', total);
 
   return {
     users,
