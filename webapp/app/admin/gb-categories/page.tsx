@@ -13,6 +13,7 @@ import { useAdminPage } from "@/hooks/use-admin-page";
 import { ColumnDef } from "@tanstack/react-table";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { useToast } from "@/hooks/use-toast";
+import { formatSlug } from "@/lib/utils";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TranslationManagementSection } from "@/components/shared/TranslationManagementSection";
@@ -280,7 +281,6 @@ export default function GBCategoriesPage() {
     title: "Upload GB Categories CSV",
     description: "Upload a CSV with columns: name, slug, description, content, language_id, supported_language_ids (comma-separated IDs - optional), order, image, tag, source, author, is_published",
     orderConfig: {
-      parentField: null, // Top-level, no parent
       languageField: 'language_id',
       autoIncrement: true
     },
@@ -327,7 +327,7 @@ export default function GBCategoriesPage() {
     try {
       const payload = rows.map(r => ({
         name: r.name,
-        slug: r.slug,
+        slug: formatSlug(r.slug),
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,

@@ -45,6 +45,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
   const [subtopics, setSubtopics] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<any>(null);
   const [selectedTopic, setSelectedTopic] = useState<any>(null);
+  const [selectedSubtopic, setSelectedSubtopic] = useState<any>(null);
 
   // Check if we're editing existing question (has _id) vs adding new question (no _id)
   const isEditMode = Boolean(initialData && initialData._id);
@@ -122,6 +123,16 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
               return sTopicId === formData.gb_topic_id;
             });
             setSubtopics(filtered);
+            // Preselect subtopic in edit mode if present
+            if (isEditMode) {
+              const currentId = typeof (initialData as any)?.gb_subtopic_id === 'object'
+                ? (initialData as any).gb_subtopic_id._id
+                : (initialData as any)?.gb_subtopic_id;
+              if (currentId) {
+                const found = filtered.find((s: any) => s._id === currentId);
+                if (found) setSelectedSubtopic(found);
+              }
+            }
           }
         } catch (error) {
           console.error('Error fetching subtopics:', error);
@@ -130,6 +141,7 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       fetchSubtopics();
     } else {
       setSubtopics([]);
+      setSelectedSubtopic(null);
     }
     if (!isEditMode) {
       setFormData(prev => ({ ...prev, gb_subtopic_id: '' }));
@@ -146,7 +158,10 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
           const subtopicData = await subtopicResponse.json();
           if (subtopicResponse.ok) {
             const allSubtopics = subtopicData.data || subtopicData || [];
-            const subtopic = allSubtopics.find((s: any) => s._id === initialData.gb_subtopic_id);
+            const subtopicId = typeof (initialData as any).gb_subtopic_id === 'object'
+              ? (initialData as any).gb_subtopic_id._id
+              : (initialData as any).gb_subtopic_id;
+            const subtopic = allSubtopics.find((s: any) => s._id === subtopicId);
             if (subtopic) {
               const topicId = typeof subtopic.gb_topic_id === 'object' ? subtopic.gb_topic_id._id : subtopic.gb_topic_id;
               
@@ -170,6 +185,10 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
                   } else {
                     const cat = categories.find((c: any) => c._id === categoryId);
                     if (cat) setSelectedCategory(cat);
+                  }
+                  // If initial subtopic object is present, keep for display
+                  if ((initialData as any)?.gb_subtopic && typeof (initialData as any).gb_subtopic === 'object') {
+                    setSelectedSubtopic((initialData as any).gb_subtopic);
                   }
                 }
               }
@@ -222,6 +241,9 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
         is_published: initialData.is_published || false,
       });
       setSupportedLanguageIds(initialData.supported_language_ids || []);
+      if ((initialData as any)?.gb_subtopic && typeof (initialData as any).gb_subtopic === 'object') {
+        setSelectedSubtopic((initialData as any).gb_subtopic);
+      }
     }
   }, [initialData?._id, initialData?.gb_subtopic_id]); // Only depend on stable IDs to prevent infinite loops
 
@@ -315,9 +337,12 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       <div>
         <Label htmlFor="gb_category_id">GB Category</Label>
         {isEditMode ? (
-          <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-            {selectedCategory?.name || (initialData as any)?.gb_category?.name || categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
-          </div>
+          <Input
+            id="gb_category_id"
+            value={selectedCategory?.name || (initialData as any)?.gb_category?.name || categories.find((c) => c._id === formData.gb_category_id)?.name || '-'}
+            disabled
+            className="bg-gray-100"
+          />
         ) : (
           <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
             <SelectTrigger>
@@ -337,9 +362,12 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
       <div>
         <Label htmlFor="gb_topic_id">GB Topic</Label>
         {isEditMode ? (
-          <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-            {selectedTopic?.name || (initialData as any)?.gb_topic?.name || topics.find((t) => t._id === formData.gb_topic_id)?.name || '-'}
-          </div>
+          <Input
+            id="gb_topic_id"
+            value={selectedTopic?.name || (initialData as any)?.gb_topic?.name || topics.find((t) => t._id === formData.gb_topic_id)?.name || '-'}
+            disabled
+            className="bg-gray-100"
+          />
         ) : (
           <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
             <SelectTrigger>
@@ -358,18 +386,27 @@ export function GBQuestionForm({ initialData = {}, onSubmit, loading = false }: 
 
       <div>
         <Label htmlFor="gb_subtopic_id">GB Subtopic *</Label>
-        <Select value={formData.gb_subtopic_id} onValueChange={(value) => setFormData({ ...formData, gb_subtopic_id: value })} disabled={!formData.gb_topic_id && !isEditMode} required>
-          <SelectTrigger>
-            <SelectValue placeholder="Select GB Subtopic" />
-          </SelectTrigger>
-          <SelectContent>
-            {subtopics.map((subtopic) => (
-              <SelectItem key={subtopic._id} value={subtopic._id}>
-                {subtopic.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {isEditMode ? (
+          <Input
+            id="gb_subtopic_id"
+            value={selectedSubtopic?.name || subtopics.find((s) => s._id === formData.gb_subtopic_id)?.name || '-'}
+            disabled
+            className="bg-gray-100"
+          />
+        ) : (
+          <Select value={formData.gb_subtopic_id} onValueChange={(value) => setFormData({ ...formData, gb_subtopic_id: value })} disabled={!formData.gb_topic_id && !isEditMode} required>
+            <SelectTrigger>
+              <SelectValue placeholder="Select GB Subtopic" />
+            </SelectTrigger>
+            <SelectContent>
+              {subtopics.map((subtopic) => (
+                <SelectItem key={subtopic._id} value={subtopic._id}>
+                  {subtopic.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <div>

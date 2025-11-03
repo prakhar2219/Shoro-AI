@@ -34,6 +34,8 @@ export function formatSlug(value: string): string {
     .replace(/[\s\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000\uFEFF]+/g, '-')
     // Remove URL problematic characters
     .replace(/[#?&%=+]/g, '')
+    // Allow any Unicode letters/numbers; remove other punctuation except hyphen
+    .replace(/[^\p{L}\p{N}-]/gu, '')
     // Replace multiple consecutive hyphens with single hyphen
     .replace(/-+/g, '-')
     // Remove leading and trailing hyphens
@@ -51,6 +53,12 @@ export function validateSlugFormat(slug: string): string | null {
   // Check for any whitespace characters
   if (/[\s\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000\uFEFF]/.test(slug)) {
     return 'Slug cannot contain spaces. Use hyphens (-) instead (e.g., "this-word-ending")';
+  }
+
+  // Strict rule: after formatting, allow only letters, numbers and hyphens
+  const formatted = formatSlug(slug);
+  if (!/^[\p{L}\p{N}-]+$/u.test(formatted)) {
+    return 'Slug may only contain letters, numbers, and hyphens (-)';
   }
   
   return null;

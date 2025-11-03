@@ -19,6 +19,7 @@ import { createSubtopic } from "@/lib/api/entities/subtopics";
 import { getChapters } from "@/lib/api/entities/chapters";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { downloadCSV } from "@/lib/utils/csv-utils";
+import { formatSlug } from "@/lib/utils";
 import { EntityActionDropdown } from "@/components/shared/EntityActionDropdown";
 import { getLanguages, ILanguage } from '@/lib/api/entities/language';
 import { api } from '@/lib/api/axios';
@@ -295,7 +296,7 @@ export default function TopicsPage() {
             ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
             : [],
           title: r.title,
-          slug: r.slug,
+          slug: formatSlug(r.slug),
           author: r.author || undefined,
           tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
           source: r.source || undefined,

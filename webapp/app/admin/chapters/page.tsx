@@ -23,6 +23,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { CsvUploadDialog, CsvSchema, FieldSchema } from "@/components/shared/CsvUploadDialog";
 import { useToast } from "@/hooks/use-toast";
 import { downloadCSV } from "@/lib/utils/csv-utils";
+import { formatSlug } from "@/lib/utils";
 
 type Chapter = any;
 
@@ -331,7 +332,7 @@ export default function ChapterAdminPage() {
             ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id)
             : [],
           title: r.title,
-          slug: r.slug,
+          slug: formatSlug(r.slug),
           author: r.author || undefined,
           tag: r.tag ? r.tag.split(',').map((t: string) => t.trim()) : [],
           source: r.source || undefined,

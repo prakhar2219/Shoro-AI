@@ -132,7 +132,10 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
           const data = await response.json();
           if (response.ok) {
             const allTopics = data.data || data || [];
-            const topic = allTopics.find((t: any) => t._id === initialData.gb_topic_id);
+            const initialTopicId = typeof (initialData as any).gb_topic_id === 'object'
+              ? (initialData as any).gb_topic_id._id
+              : (initialData as any).gb_topic_id;
+            const topic = allTopics.find((t: any) => t._id === initialTopicId);
             if (topic) {
               const categoryId = typeof topic.gb_category_id === 'object' ? topic.gb_category_id._id : topic.gb_category_id;
               setFormData(prev => ({
@@ -311,16 +314,17 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
           <div>
             <Label htmlFor="gb_category_id">GB Category</Label>
             {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {(
-                  selectedCategory?.name ||
-                  // Prefer initialData nested objects if available, then categories list
+              <Input
+                id="gb_category_id"
+                value={(selectedCategory?.name) ||
+                  (typeof selectedTopic?.gb_category_id === 'object' && (selectedTopic as any).gb_category_id?.name) ||
                   (initialData?.gb_topic && typeof initialData.gb_topic.gb_category_id === 'object' && initialData.gb_topic.gb_category_id?.name) ||
                   (typeof initialData?.gb_category_id === 'object' && (initialData.gb_category_id as any)?.name) ||
                   categories.find((c) => c._id === formData.gb_category_id)?.name ||
-                  '-'
-                )}
-              </div>
+                  '-'}
+                disabled
+                className="bg-gray-100"
+              />
             ) : (
               <Select value={formData.gb_category_id} onValueChange={(value) => setFormData({ ...formData, gb_category_id: value })}>
                 <SelectTrigger>
@@ -340,9 +344,15 @@ export function GBSubtopicForm({ initialData = {}, onSubmit, loading = false }: 
           <div>
             <Label htmlFor="gb_topic_id">GB Topic *</Label>
             {isEditMode ? (
-              <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
-                {(selectedTopic?.name) || (typeof initialData?.gb_topic_id === 'object' && (initialData.gb_topic_id as any)?.name) || topics.find((t: any) => t._id === formData.gb_topic_id)?.name || '-'}
-              </div>
+              <Input
+                id="gb_topic_id"
+                value={(selectedTopic?.name) ||
+                  (typeof initialData?.gb_topic_id === 'object' && (initialData.gb_topic_id as any)?.name) ||
+                  topics.find((t: any) => t._id === formData.gb_topic_id)?.name ||
+                  '-'}
+                disabled
+                className="bg-gray-100"
+              />
             ) : (
               <Select value={formData.gb_topic_id} onValueChange={(value) => setFormData({ ...formData, gb_topic_id: value })} disabled={!formData.gb_category_id}>
                 <SelectTrigger>
