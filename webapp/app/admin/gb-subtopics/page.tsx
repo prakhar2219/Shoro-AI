@@ -20,6 +20,7 @@ import { GlobalContentManagement } from "@/components/shared/GlobalContentManage
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBSubtopicTranslationForm } from "@/components/entity/GBSubtopicTranslationForm";
+import { formatSlug } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 
@@ -335,7 +336,7 @@ export default function GBSubtopicsPage() {
         gb_topic_id: r.gb_topic_id,
         // Note: Reference columns (gb_topic_name, gb_category_name) are ignored during upload
         name: r.name,
-        slug: r.slug,
+        slug: formatSlug(r.slug),
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,

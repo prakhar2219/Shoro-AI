@@ -122,6 +122,8 @@ export const getSubtopics = async (topic_id?: string) => {
         }
       }
     })
+    .populate('language_id')
+    .lean()
     .sort({ order: 1 });
 };
 

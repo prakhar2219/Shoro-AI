@@ -22,6 +22,7 @@ import { GlobalContentManagement } from "@/components/shared/GlobalContentManage
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBTopicTranslationForm } from "@/components/entity/GBTopicTranslationForm";
+import { formatSlug } from "@/lib/utils";
 
 type GBTopic = IGBTopic;
 type GBTopicInput = Omit<IGBTopic, '_id' | 'createdAt' | 'updatedAt'>;
@@ -370,7 +371,7 @@ export default function GBTopicsPage() {
         gb_category_id: r.gb_category_id,
         // Note: Reference column (gb_category_name) is ignored during upload
         name: r.name,
-        slug: r.slug,
+        slug: formatSlug(r.slug),
         description: r.description || undefined,
         content: r.content || undefined,
         language_id: r.language_id,

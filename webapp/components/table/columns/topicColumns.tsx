@@ -75,6 +75,10 @@ export const topicColumns: ColumnDef<ITopic>[] = [
       if (classs && typeof classs === "object" && "name" in classs) {
         return <span>{classs.name}</span>;
       }
+      if (typeof chapter?.subject_id?.class_id === 'string') {
+        const id = String(chapter.subject_id.class_id);
+        return <code className="text-xs text-zinc-400">{id.substring(0, 8)}...</code>;
+      }
       return <span className="text-zinc-400 italic">Unknown</span>;
     },
   },
@@ -87,6 +91,10 @@ export const topicColumns: ColumnDef<ITopic>[] = [
       if (subject && typeof subject === "object" && "name" in subject) {
         return <span>{subject.name}</span>;
       }
+      if (typeof chapter?.subject_id === 'string') {
+        const id = String(chapter.subject_id);
+        return <code className="text-xs text-zinc-400">{id.substring(0, 8)}...</code>;
+      }
       return <span className="text-zinc-400 italic">Unknown</span>;
     },
   },
@@ -98,6 +106,10 @@ export const topicColumns: ColumnDef<ITopic>[] = [
       if (chapter && typeof chapter === 'object' && 'title' in chapter) {
         return <span>{chapter.title}</span>;
       }
+      if (typeof row.original.chapter_id === 'string') {
+        const id = String(row.original.chapter_id);
+        return <code className="text-xs text-zinc-400">{id.substring(0, 8)}...</code>;
+      }
       return <span className="text-zinc-400 italic">Unknown</span>;
     }
   },
@@ -108,6 +120,10 @@ export const topicColumns: ColumnDef<ITopic>[] = [
       const language = row.original.language_id;
       if (language && typeof language === 'object' && 'name' in language) {
         return <span>{language.name} ({language.code})</span>;
+      }
+      if (typeof row.original.language_id === 'string') {
+        const id = String(row.original.language_id);
+        return <code className="text-xs text-zinc-400">{id.substring(0, 8)}...</code>;
       }
       return <span className="text-zinc-400 italic">Unknown</span>;
     },

@@ -26,6 +26,7 @@ export function formatSlug(value: string): string {
     .replace(/[\s\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000\uFEFF]+/g, '-')
     // Remove URL problematic characters
     .replace(/[#?&%=+]/g, '')
+    // Keep Unicode letters/numbers; we only remove known problematic URL chars above
     // Replace multiple consecutive hyphens with single hyphen
     .replace(/-+/g, '-')
     // Remove leading and trailing hyphens

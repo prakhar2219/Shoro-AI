@@ -21,6 +21,7 @@ import { GlobalContentManagement } from "@/components/shared/GlobalContentManage
 import { ContentFormModals } from "@/components/shared/ContentFormModals";
 import { api } from '@/lib/api/axios';
 import { GBQuestionTranslationForm } from "@/components/entity/GBQuestionTranslationForm";
+import { formatSlug } from "@/lib/utils";
 
 type GBQuestion = IGBQuestion;
 type GBQuestionInput = Omit<IGBQuestion, '_id' | 'createdAt' | 'updatedAt'>;
@@ -355,7 +356,7 @@ export default function GBQuestionsPage() {
         gb_subtopic_id: r.gb_subtopic_id,
         // Note: Reference columns (gb_subtopic_name, gb_topic_name, gb_category_name) are ignored during upload
         question: r.question,
-        slug: r.slug,
+        slug: formatSlug(r.slug),
         answer: r.answer || undefined,
         content: r.content || undefined,
         language_id: r.language_id,

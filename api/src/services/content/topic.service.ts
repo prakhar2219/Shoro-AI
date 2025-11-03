@@ -127,6 +127,8 @@ export const getTopics = async (chapter_id?: string) => {
         }
       }
     })
+    .populate('language_id')
+    .lean()
     .sort({ order: 1 });
 };
 
@@ -185,6 +187,49 @@ export const getTopicWithTranslations = async (id: string) => {
     ...topic.toObject(),
     translations
   };
+};
+
+// Scan for orphaned/missing references to help FE debug "Unknown" labels
+export const findTopicReferenceIssues = async () => {
+  const rows = await Topic.find({})
+    .populate({
+      path: 'chapter_id',
+      populate: {
+        path: 'subject_id',
+        populate: {
+          path: 'class_id',
+          populate: { path: 'board_id' }
+        }
+      }
+    })
+    .populate('language_id')
+    .select(['_id', 'chapter_id', 'language_id']);
+
+  const issues: Array<any> = [];
+  for (const t of rows) {
+    const chapter: any = (t as any).chapter_id;
+    if (!chapter) {
+      issues.push({ topic_id: t._id, issue: 'missing_chapter', details: {} });
+      continue;
+    }
+    const subject = (chapter as any).subject_id;
+    if (!subject) {
+      issues.push({ topic_id: t._id, issue: 'missing_subject', details: { chapter_id: chapter._id || chapter } });
+      continue;
+    }
+    const classs = (subject as any).class_id;
+    if (!classs) {
+      issues.push({ topic_id: t._id, issue: 'missing_class', details: { subject_id: subject._id || subject } });
+      continue;
+    }
+    const board = (classs as any).board_id;
+    if (!board) {
+      issues.push({ topic_id: t._id, issue: 'missing_board', details: { class_id: classs._id || classs } });
+      continue;
+    }
+  }
+
+  return { count: issues.length, issues };
 };
 
 

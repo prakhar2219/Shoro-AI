@@ -2,6 +2,15 @@ import { Request, Response } from 'express';
 import * as topicService from '../../services/content/topic.service';
 import { formatSlug, validateSlugFormat } from '../../utils/validators';
 
+export const getTopicsIntegrity = async (_req: Request, res: Response) => {
+  try {
+    const issues = await topicService.findTopicReferenceIssues();
+    res.status(200).json(issues);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+};
+
 export const createTopic = async (req: Request, res: Response) => {
   const { 
     chapter_id, 
