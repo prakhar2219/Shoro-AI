@@ -94,11 +94,12 @@ async function startServer() {
   app.use(errorHandler);
 
   // Start server
-  const server = app.listen(Number(CONFIG.PORT), '0.0.0.0', () => {
-    logger.info(`🚀 Server ready at http://localhost:${CONFIG.PORT}`);
-    logger.info(`🚀 GraphQL endpoint: http://localhost:${CONFIG.PORT}/api/v1/graphql`);
-  });
+  const PORT: number = Number(process.env.PORT) || CONFIG.PORT || 8000;
 
+  const server = app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`🚀 Server ready at http://0.0.0.0:${PORT}`);
+    logger.info(`🚀 GraphQL endpoint: http://0.0.0.0:${PORT}/api/v1/graphql`);
+  });
   return server;
 }
 
