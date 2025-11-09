@@ -24,6 +24,8 @@
   "author": "Pankaj Tulshyan",
   "license": "ISC",
   "dependencies": {
-    "@tanstack/react-table": "^8.21.3"
+    "@apollo/server": "^5.1.0",
+    "@tanstack/react-table": "^8.21.3",
+    "graphql": "^16.12.0"
   }
 }
