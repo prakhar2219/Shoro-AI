@@ -6,8 +6,12 @@ const GBCategorySchema = new Schema<IGBCategory>(
     name: { type: String, required: true, trim: true },
     slug: { type: String, required: true, trim: true },
     description: { type: String, trim: true },
-    content: { type: String, required: false },
+    content: { type: String },
     language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+
+    // ✅ Correctly added Country field
+    country_id: { type: Schema.Types.ObjectId, ref: 'Country', default: null },
+
     supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
     order: { type: Number, required: true, default: 0 },
     image: { type: String, trim: true },
@@ -20,11 +24,11 @@ const GBCategorySchema = new Schema<IGBCategory>(
   { timestamps: true }
 );
 
-// Virtuals for translation and translations (for FE/BE consistency)
+// Virtuals
 GBCategorySchema.virtual('translation');
 GBCategorySchema.virtual('translations');
 
-// Compound unique index: order must be unique within each language
+// Unique index inside each language
 GBCategorySchema.index({ language_id: 1, order: 1 }, { unique: true });
 
 export default mongoose.model<IGBCategory>('GBCategory', GBCategorySchema);

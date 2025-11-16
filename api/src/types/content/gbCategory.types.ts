@@ -6,7 +6,12 @@ export interface IGBCategory extends Document {
   slug: string;
   description?: string;
   content?: string;
+
   language_id: Types.ObjectId;
+
+  // ✅ FIXED: No mongoose import, same type style as others
+  country_id?: Types.ObjectId | string | null;
+
   supported_language_ids?: Types.ObjectId[];
   order: number;
   image?: string;
@@ -15,6 +20,7 @@ export interface IGBCategory extends Document {
   author?: string;
   is_published: boolean;
   created_by?: Types.ObjectId;
+
   createdAt: Date;
   updatedAt: Date;
 }

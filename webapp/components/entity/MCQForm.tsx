@@ -5,10 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RichTextEditor } from "@/components/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+
 import { getChapters } from "@/lib/api/entities/chapters";
 import { getCountries } from "@/lib/api/entities/countries";
 import { getBoards } from "@/lib/api/entities/boards";
@@ -20,6 +27,17 @@ import { getGBSubtopics } from "@/lib/api/entities/gbSubtopics";
 import { getTopics } from "@/lib/api/entities/topics";
 import { getSubtopics } from "@/lib/api/entities/subtopics";
 import { getLanguages } from "@/lib/api/entities/language";
+
+// --------------------------------------------------------------------
+// 🔧 SAFETY HELPER — Fixes "type never" and makes all API calls safe
+// --------------------------------------------------------------------
+function normalizeList(res: any): any[] {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (res.items && Array.isArray(res.items)) return res.items;
+  return [];
+}
 
 interface MCQFormProps {
   onSubmit: (data: any) => void;
@@ -34,191 +52,307 @@ interface MCQFormProps {
     difficulty?: string;
     tags?: string[];
     content?: any;
+    supported_language_ids?: string[];
   };
   entityType?: string;
   entityId?: string;
 }
 
-export function MCQForm({ onSubmit, loading = false, initialData, entityType, entityId }: MCQFormProps) {
+export function MCQForm({
+  onSubmit,
+  loading = false,
+  initialData,
+  entityType,
+  entityId,
+}: MCQFormProps) {
+  // --------------------------------------------------------------------
+  // Form State
+  // --------------------------------------------------------------------
   const [form, setForm] = useState({
     entity_type: entityType || initialData?.entity_type || "",
     entity_id: entityId || initialData?.entity_id || "",
     question: initialData?.question || "",
-    options: initialData?.options || [
-      { key: "A", text: "" },
-      { key: "B", text: "" },
-      { key: "C", text: "" },
-      { key: "D", text: "" }
-    ],
+    options:
+      initialData?.options || [
+        { key: "A", text: "" },
+        { key: "B", text: "" },
+        { key: "C", text: "" },
+        { key: "D", text: "" },
+      ],
     correct_answer: initialData?.correct_answer || "A",
     explanation: initialData?.explanation || "",
     difficulty: initialData?.difficulty || "medium",
     tags: initialData?.tags || [],
-    content: typeof initialData?.content === 'string' ? initialData.content : '',
+    content:
+      typeof initialData?.content === "string" ? initialData.content : "",
   });
 
   const [newTag, setNewTag] = useState("");
-  const [entityOptions, setEntityOptions] = useState<Array<{ id: string; label: string }>>([]);
-  // Core hierarchy filters
+
+  // --------------------------------------------------------------------
+  // Core Entity Collections
+  // --------------------------------------------------------------------
   const [boards, setBoards] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [chapters, setChapters] = useState<any[]>([]);
-  const [selectedBoardId, setSelectedBoardId] = useState<string>("");
-  const [selectedClassId, setSelectedClassId] = useState<string>("");
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
-  const [selectedChapterId, setSelectedChapterId] = useState<string>("");
   const [topics, setTopics] = useState<any[]>([]);
-  const [selectedTopicId, setSelectedTopicId] = useState<string>("");
-  // GB hierarchy filters
+
+  // --------------------------------------------------------------------
+  // Selected hierarchy nodes
+  // --------------------------------------------------------------------
+  const [selectedBoardId, setSelectedBoardId] = useState("");
+  const [selectedClassId, setSelectedClassId] = useState("");
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [selectedChapterId, setSelectedChapterId] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState("");
+
+  // --------------------------------------------------------------------
+  // GB Entities
+  // --------------------------------------------------------------------
   const [gbCategories, setGbCategories] = useState<any[]>([]);
   const [gbTopics, setGbTopics] = useState<any[]>([]);
-  const [selectedGbCategoryId, setSelectedGbCategoryId] = useState<string>("");
-  const [selectedGbTopicId, setSelectedGbTopicId] = useState<string>("");
-  const [languages, setLanguages] = useState<any[]>([]);
-  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
+  const [selectedGbCategoryId, setSelectedGbCategoryId] = useState("");
+  const [selectedGbTopicId, setSelectedGbTopicId] = useState("");
 
-  // Prefetch lightweight lists for filters
+  // --------------------------------------------------------------------
+  // Language Entities
+  // --------------------------------------------------------------------
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(
+    initialData?.supported_language_ids || []
+  );
+
+  // Final entity list for entity_id dropdown
+  const [entityOptions, setEntityOptions] = useState<
+    Array<{ id: string; label: string }>
+  >([]);
+
+  // --------------------------------------------------------------------
+  // INITIAL PREFETCH of all lists
+  // --------------------------------------------------------------------
   useEffect(() => {
-    const prefetch = async () => {
-      try {
-        const [b, c, s, ch, gbc, gbt, langs] = await Promise.all([
-          getBoards().catch(() => []),
-          getClasses().catch(() => []),
-          getSubjects().catch(() => []),
-          getChapters({ page: 1, limit: 100 } as any).catch(() => ({ data: [] })),
-          getGBCategories({ page: 1, limit: 100 }).catch(() => ({ data: [] })),
-          getGBTopics({ page: 1, limit: 100 }).catch(() => ({ data: [] })),
-          getLanguages().catch(() => ([] as any[])),
-        ] as any);
-        setBoards(Array.isArray(b) ? b : []);
-        setClasses(Array.isArray(c) ? c : (c?.data || []));
-        setSubjects(Array.isArray(s) ? s : (s?.data || []));
-        setChapters(Array.isArray(ch) ? ch : (ch?.data || []));
-        setGbCategories((gbc as any).data || []);
-        setGbTopics((gbt as any).data || []);
-        setLanguages(Array.isArray(langs) ? langs : (langs?.data || []));
-      } catch {}
+    const load = async () => {
+      const [b, c, s, ch, gbc, gbt, langs] = await Promise.all([
+        getBoards().catch(() => []),
+        getClasses().catch(() => []),
+        getSubjects().catch(() => []),
+        getChapters({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
+        getGBCategories({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
+        getGBTopics({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
+        getLanguages().catch(() => []),
+      ]);
+
+      setBoards(normalizeList(b));
+      setClasses(normalizeList(c));
+      setSubjects(normalizeList(s));
+      setChapters(normalizeList(ch));
+      setGbCategories(normalizeList(gbc));
+      setGbTopics(normalizeList(gbt));
+      setLanguages(normalizeList(langs));
     };
-    prefetch();
+
+    load();
   }, []);
 
-  // Refresh GB Topics when category changes for better filtering
+  // --------------------------------------------------------------------
+  // Load TOPICS when Chapter changes
+  // --------------------------------------------------------------------
   useEffect(() => {
     const loadTopics = async () => {
-      if (!selectedGbCategoryId) return;
-      try {
-        const res = await getGBTopics({ page: 1, limit: 100, gb_category_id: selectedGbCategoryId });
-        setGbTopics((res as any).data || []);
-      } catch {}
-    };
-    loadTopics();
-  }, [selectedGbCategoryId]);
+      if (!selectedChapterId) return setTopics([]);
 
-  // Refresh Topics when chapter changes; Subtopics when topic changes
-  useEffect(() => {
-    const loadTopics = async () => {
-      if (!selectedChapterId) { setTopics([]); return; }
-      try {
-        const list = await getTopics(selectedChapterId);
-        setTopics(Array.isArray(list) ? list : (list as any)?.data || []);
-      } catch { setTopics([]); }
+      const list = await getTopics(selectedChapterId).catch(() => []);
+      setTopics(normalizeList(list));
     };
+
     loadTopics();
   }, [selectedChapterId]);
 
+  // --------------------------------------------------------------------
+  // Load SUBTOPICS when Topic changes (for entity_type=Subtopic)
+  // --------------------------------------------------------------------
   useEffect(() => {
-    const loadSubtopics = async () => {
-      if (!selectedTopicId) return;
-      try {
-        const list = await getSubtopics(selectedTopicId);
-        setEntityOptions((Array.isArray(list) ? list : (list as any)?.data || []).map((x: any) => ({ id: x._id, label: x.title || x.name })));
-      } catch {}
+    if (form.entity_type !== "Subtopic") return;
+
+    const load = async () => {
+      if (!selectedTopicId) return setEntityOptions([]);
+
+      const res = await getSubtopics(selectedTopicId).catch(() => []);
+      setEntityOptions(
+        normalizeList(res).map((x: any) => ({
+          id: x._id,
+          label: x.title || x.name,
+        }))
+      );
     };
-    if (form.entity_type === 'Subtopic') loadSubtopics();
+
+    load();
   }, [selectedTopicId, form.entity_type]);
 
+  // --------------------------------------------------------------------
+  // Build entityOptions whenever entity_type changes
+  // --------------------------------------------------------------------
   useEffect(() => {
     const load = async () => {
       const type = form.entity_type || entityType;
-      if (!type) { setEntityOptions([]); return; }
-      try {
-        if (type === 'Chapter') {
-          const res: any = await getChapters({ page: 1, limit: 100, board_id: selectedBoardId || undefined, class_id: selectedClassId || undefined, subject_id: selectedSubjectId || undefined } as any);
-          const list: any[] = Array.isArray(res) ? res : res?.data || [];
-          setEntityOptions(list.map((c: any) => ({ id: c._id, label: c.title })));
-        } else if (type === 'Country') {
-          const list: any[] = await getCountries();
-          setEntityOptions(list.map((x: any) => ({ id: x._id || x.id, label: x.name })));
-        } else if (type === 'Board') {
-          const list: any[] = await getBoards();
-          setEntityOptions(list.map((x: any) => ({ id: x._id, label: x.name })));
-        } else if (type === 'Class') {
-          // Filter classes by selected board if provided
-          const list: any[] = classes;
-          const filtered = selectedBoardId
-            ? list.filter((cl: any) => (cl.board_id?._id || cl.board_id) === selectedBoardId)
-            : list;
-          setEntityOptions(filtered.map((x: any) => ({ id: x._id, label: x.name })));
-        } else if (type === 'Subject') {
-          // Filter subjects by selected class
-          const list: any[] = subjects;
-          const filtered = selectedClassId
-            ? list.filter((s: any) => (s.class_id?._id || s.class_id) === selectedClassId)
-            : list;
-          setEntityOptions(filtered.map((x: any) => ({ id: x._id, label: x.name })));
-        } else if (type === 'Topic') {
-          // Filter topics by selected chapter
-          const list: any[] = topics;
-          const filtered = selectedChapterId
-            ? list.filter((t: any) => (t.chapter_id?._id || t.chapter_id) === selectedChapterId)
-            : list;
-          setEntityOptions(filtered.map((x: any) => ({ id: x._id, label: x.title })));
-        } else if (type === 'Subtopic') {
-          // When Subtopic selected, entityOptions is managed by selectedTopicId effect
-          // If no topic chosen yet, clear options
-          if (!selectedTopicId) setEntityOptions([]);
-        } else if (type === 'GB Category') {
-          const res = await getGBCategories({ page: 1, limit: 100 });
-          setEntityOptions((res as any).data.map((x: any) => ({ id: x._id, label: x.name })));
-        } else if (type === 'GB Topic') {
-          const res = await getGBTopics({ page: 1, limit: 100, gb_category_id: selectedGbCategoryId || undefined });
-          setEntityOptions((res as any).data.map((x: any) => ({ id: x._id, label: x.name })));
-        } else if (type === 'GB Subtopic') {
-          const res = await getGBSubtopics({ page: 1, limit: 100, gb_topic_id: selectedGbTopicId || undefined });
-          setEntityOptions((res as any).data.map((x: any) => ({ id: x._id, label: x.name })));
-        } else {
-          setEntityOptions([]);
-        }
-      } catch (e) {
-        setEntityOptions([]);
+
+      if (!type) return setEntityOptions([]);
+
+      // CHAPTER ENTITY TYPE
+      if (type === "Chapter") {
+        const result = await getChapters({
+          page: 1,
+          limit: 500,
+          board_id: selectedBoardId || undefined,
+          class_id: selectedClassId || undefined,
+          subject_id: selectedSubjectId || undefined,
+        }).catch(() => ({ data: [] }));
+
+        const list = normalizeList(result);
+        return setEntityOptions(
+          list.map((ch: any) => ({ id: ch._id, label: ch.title }))
+        );
       }
+
+      // COUNTRY
+      if (type === "Country") {
+        const list = await getCountries().catch(() => []);
+        return setEntityOptions(
+          normalizeList(list).map((x: any) => ({
+            id: x._id || x.id,
+            label: x.name,
+          }))
+        );
+      }
+
+      // BOARD
+      if (type === "Board") {
+        return setEntityOptions(
+          boards.map((x) => ({ id: x._id, label: x.name }))
+        );
+      }
+
+      // CLASS
+      if (type === "Class") {
+        const list = selectedBoardId
+          ? classes.filter(
+              (cl) => (cl.board_id?._id || cl.board_id) === selectedBoardId
+            )
+          : classes;
+
+        return setEntityOptions(
+          list.map((x) => ({ id: x._id, label: x.name }))
+        );
+      }
+
+      // SUBJECT
+      if (type === "Subject") {
+        const list = selectedClassId
+          ? subjects.filter(
+              (s) => (s.class_id?._id || s.class_id) === selectedClassId
+            )
+          : subjects;
+
+        return setEntityOptions(
+          list.map((x) => ({ id: x._id, label: x.name }))
+        );
+      }
+
+      // TOPIC
+      if (type === "Topic") {
+        const list = selectedChapterId
+          ? topics.filter(
+              (t) => (t.chapter_id?._id || t.chapter_id) === selectedChapterId
+            )
+          : topics;
+
+        return setEntityOptions(
+          list.map((x) => ({ id: x._id, label: x.title }))
+        );
+      }
+
+      // GB CATEGORY
+      if (type === "GB Category") {
+        return setEntityOptions(
+          gbCategories.map((x) => ({
+            id: x._id,
+            label: x.name,
+          }))
+        );
+      }
+
+      // GB TOPIC
+      if (type === "GB Topic") {
+        const list = selectedGbCategoryId
+          ? gbTopics.filter(
+              (t) =>
+                (t.gb_category_id?._id || t.gb_category_id) ===
+                selectedGbCategoryId
+            )
+          : gbTopics;
+
+        return setEntityOptions(
+          list.map((x) => ({ id: x._id, label: x.name }))
+        );
+      }
+
+      // GB SUBTOPIC
+      if (type === "GB Subtopic") {
+        const res = await getGBSubtopics({
+          page: 1,
+          limit: 500,
+          gb_topic_id: selectedGbTopicId || undefined,
+        }).catch(() => ({ data: [] }));
+
+        return setEntityOptions(
+          normalizeList(res).map((x: any) => ({
+            id: x._id,
+            label: x.name,
+          }))
+        );
+      }
+
+      setEntityOptions([]);
     };
+
     load();
-  }, [form.entity_type, entityType, selectedBoardId, selectedClassId, selectedSubjectId, selectedGbCategoryId, selectedGbTopicId]);
+  }, [
+    form.entity_type,
+    selectedBoardId,
+    selectedClassId,
+    selectedSubjectId,
+    selectedChapterId,
+    selectedGbCategoryId,
+    selectedGbTopicId,
+  ]);
 
-  const handleContentChange = (html: string) => {
+  // --------------------------------------------------------------------
+  // Form Helpers
+  // --------------------------------------------------------------------
+  const handleContentChange = (html: string) =>
     setForm({ ...form, content: html });
-  };
 
-  const handleOptionChange = (index: number, field: 'key' | 'text', value: string) => {
-    const newOptions = [...form.options];
-    newOptions[index] = { ...newOptions[index], [field]: value };
-    setForm({ ...form, options: newOptions });
+  const handleOptionChange = (i: number, field: "key" | "text", value: string) => {
+    const opts = [...form.options];
+    opts[i][field] = value;
+    setForm({ ...form, options: opts });
   };
 
   const addOption = () => {
-    const newKey = String.fromCharCode(65 + form.options.length); // A, B, C, D, E, etc.
+    const newKey = String.fromCharCode(65 + form.options.length);
     setForm({
       ...form,
-      options: [...form.options, { key: newKey, text: "" }]
+      options: [...form.options, { key: newKey, text: "" }],
     });
   };
 
-  const removeOption = (index: number) => {
-    if (form.options.length <= 2) return; // Minimum 2 options
-    const newOptions = form.options.filter((_, i) => i !== index);
-    setForm({ ...form, options: newOptions });
+  const removeOption = (i: number) => {
+    if (form.options.length <= 2) return;
+    setForm({
+      ...form,
+      options: form.options.filter((_, idx) => idx !== i),
+    });
   };
 
   const addTag = () => {
@@ -228,61 +362,62 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
     }
   };
 
-  const removeTag = (tagToRemove: string) => {
-    setForm({ ...form, tags: form.tags.filter(tag => tag !== tagToRemove) });
-  };
+  const removeTag = (t: string) =>
+    setForm({ ...form, tags: form.tags.filter((tag) => tag !== t) });
+
+  const toggleLanguage = (id: string) =>
+    setSupportedLanguageIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate options
-    if (form.options.length < 2) {
-      alert("At least 2 options are required");
-      return;
-    }
 
-    if (form.options.some(opt => !opt.text.trim())) {
-      alert("All options must have text");
-      return;
-    }
+    if (form.options.length < 2)
+      return alert("At least 2 options required");
 
-    if (!form.options.find(opt => opt.key === form.correct_answer)) {
-      alert("Correct answer must be one of the option keys");
-      return;
-    }
+    if (form.options.some((o) => !o.text.trim()))
+      return alert("All options must have text");
+
+    if (!form.options.find((o) => o.key === form.correct_answer))
+      return alert("Correct answer must match an option key");
 
     onSubmit({ ...form, supported_language_ids: supportedLanguageIds });
   };
 
-  const handleSupportedLanguagesChange = (value: string) => {
-    setSupportedLanguageIds((prev) => (prev.includes(value) ? prev.filter((id) => id !== value) : [...prev, value]));
-  };
-
+  // --------------------------------------------------------------------
+  // UI Layout
+  // --------------------------------------------------------------------
   return (
     <Card>
       <CardHeader>
         <CardTitle>{initialData ? "Edit MCQ" : "Create MCQ"}</CardTitle>
       </CardHeader>
-  <CardContent className="max-h-[70vh] overflow-y-auto">
+
+      <CardContent className="max-h-[70vh] overflow-y-auto">
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* ENTITY TYPE */}
           {!entityType && (
             <div className="space-y-2">
-              <Label htmlFor="entity_type">Entity Type</Label>
+              <Label>Entity Type</Label>
               <Select
                 value={form.entity_type}
-                onValueChange={(value) => setForm({ ...form, entity_type: value })}
+                onValueChange={(v) =>
+                  setForm({ ...form, entity_type: v, entity_id: "" })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select entity type" />
                 </SelectTrigger>
+
                 <SelectContent>
                   <SelectItem value="Chapter">Chapter</SelectItem>
-                  <SelectItem value="Country">Country</SelectItem>
-                  <SelectItem value="Board">Board</SelectItem>
-                  <SelectItem value="Class">Class</SelectItem>
-                  <SelectItem value="Subject">Subject</SelectItem>
                   <SelectItem value="Topic">Topic</SelectItem>
                   <SelectItem value="Subtopic">Subtopic</SelectItem>
+                  <SelectItem value="Subject">Subject</SelectItem>
+                  <SelectItem value="Class">Class</SelectItem>
+                  <SelectItem value="Board">Board</SelectItem>
+                  <SelectItem value="Country">Country</SelectItem>
                   <SelectItem value="GB Category">GB Category</SelectItem>
                   <SelectItem value="GB Topic">GB Topic</SelectItem>
                   <SelectItem value="GB Subtopic">GB Subtopic</SelectItem>
@@ -291,222 +426,540 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
             </div>
           )}
 
+          {/* ENTITY FILTERS */}
           {!entityId && (
             <div className="space-y-2">
-              <Label htmlFor="entity_id">Entity</Label>
-              {/* Hierarchy filters for Chapter */}
-              {form.entity_type === 'Chapter' && (
+              <Label>Entity</Label>
+
+              {/* --------------------------------------
+                  ENTITY TYPE: CHAPTER
+                 -------------------------------------- */}
+              {form.entity_type === "Chapter" && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                  <Select value={selectedBoardId} onValueChange={(v) => { setSelectedBoardId(v); setSelectedClassId(""); setSelectedSubjectId(""); setForm({ ...form, entity_id: "" }); }}>
+                  {/* BOARD */}
+                  <Select
+                    value={selectedBoardId}
+                    onValueChange={(v) => {
+                      setSelectedBoardId(v);
+                      setSelectedClassId("");
+                      setSelectedSubjectId("");
+                      setSelectedChapterId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Board" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {boards.map((b) => (<SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>))}
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedSubjectId(""); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* CLASS */}
+                  <Select
+                    value={selectedClassId}
+                    onValueChange={(v) => {
+                      setSelectedClassId(v);
+                      setSelectedSubjectId("");
+                      setSelectedChapterId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Class" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {classes.filter((cl: any) => !selectedBoardId || (cl.board_id?._id || cl.board_id) === selectedBoardId).map((cl: any) => (
-                        <SelectItem key={cl._id} value={cl._id}>{cl.name}</SelectItem>
-                      ))}
+                      {classes
+                        .filter(
+                          (cl) =>
+                            !selectedBoardId ||
+                            (cl.board_id?._id || cl.board_id) === selectedBoardId
+                        )
+                        .map((cl) => (
+                          <SelectItem key={cl._id} value={cl._id}>
+                            {cl.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedSubjectId} onValueChange={(v) => { setSelectedSubjectId(v); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* SUBJECT */}
+                  <Select
+                    value={selectedSubjectId}
+                    onValueChange={(v) => {
+                      setSelectedSubjectId(v);
+                      setSelectedChapterId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Subject" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {subjects.filter((s: any) => !selectedClassId || (s.class_id?._id || s.class_id) === selectedClassId).map((s: any) => (
-                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
-                      ))}
+                      {subjects
+                        .filter(
+                          (s) =>
+                            !selectedClassId ||
+                            (s.class_id?._id || s.class_id) === selectedClassId
+                        )
+                        .map((s) => (
+                          <SelectItem key={s._id} value={s._id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-              {/* Filters for Class (Board) and Subject (Board -> Class) */}
-              {form.entity_type === 'Class' && (
-                <div className="grid grid-cols-1 md:grid-cols-1 gap-2">
-                  <Select value={selectedBoardId} onValueChange={(v) => { setSelectedBoardId(v); setForm({ ...form, entity_id: "" }); }}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Board" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {boards.map((b) => (<SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {form.entity_type === 'Topic' && (
+
+              {/* --------------------------------------
+                  ENTITY TYPE: TOPIC
+                 -------------------------------------- */}
+              {form.entity_type === "Topic" && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
-                  <Select value={selectedBoardId} onValueChange={(v) => { setSelectedBoardId(v); setSelectedClassId(""); setSelectedSubjectId(""); setSelectedChapterId(""); setForm({ ...form, entity_id: "" }); }}>
+                  {/* BOARD */}
+                  <Select
+                    value={selectedBoardId}
+                    onValueChange={(v) => {
+                      setSelectedBoardId(v);
+                      setSelectedClassId("");
+                      setSelectedSubjectId("");
+                      setSelectedChapterId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Board" />
                     </SelectTrigger>
                     <SelectContent>
-                      {boards.map((b) => (<SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>))}
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedSubjectId(""); setSelectedChapterId(""); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* CLASS */}
+                  <Select
+                    value={selectedClassId}
+                    onValueChange={(v) => {
+                      setSelectedClassId(v);
+                      setSelectedSubjectId("");
+                      setSelectedChapterId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Class" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {classes.filter((cl: any) => !selectedBoardId || (cl.board_id?._id || cl.board_id) === selectedBoardId).map((cl: any) => (
-                        <SelectItem key={cl._id} value={cl._id}>{cl.name}</SelectItem>
-                      ))}
+                      {classes
+                        .filter(
+                          (cl) =>
+                            !selectedBoardId ||
+                            (cl.board_id?._id || cl.board_id) === selectedBoardId
+                        )
+                        .map((cl) => (
+                          <SelectItem key={cl._id} value={cl._id}>
+                            {cl.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedSubjectId} onValueChange={(v) => { setSelectedSubjectId(v); setSelectedChapterId(""); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* SUBJECT */}
+                  <Select
+                    value={selectedSubjectId}
+                    onValueChange={(v) => {
+                      setSelectedSubjectId(v);
+                      setSelectedChapterId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Subject" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {subjects.filter((s: any) => !selectedClassId || (s.class_id?._id || s.class_id) === selectedClassId).map((s: any) => (
-                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
-                      ))}
+                      {subjects
+                        .filter(
+                          (s) =>
+                            !selectedClassId ||
+                            (s.class_id?._id || s.class_id) === selectedClassId
+                        )
+                        .map((s) => (
+                          <SelectItem key={s._id} value={s._id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* CHAPTER */}
+                  <Select
+                    value={selectedChapterId}
+                    onValueChange={(v) => {
+                      setSelectedChapterId(v);
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Chapter" />
                     </SelectTrigger>
+
                     <SelectContent>
-                      {chapters.filter((ch: any) => !selectedSubjectId || (ch.subject_id?._id || ch.subject_id) === selectedSubjectId).map((ch: any) => (
-                        <SelectItem key={ch._id} value={ch._id}>{ch.title}</SelectItem>
-                      ))}
+                      {chapters
+                        .filter((ch) => {
+                          const matchesBoard =
+                            !selectedBoardId ||
+                            (ch.board_id?._id || ch.board_id) === selectedBoardId;
+
+                          const matchesClass =
+                            !selectedClassId ||
+                            (ch.class_id?._id || ch.class_id) === selectedClassId;
+
+                          const matchesSubject =
+                            !selectedSubjectId ||
+                            (ch.subject_id?._id || ch.subject_id) ===
+                              selectedSubjectId;
+
+                          return matchesBoard && matchesClass && matchesSubject;
+                        })
+                        .map((ch) => (
+                          <SelectItem key={ch._id} value={ch._id}>
+                            {ch.title}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-              {form.entity_type === 'Subtopic' && (
+
+              {/* --------------------------------------
+                  ENTITY TYPE: SUBTOPIC
+                 -------------------------------------- */}
+              {form.entity_type === "Subtopic" && (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-                  <Select value={selectedBoardId} onValueChange={(v) => { setSelectedBoardId(v); setSelectedClassId(""); setSelectedSubjectId(""); setSelectedChapterId(""); setSelectedTopicId(""); setForm({ ...form, entity_id: "" }); }}>
+                  {/* BOARD */}
+                  <Select
+                    value={selectedBoardId}
+                    onValueChange={(v) => {
+                      setSelectedBoardId(v);
+                      setSelectedClassId("");
+                      setSelectedSubjectId("");
+                      setSelectedChapterId("");
+                      setSelectedTopicId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Board" />
                     </SelectTrigger>
                     <SelectContent>
-                      {boards.map((b) => (<SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>))}
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setSelectedSubjectId(""); setSelectedChapterId(""); setSelectedTopicId(""); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* CLASS */}
+                  <Select
+                    value={selectedClassId}
+                    onValueChange={(v) => {
+                      setSelectedClassId(v);
+                      setSelectedSubjectId("");
+                      setSelectedChapterId("");
+                      setSelectedTopicId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Class" />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes.filter((cl: any) => !selectedBoardId || (cl.board_id?._id || cl.board_id) === selectedBoardId).map((cl: any) => (
-                        <SelectItem key={cl._id} value={cl._id}>{cl.name}</SelectItem>
-                      ))}
+                      {classes
+                        .filter(
+                          (cl) =>
+                            !selectedBoardId ||
+                            (cl.board_id?._id || cl.board_id) === selectedBoardId
+                        )
+                        .map((cl) => (
+                          <SelectItem key={cl._id} value={cl._id}>
+                            {cl.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedSubjectId} onValueChange={(v) => { setSelectedSubjectId(v); setSelectedChapterId(""); setSelectedTopicId(""); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* SUBJECT */}
+                  <Select
+                    value={selectedSubjectId}
+                    onValueChange={(v) => {
+                      setSelectedSubjectId(v);
+                      setSelectedChapterId("");
+                      setSelectedTopicId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Subject" />
                     </SelectTrigger>
                     <SelectContent>
-                      {subjects.filter((s: any) => !selectedClassId || (s.class_id?._id || s.class_id) === selectedClassId).map((s: any) => (
-                        <SelectItem key={s._id} value={s._id}>{s.name}</SelectItem>
-                      ))}
+                      {subjects
+                        .filter(
+                          (s) =>
+                            !selectedClassId ||
+                            (s.class_id?._id || s.class_id) === selectedClassId
+                        )
+                        .map((s) => (
+                          <SelectItem key={s._id} value={s._id}>
+                            {s.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedChapterId} onValueChange={(v) => { setSelectedChapterId(v); setSelectedTopicId(""); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* CHAPTER */}
+                  <Select
+                    value={selectedChapterId}
+                    onValueChange={(v) => {
+                      setSelectedChapterId(v);
+                      setSelectedTopicId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Chapter" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {chapters.filter((ch: any) => !selectedSubjectId || (ch.subject_id?._id || ch.subject_id) === selectedSubjectId).map((ch: any) => (
-                        <SelectItem key={ch._id} value={ch._id}>{ch.title}</SelectItem>
-                      ))}
-                    </SelectContent>
+         <SelectContent
+  position="popper"
+  className="max-h-64 overflow-y-auto bg-white border shadow-lg z-[9999]"
+>
+  {chapters
+    .filter((ch) => {
+      const matchesBoard =
+        !selectedBoardId ||
+        (ch.board_id?._id || ch.board_id) === selectedBoardId;
+
+      const matchesClass =
+        !selectedClassId ||
+        (ch.class_id?._id || ch.class_id) === selectedClassId;
+
+      const matchesSubject =
+        !selectedSubjectId ||
+        (ch.subject_id?._id || ch.subject_id) === selectedSubjectId;
+
+      return matchesBoard && matchesClass && matchesSubject;
+    })
+    .map((ch) => (
+      <SelectItem
+        key={ch._id}
+        value={ch._id}
+        className="data-[state=checked]:bg-blue-100 data-[state=checked]:text-blue-700"
+      >
+        {ch.title}
+      </SelectItem>
+    ))}
+</SelectContent>
+
+
+
                   </Select>
-                  <Select value={selectedTopicId} onValueChange={(v) => { setSelectedTopicId(v); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* TOPIC */}
+                  <Select
+                    value={selectedTopicId}
+                    onValueChange={(v) => {
+                      setSelectedTopicId(v);
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Topic" />
                     </SelectTrigger>
                     <SelectContent>
-                      {topics.filter((t: any) => !selectedChapterId || (t.chapter_id?._id || t.chapter_id) === selectedChapterId).map((t: any) => (
-                        <SelectItem key={t._id} value={t._id}>{t.title}</SelectItem>
-                      ))}
+                      {topics
+                        .filter(
+                          (t) =>
+                            !selectedChapterId ||
+                            (t.chapter_id?._id || t.chapter_id) ===
+                              selectedChapterId
+                        )
+                        .map((t) => (
+                          <SelectItem key={t._id} value={t._id}>
+                            {t.title}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-              {form.entity_type === 'Subject' && (
+
+              {/* --------------------------------------
+                  ENTITY TYPE: SUBJECT (Board → Class)
+                 -------------------------------------- */}
+              {form.entity_type === "Subject" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <Select value={selectedBoardId} onValueChange={(v) => { setSelectedBoardId(v); setSelectedClassId(""); setForm({ ...form, entity_id: "" }); }}>
+                  {/* BOARD */}
+                  <Select
+                    value={selectedBoardId}
+                    onValueChange={(v) => {
+                      setSelectedBoardId(v);
+                      setSelectedClassId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Board" />
                     </SelectTrigger>
                     <SelectContent>
-                      {boards.map((b) => (<SelectItem key={b._id} value={b._id}>{b.name}</SelectItem>))}
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id}>
+                          {b.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  <Select value={selectedClassId} onValueChange={(v) => { setSelectedClassId(v); setForm({ ...form, entity_id: "" }); }}>
+
+                  {/* CLASS */}
+                  <Select
+                    value={selectedClassId}
+                    onValueChange={(v) => {
+                      setSelectedClassId(v);
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Class" />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes.filter((cl: any) => !selectedBoardId || (cl.board_id?._id || cl.board_id) === selectedBoardId).map((cl: any) => (
-                        <SelectItem key={cl._id} value={cl._id}>{cl.name}</SelectItem>
-                      ))}
+                      {classes
+                        .filter(
+                          (cl) =>
+                            !selectedBoardId ||
+                            (cl.board_id?._id || cl.board_id) === selectedBoardId
+                        )
+                        .map((cl) => (
+                          <SelectItem key={cl._id} value={cl._id}>
+                            {cl.name}
+                          </SelectItem>
+                        ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-              {/* Hierarchy filters for GB Topic/Subtopic */}
-              {(form.entity_type === 'GB Topic' || form.entity_type === 'GB Subtopic') && (
+
+              {/* --------------------------------------
+                  ENTITY TYPE: GB TOPIC / SUBTOPIC
+                 -------------------------------------- */}
+              {(form.entity_type === "GB Topic" ||
+                form.entity_type === "GB Subtopic") && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <Select value={selectedGbCategoryId} onValueChange={(v) => { setSelectedGbCategoryId(v); setSelectedGbTopicId(""); setForm({ ...form, entity_id: "" }); }}>
+                  <Select
+                    value={selectedGbCategoryId}
+                    onValueChange={(v) => {
+                      setSelectedGbCategoryId(v);
+                      setSelectedGbTopicId("");
+                      setForm({ ...form, entity_id: "" });
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select GB Category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {gbCategories.map((c) => (<SelectItem key={c._id} value={c._id}>{c.name}</SelectItem>))}
+                      {gbCategories.map((c) => (
+                        <SelectItem key={c._id} value={c._id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
-                  {form.entity_type === 'GB Subtopic' && (
-                    <Select value={selectedGbTopicId} onValueChange={(v) => { setSelectedGbTopicId(v); setForm({ ...form, entity_id: "" }); }}>
+
+                  {form.entity_type === "GB Subtopic" && (
+                    <Select
+                      value={selectedGbTopicId}
+                      onValueChange={(v) => {
+                        setSelectedGbTopicId(v);
+                        setForm({ ...form, entity_id: "" });
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select GB Topic" />
                       </SelectTrigger>
                       <SelectContent>
-                        {gbTopics.filter((t: any) => !selectedGbCategoryId || (t.gb_category_id?._id || t.gb_category_id) === selectedGbCategoryId).map((t: any) => (
-                          <SelectItem key={t._id} value={t._id}>{t.name}</SelectItem>
-                        ))}
+                        {gbTopics
+                          .filter(
+                            (t) =>
+                              !selectedGbCategoryId ||
+                              (t.gb_category_id?._id || t.gb_category_id) ===
+                                selectedGbCategoryId
+                          )
+                          .map((t) => (
+                            <SelectItem key={t._id} value={t._id}>
+                              {t.name}
+                            </SelectItem>
+                          ))}
                       </SelectContent>
                     </Select>
                   )}
                 </div>
               )}
+
+              {/* FINAL ENTITY SELECT */}
               <Select
                 value={form.entity_id}
-                onValueChange={(value) => setForm({ ...form, entity_id: value })}
+                onValueChange={(value) =>
+                  setForm({ ...form, entity_id: value })
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={form.entity_type ? `Select ${form.entity_type}` : 'Select entity'} />
+                  <SelectValue
+                    placeholder={
+                      form.entity_type
+                        ? `Select ${form.entity_type}`
+                        : "Select entity"
+                    }
+                  />
                 </SelectTrigger>
+
                 <SelectContent>
                   {entityOptions.map((opt) => (
-                    <SelectItem key={opt.id} value={opt.id}>{opt.label}</SelectItem>
+                    <SelectItem key={opt.id} value={opt.id}>
+                      {opt.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           )}
 
+          {/* SUPPORTED LANGUAGES */}
           <div className="space-y-2">
             <Label>Supported Languages</Label>
+
             <div className="flex flex-wrap gap-2">
               {languages.map((lang) => (
                 <Button
                   key={lang._id}
                   type="button"
-                  variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                  variant={
+                    supportedLanguageIds.includes(lang._id)
+                      ? "default"
+                      : "outline"
+                  }
                   size="sm"
-                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                  onClick={() => toggleLanguage(lang._id)}
                 >
                   {lang.name}
                 </Button>
@@ -514,90 +967,111 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
             </div>
           </div>
 
+          {/* QUESTION */}
           <div className="space-y-2">
-            <Label htmlFor="question">Question</Label>
+            <Label>Question</Label>
             <Input
-              id="question"
               value={form.question}
-              onChange={(e) => setForm({ ...form, question: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, question: e.target.value })
+              }
               placeholder="Enter the question"
               required
             />
           </div>
 
+          {/* OPTIONS */}
           <div className="space-y-2">
             <Label>Options</Label>
-            {form.options.map((option, index) => (
-              <div key={index} className="flex gap-2 items-center">
+
+            {form.options.map((opt, i) => (
+              <div key={i} className="flex gap-2 items-center">
                 <Input
-                  value={option.key}
-                  onChange={(e) => handleOptionChange(index, 'key', e.target.value)}
+                  value={opt.key}
+                  onChange={(e) =>
+                    handleOptionChange(i, "key", e.target.value)
+                  }
                   className="w-16"
                   placeholder="Key"
-                  required
                 />
+
                 <Input
-                  value={option.text}
-                  onChange={(e) => handleOptionChange(index, 'text', e.target.value)}
+                  value={opt.text}
+                  onChange={(e) =>
+                    handleOptionChange(i, "text", e.target.value)
+                  }
                   className="flex-1"
-                  placeholder={`Option ${option.key}`}
-                  required
+                  placeholder={`Option ${opt.key}`}
                 />
+
                 {form.options.length > 2 && (
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => removeOption(index)}
+                    onClick={() => removeOption(i)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
                 )}
               </div>
             ))}
+
             <Button type="button" variant="outline" onClick={addOption}>
               Add Option
             </Button>
           </div>
 
+          {/* CORRECT ANSWER */}
           <div className="space-y-2">
-            <Label htmlFor="correct_answer">Correct Answer</Label>
+            <Label>Correct Answer</Label>
+
             <Select
               value={form.correct_answer}
-              onValueChange={(value) => setForm({ ...form, correct_answer: value })}
+              onValueChange={(v) =>
+                setForm({ ...form, correct_answer: v })
+              }
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select correct answer" />
               </SelectTrigger>
+
               <SelectContent>
-                {form.options.map((option) => (
-                  <SelectItem key={option.key} value={option.key}>
-                    {option.key}: {option.text}
+                {form.options.map((opt) => (
+                  <SelectItem key={opt.key} value={opt.key}>
+                    {opt.key}: {opt.text}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
+          {/* EXPLANATION */}
           <div className="space-y-2">
-            <Label htmlFor="explanation">Explanation</Label>
+            <Label>Explanation</Label>
             <Input
-              id="explanation"
               value={form.explanation}
-              onChange={(e) => setForm({ ...form, explanation: e.target.value })}
-              placeholder="Explain why this is the correct answer"
+              onChange={(e) =>
+                setForm({ ...form, explanation: e.target.value })
+              }
+              placeholder="Explain why this answer is correct"
             />
           </div>
 
+          {/* DIFFICULTY */}
           <div className="space-y-2">
-            <Label htmlFor="difficulty">Difficulty</Label>
+            <Label>Difficulty</Label>
+
             <Select
               value={form.difficulty}
-              onValueChange={(value) => setForm({ ...form, difficulty: value })}
+              onValueChange={(v) =>
+                setForm({ ...form, difficulty: v })
+              }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
+
               <SelectContent>
                 <SelectItem value="easy">Easy</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
@@ -606,22 +1080,32 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
             </Select>
           </div>
 
+          {/* TAGS */}
           <div className="space-y-2">
             <Label>Tags</Label>
+
             <div className="flex gap-2">
               <Input
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 placeholder="Add a tag"
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onKeyDown={(e) =>
+                  e.key === "Enter" && (e.preventDefault(), addTag())
+                }
               />
+
               <Button type="button" variant="outline" onClick={addTag}>
                 Add
               </Button>
             </div>
+
             <div className="flex flex-wrap gap-2">
               {form.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="flex items-center gap-1">
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="flex items-center gap-1"
+                >
                   {tag}
                   <X
                     className="h-3 w-3 cursor-pointer"
@@ -632,18 +1116,25 @@ export function MCQForm({ onSubmit, loading = false, initialData, entityType, en
             </div>
           </div>
 
+          {/* CONTENT */}
           <div className="space-y-2">
-            <Label htmlFor="content">Content</Label>
-            <RichTextEditor value={form.content} onChange={handleContentChange} />
+            <Label>Content</Label>
+            <RichTextEditor
+              value={form.content}
+              onChange={handleContentChange}
+            />
           </div>
 
-          
-
+          {/* SUBMIT BUTTON */}
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Saving..." : initialData ? "Update MCQ" : "Create MCQ"}
+            {loading
+              ? "Saving..."
+              : initialData
+              ? "Update MCQ"
+              : "Create MCQ"}
           </Button>
         </form>
       </CardContent>
     </Card>
   );
-} 
+}
