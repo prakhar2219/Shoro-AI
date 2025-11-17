@@ -214,7 +214,7 @@ export function GBCategoryForm({
           onValueChange={(v) => setFormData({ ...formData, country_id: v })}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select Country (Optional)" />
+            <SelectValue placeholder="Select Country" />
           </SelectTrigger>
 
           <SelectContent className="max-h-64 overflow-y-auto">

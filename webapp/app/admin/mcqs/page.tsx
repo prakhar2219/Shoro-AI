@@ -163,6 +163,7 @@ export default function MCQsPage() {
       fetchPaginatedData(page, pageSize, searchTerm);
     } catch (error: any) {
       console.error('Failed to save MCQ:', error);
+      toast({ title: 'Error', description: 'Failed to save MCQ', variant: 'destructive' });
     } finally {
       stopLoading();
     }
@@ -413,7 +414,8 @@ export default function MCQsPage() {
   // CSV schema for MCQs
   const mcqCsvSchema: CsvSchema = {
     title: "Upload MCQs CSV",
-    description: "CSV columns: entity_type, entity_id, question, option_a, option_b, option_c, option_d, correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false), content(HTML - optional). Note: legacy 'options' JSON is still accepted.",
+    description:
+      "CSV columns: entity_type, entity_id, supported_language_ids, question, option_a, option_b, option_c, option_d, correct_answer, explanation(optional), difficulty(optional), tags(comma-separated), is_active(optional true/false/yes/no), content(HTML - optional). Note: legacy 'options' JSON is still accepted.",
     fields: [
       { name: "entity_type", type: "text", required: true } as FieldSchema,
       { name: "entity_id", type: "text", required: true } as FieldSchema,
@@ -432,54 +434,179 @@ export default function MCQsPage() {
     ],
   };
 
-  const handleBulkUpload = async (rows: any[]) => {
-    try {
-      startLoading();
-      const payload = rows.map((r: any) => {
-        let options: any[] = [];
-        // Prefer new columns option_a .. option_d; fallback to legacy 'options' JSON
-        const oa = r.option_a, ob = r.option_b, oc = r.option_c, od = r.option_d;
-        if (oa || ob || oc || od) {
-          const candidates = [
-            { key: 'A', text: (oa ?? '').toString() },
-            { key: 'B', text: (ob ?? '').toString() },
-            { key: 'C', text: (oc ?? '').toString() },
-            { key: 'D', text: (od ?? '').toString() },
-          ];
-          options = candidates.filter(c => c.text !== '');
-        } else if (r.options) {
-          try { options = JSON.parse(r.options); } catch { options = []; }
-        }
-        const content = r.content || undefined
-        const is_active = String(r.is_active).toLowerCase() === 'true';
-        const tags = typeof r.tags === 'string' && r.tags.trim() ? r.tags.split(',').map((t: string) => t.trim()) : [];
-        return {
-          entity_type: r.entity_type,
-          entity_id: r.entity_id,
-          supported_language_ids: r.supported_language_ids ? r.supported_language_ids.split(',').map((id: string) => id.trim()).filter((id: string) => id) : [],
-          question: r.question,
-          options,
-          correct_answer: r.correct_answer,
-          explanation: r.explanation || undefined,
-          difficulty: (r.difficulty || 'medium') as any,
-          tags,
-          is_active,
-          content,
-        };
-      });
-      const chunkSize = 500;
-      for (let i = 0; i < payload.length; i += chunkSize) {
-        const chunk = payload.slice(i, i + chunkSize);
-        await bulkCreateMCQs(chunk);
+  // ---------------------------
+  // Helper: parse supported_language_ids
+  // ---------------------------
+  function parseSupportedLanguageIds(raw: any): string[] {
+    if (!raw && raw !== 0) return [];
+    if (Array.isArray(raw)) return raw.map(String);
+    const s = String(raw).trim();
+    if (!s) return [];
+    // Try JSON parse if looks like an array
+    if (s.startsWith("[") && s.endsWith("]")) {
+      try {
+        const parsed = JSON.parse(s);
+        if (Array.isArray(parsed)) return parsed.map((x: any) => String(x));
+      } catch (e) {
+        // fallback to splitting
       }
-      toast({ title: 'Success', description: `${payload.length} MCQs uploaded successfully.` });
-      fetchPaginatedData(page, pageSize, searchTerm);
-    } catch (error: any) {
-      toast({ title: 'Error', description: error?.response?.data?.error || 'Failed to upload MCQs.', variant: 'destructive' });
-    } finally {
-      stopLoading();
     }
-  };
+    // Split by comma
+    return s.split(",").map((id) => id.trim()).filter((id) => id);
+  }
+
+  // ---------------------------
+  // Helper: parse boolean-ish values
+  // ---------------------------
+  function parseBoolean(raw: any): boolean {
+    if (raw === true || raw === 1) return true;
+    if (raw === false || raw === 0) return false;
+    const s = String(raw || "").trim().toLowerCase();
+    return ["true", "1", "yes", "y"].includes(s);
+  }
+
+  // ---------------------------
+  // Helper: normalize correct_answer
+  // If user provided text (e.g. "Yes") we try to map to A/B/C/D
+  // ---------------------------
+  function normalizeCorrectAnswer(correctRaw: any, opts: { key: string; text: string }[]) {
+    if (!correctRaw) return null;
+    const s = String(correctRaw).trim();
+    // Already A/B/C/D
+    if (/^[A-D]$/i.test(s)) return s.toUpperCase();
+    // Numeric choices 1..4 -> map to A..D
+    if (/^[1-4]$/.test(s)) return String.fromCharCode(64 + Number(s));
+    // Try match by option text (case-insensitive, trimmed)
+    const match = opts.find(o => (o.text || "").trim().toLowerCase() === s.toLowerCase());
+    if (match) return match.key;
+    // Try partial contains match (some CSVs may include extra whitespace or punctuation)
+    const partial = opts.find(o => (o.text || "").toLowerCase().includes(s.toLowerCase()) || s.toLowerCase().includes((o.text || "").toLowerCase()));
+    if (partial) return partial.key;
+    // Not recognized
+    return null;
+  }
+
+  const handleBulkUpload = async (rows: any[]) => {
+  try {
+    startLoading();
+
+    const payload = rows.map((r: any, index: number) => {
+      /* -----------------------------
+         🔵 Normalize SUPPORTED LANGUAGES
+      ------------------------------ */
+      const supportedLanguages = r.supported_language_ids
+        ? r.supported_language_ids
+            .split(",")
+            .map((id: string) => id.trim())
+            .filter(Boolean)
+        : [];
+
+      /* -----------------------------
+         🔵 Normalize OPTIONS A–D
+      ------------------------------ */
+      let options: any[] = [];
+
+      const oa = r.option_a;
+      const ob = r.option_b;
+      const oc = r.option_c;
+      const od = r.option_d;
+
+      if (oa || ob || oc || od) {
+        const candidates = [
+          { key: "A", text: (oa ?? "").toString() },
+          { key: "B", text: (ob ?? "").toString() },
+          { key: "C", text: (oc ?? "").toString() },
+          { key: "D", text: (od ?? "").toString() },
+        ];
+
+        options = candidates.filter((c) => c.text !== "");
+      }
+
+      /* -----------------------------
+         🔵 Normalize TAGS
+      ------------------------------ */
+      const tags =
+        typeof r.tags === "string" && r.tags.trim()
+          ? r.tags.split(",").map((t: string) => t.trim())
+          : [];
+
+      /* -----------------------------
+         🔵 Normalize DIFFICULTY (CRITICAL FIX)
+      ------------------------------ */
+
+      const rawDiff = (r.difficulty || "").toString().trim().toLowerCase();
+
+      const normalizedDifficulty =
+        rawDiff === "easy"
+          ? "easy"
+          : rawDiff === "medium"
+          ? "medium"
+          : rawDiff === "difficult"
+          ? "hard"
+          : rawDiff === "hard"
+          ? "hard"
+          : "medium"; // fallback
+
+      /* -----------------------------
+         🔵 Normalize BOOLEAN
+      ------------------------------ */
+      const isActive = String(r.is_active).toLowerCase() === "true";
+
+      /* -----------------------------
+         🔵 Build row payload
+      ------------------------------ */
+      return {
+        entity_type: r.entity_type,
+        entity_id: r.entity_id,
+
+        supported_language_ids: supportedLanguages,
+
+        question: r.question,
+        options,
+
+        correct_answer: r.correct_answer,
+        explanation: r.explanation || undefined,
+
+        difficulty: normalizedDifficulty,
+
+        tags,
+        is_active: isActive,
+
+        content: r.content || undefined,
+
+        __rowIndex: index + 1, // for debugging if backend fails
+      };
+    });
+
+    /* -----------------------------
+       🔵 Chunk Upload (500 at a time)
+    ------------------------------ */
+    const chunkSize = 500;
+    for (let i = 0; i < payload.length; i += chunkSize) {
+      const chunk = payload.slice(i, i + chunkSize);
+      const res = await bulkCreateMCQs(chunk);
+      console.log("Bulk create result:", res);
+    }
+
+    toast({
+      title: "Success",
+      description: `${payload.length} MCQs uploaded successfully.`,
+    });
+
+    fetchPaginatedData(page, pageSize, searchTerm);
+  } catch (error: any) {
+    console.error("UPLOAD ERROR:", error);
+    toast({
+      title: "Error",
+      description:
+        error?.response?.data?.error || "Failed to upload MCQs.",
+      variant: "destructive",
+    });
+  } finally {
+    stopLoading();
+  }
+};
+
 
   return (
     <AdminPageLayout
@@ -563,4 +690,4 @@ export default function MCQsPage() {
       />
     </AdminPageLayout>
   );
-} 
+}

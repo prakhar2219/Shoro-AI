@@ -36,7 +36,12 @@ const navItems = [
     { name: "Chapters", href: "/admin/chapters", icon: LayoutList },
     { name: "Topics", href: "/admin/topics", icon: LayoutList },
     { name: "Subtopics", href: "/admin/subtopics", icon: LayoutList },
+
+    // --------- NEW SECTION ADDED HERE ----------
     { name: "MCQs", href: "/admin/mcqs", icon: CheckSquare },
+    { name: "Short Questions", href: "/admin/short-questions", icon: MessageSquare }, // NEW
+    // -------------------------------------------
+
     { name: "Descriptive Questions", href: "/admin/descriptive-questions", icon: MessageSquare },
     { name: "FAQs", href: "/admin/faqs", icon: HelpCircle },
     { name: "GB Categories", href: "/admin/gb-categories", icon: Folder },

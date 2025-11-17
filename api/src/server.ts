@@ -20,7 +20,6 @@ import contentRoutes from './routes/content/index.routes';
 import ratingRoutes from './routes/rating.routes';
 import { typeDefs } from './graphql/schema';
 import { resolvers } from './graphql/resolvers';
-
 /* -------------------------------------------------------------------------- */
 /*                               FIXED CORS SETUP                              */
 /* -------------------------------------------------------------------------- */

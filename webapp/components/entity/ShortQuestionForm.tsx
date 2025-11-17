@@ -1,6 +1,7 @@
+// webapp/components/entity/ShortQuestionForm.tsx
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,15 +28,6 @@ import { getGBSubtopics } from "@/lib/api/entities/gbSubtopics";
 import { getTopics } from "@/lib/api/entities/topics";
 import { getSubtopics } from "@/lib/api/entities/subtopics";
 import { getLanguages } from "@/lib/api/entities/language";
-
-/**
- * Full rewritten MCQForm.tsx
- * - Single source of truth for filters
- * - Controlled selects that always render a Select wrapper
- * - "No items found" placeholders
- * - Scrollable dropdowns and forced bottom placement
- * - Hover + selected styles (Style B)
- */
 
 /* ---------- Helpers ---------- */
 
@@ -81,7 +73,7 @@ function filterByHierarchy<T extends any>(
 
 /* ---------- Types ---------- */
 
-interface MCQFormProps {
+interface ShortQuestionFormProps {
   onSubmit: (data: any) => void;
   loading?: boolean;
   initialData?: {
@@ -95,6 +87,7 @@ interface MCQFormProps {
     tags?: string[];
     content?: any;
     supported_language_ids?: string[];
+    is_active?: boolean;
   };
   entityType?: string;
   entityId?: string;
@@ -102,14 +95,14 @@ interface MCQFormProps {
 
 /* ---------- Component ---------- */
 
-export function MCQForm({
+export function ShortQuestionForm({
   onSubmit,
   loading = false,
   initialData,
   entityType,
   entityId,
-}: MCQFormProps) {
-  // Form state
+}: ShortQuestionFormProps) {
+  // Form state - same defaults/structure as MCQForm
   const [form, setForm] = useState({
     entity_type: entityType || initialData?.entity_type || "",
     entity_id: entityId || initialData?.entity_id || "",
@@ -125,7 +118,12 @@ export function MCQForm({
     explanation: initialData?.explanation || "",
     difficulty: initialData?.difficulty || "medium",
     tags: initialData?.tags || [],
-    content: typeof initialData?.content === "string" ? initialData.content : "",
+    content:
+      typeof initialData?.content === "string" ? initialData.content : "",
+    is_active:
+      typeof initialData?.is_active === "boolean"
+        ? initialData.is_active
+        : true,
   });
 
   const [newTag, setNewTag] = useState("");
@@ -146,7 +144,9 @@ export function MCQForm({
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>("");
   const [selectedChapterId, setSelectedChapterId] = useState<string>("");
   const [selectedTopicId, setSelectedTopicId] = useState<string>("");
-  const [selectedGbCategoryId, setSelectedGbCategoryId] = useState<string>("");
+  const [selectedGbCategoryId, setSelectedGbCategoryId] = useState<string>(
+    ""
+  );
   const [selectedGbTopicId, setSelectedGbTopicId] = useState<string>("");
 
   // Supported languages
@@ -155,34 +155,30 @@ export function MCQForm({
   );
 
   // Options for the final entity dropdown (entity_id)
-  const [entityOptions, setEntityOptions] = useState<Array<{ id: string; label: string }>>(
-    []
-  );
+  const [entityOptions, setEntityOptions] = useState<
+    Array<{ id: string; label: string }>
+  >([]);
 
   // Prefetch lists on mount
   useEffect(() => {
     const load = async () => {
-      try {
-        const [b, c, s, ch, gbc, gbt, langs] = await Promise.all([
-          getBoards().catch(() => []),
-          getClasses().catch(() => []),
-          getSubjects().catch(() => []),
-          getChapters({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
-          getGBCategories({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
-          getGBTopics({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
-          getLanguages().catch(() => []),
-        ]);
+      const [b, c, s, ch, gbc, gbt, langs] = await Promise.all([
+        getBoards().catch(() => []),
+        getClasses().catch(() => []),
+        getSubjects().catch(() => []),
+        getChapters({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
+        getGBCategories({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
+        getGBTopics({ page: 1, limit: 500 }).catch(() => ({ data: [] })),
+        getLanguages().catch(() => []),
+      ]);
 
-        setBoards(normalizeList(b));
-        setClasses(normalizeList(c));
-        setSubjects(normalizeList(s));
-        setChapters(normalizeList(ch));
-        setGbCategories(normalizeList(gbc));
-        setGbTopics(normalizeList(gbt));
-        setLanguages(normalizeList(langs));
-      } catch (err) {
-        // swallow - already handled in .catch
-      }
+      setBoards(normalizeList(b));
+      setClasses(normalizeList(c));
+      setSubjects(normalizeList(s));
+      setChapters(normalizeList(ch));
+      setGbCategories(normalizeList(gbc));
+      setGbTopics(normalizeList(gbt));
+      setLanguages(normalizeList(langs));
     };
 
     load();
@@ -195,116 +191,113 @@ export function MCQForm({
         setTopics([]);
         return;
       }
-      try {
-        const list = await getTopics(selectedChapterId).catch(() => []);
-        setTopics(normalizeList(list));
-      } catch {}
+      const list = await getTopics(selectedChapterId).catch(() => []);
+      setTopics(normalizeList(list));
     };
+
     loadTopics();
   }, [selectedChapterId]);
 
   // Load subtopics when topic changes (for subtopic flow)
   useEffect(() => {
-    const loadSubtopics = async () => {
-      if (!selectedTopicId) return;
-      try {
-        const list = await getSubtopics(selectedTopicId).catch(() => []);
-        setEntityOptions(
-          normalizeList(list).map((x: any) => ({ id: x._id, label: x.title || x.name }))
-        );
-      } catch {
-        setEntityOptions([]);
-      }
+    if (!selectedTopicId) return;
+    const load = async () => {
+      const res = await getSubtopics(selectedTopicId).catch(() => []);
+      setEntityOptions(
+        normalizeList(res).map((x: any) => ({ id: x._id, label: x.title || x.name }))
+      );
     };
-    loadSubtopics();
+    load();
   }, [selectedTopicId]);
 
   // Build entityOptions depending on entity_type and filters
   useEffect(() => {
     const load = async () => {
       const type = form.entity_type || entityType;
+
       if (!type) {
         setEntityOptions([]);
         return;
       }
 
-      try {
-        if (type === "Chapter") {
-          const res = await getChapters({
-            page: 1,
-            limit: 500,
-            board_id: selectedBoardId || undefined,
-            class_id: selectedClassId || undefined,
-            subject_id: selectedSubjectId || undefined,
-          }).catch(() => ({ data: [] }));
-          const list = normalizeList(res);
-          setEntityOptions(list.map((c: any) => ({ id: c._id, label: c.title })));
-          return;
-        }
+      // CHAPTER
+      if (type === "Chapter") {
+        const result = await getChapters({
+          page: 1,
+          limit: 500,
+          board_id: selectedBoardId || undefined,
+          class_id: selectedClassId || undefined,
+          subject_id: selectedSubjectId || undefined,
+        }).catch(() => ({ data: [] }));
 
-        if (type === "Country") {
-          const list = await getCountries().catch(() => []);
-          setEntityOptions(normalizeList(list).map((x: any) => ({ id: x._id || x.id, label: x.name })));
-          return;
-        }
-
-        if (type === "Board") {
-          setEntityOptions(boards.map((b) => ({ id: b._id, label: b.name })));
-          return;
-        }
-
-        if (type === "Class") {
-          const filtered = selectedBoardId
-            ? classes.filter((cl) => (cl.board_id?._id || cl.board_id) === selectedBoardId)
-            : classes;
-          setEntityOptions(filtered.map((c) => ({ id: c._id, label: c.name })));
-          return;
-        }
-
-        if (type === "Subject") {
-          const filtered = selectedClassId
-            ? subjects.filter((s) => (s.class_id?._id || s.class_id) === selectedClassId)
-            : subjects;
-          setEntityOptions(filtered.map((s) => ({ id: s._id, label: s.name })));
-          return;
-        }
-
-        if (type === "Topic") {
-          const list = selectedChapterId
-            ? topics.filter((t) => (t.chapter_id?._id || t.chapter_id) === selectedChapterId)
-            : topics;
-          setEntityOptions(list.map((t) => ({ id: t._id, label: t.title })));
-          return;
-        }
-
-        if (type === "GB Category") {
-          setEntityOptions(gbCategories.map((g) => ({ id: g._id, label: g.name })));
-          return;
-        }
-
-        if (type === "GB Topic") {
-          const list = selectedGbCategoryId
-            ? gbTopics.filter((t) => (t.gb_category_id?._id || t.gb_category_id) === selectedGbCategoryId)
-            : gbTopics;
-          setEntityOptions(list.map((t) => ({ id: t._id, label: t.name })));
-          return;
-        }
-
-        if (type === "GB Subtopic") {
-          const res = await getGBSubtopics({
-            page: 1,
-            limit: 500,
-            gb_topic_id: selectedGbTopicId || undefined,
-          }).catch(() => ({ data: [] }));
-          setEntityOptions(normalizeList(res).map((x: any) => ({ id: x._id, label: x.name })));
-          return;
-        }
-
-        // default
-        setEntityOptions([]);
-      } catch (err) {
-        setEntityOptions([]);
+        const list = normalizeList(result);
+        return setEntityOptions(
+          list.map((ch: any) => ({ id: ch._id, label: ch.title }))
+        );
       }
+
+      // COUNTRY
+      if (type === "Country") {
+        const list = await getCountries().catch(() => []);
+        return setEntityOptions(
+          normalizeList(list).map((x: any) => ({ id: x._id || x.id, label: x.name }))
+        );
+      }
+
+      // BOARD
+      if (type === "Board") {
+        return setEntityOptions(boards.map((x) => ({ id: x._id, label: x.name })));
+      }
+
+      // CLASS
+      if (type === "Class") {
+        const list = selectedBoardId
+          ? classes.filter((cl) => (cl.board_id?._id || cl.board_id) === selectedBoardId)
+          : classes;
+        return setEntityOptions(list.map((x) => ({ id: x._id, label: x.name })));
+      }
+
+      // SUBJECT
+      if (type === "Subject") {
+        const list = selectedClassId
+          ? subjects.filter((s) => (s.class_id?._id || s.class_id) === selectedClassId)
+          : subjects;
+        return setEntityOptions(list.map((x) => ({ id: x._id, label: x.name })));
+      }
+
+      // TOPIC
+      if (type === "Topic") {
+        const list = selectedChapterId
+          ? topics.filter((t) => (t.chapter_id?._id || t.chapter_id) === selectedChapterId)
+          : topics;
+        return setEntityOptions(list.map((x) => ({ id: x._id, label: x.title })));
+      }
+
+      // GB CATEGORY
+      if (type === "GB Category") {
+        return setEntityOptions(gbCategories.map((x) => ({ id: x._id, label: x.name })));
+      }
+
+      // GB TOPIC
+      if (type === "GB Topic") {
+        const list = selectedGbCategoryId
+          ? gbTopics.filter((t) => (t.gb_category_id?._id || t.gb_category_id) === selectedGbCategoryId)
+          : gbTopics;
+        return setEntityOptions(list.map((t) => ({ id: t._id, label: t.name })));
+      }
+
+      // GB SUBTOPIC
+      if (type === "GB Subtopic") {
+        const res = await getGBSubtopics({
+          page: 1,
+          limit: 500,
+          gb_topic_id: selectedGbTopicId || undefined,
+        }).catch(() => ({ data: [] }));
+
+        return setEntityOptions(normalizeList(res).map((x: any) => ({ id: x._id, label: x.name })));
+      }
+
+      setEntityOptions([]);
     };
 
     load();
@@ -325,9 +318,10 @@ export function MCQForm({
     gbTopics,
   ]);
 
-  /* ---------- Form helpers ---------- */
+  /* ---------- Form Helpers ---------- */
 
-  const handleContentChange = (html: string) => setForm({ ...form, content: html });
+  const handleContentChange = (html: string) =>
+    setForm({ ...form, content: html });
 
   const handleOptionChange = (i: number, field: "key" | "text", value: string) => {
     const opts = [...form.options];
@@ -337,12 +331,18 @@ export function MCQForm({
 
   const addOption = () => {
     const newKey = String.fromCharCode(65 + form.options.length);
-    setForm({ ...form, options: [...form.options, { key: newKey, text: "" }] });
+    setForm({
+      ...form,
+      options: [...form.options, { key: newKey, text: "" }],
+    });
   };
 
   const removeOption = (i: number) => {
     if (form.options.length <= 2) return;
-    setForm({ ...form, options: form.options.filter((_, idx) => idx !== i) });
+    setForm({
+      ...form,
+      options: form.options.filter((_, idx) => idx !== i),
+    });
   };
 
   const addTag = () => {
@@ -352,28 +352,25 @@ export function MCQForm({
     }
   };
 
-  const removeTag = (t: string) => setForm({ ...form, tags: form.tags.filter((tag) => tag !== t) });
+  const removeTag = (t: string) =>
+    setForm({ ...form, tags: form.tags.filter((tag) => tag !== t) });
 
   const toggleLanguage = (id: string) =>
-    setSupportedLanguageIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setSupportedLanguageIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (form.options.length < 2) {
-      alert("At least 2 options required");
-      return;
-    }
+    if (form.options.length < 2)
+      return alert("At least 2 options required");
 
-    if (form.options.some((o) => !o.text.trim())) {
-      alert("All options must have text");
-      return;
-    }
+    if (form.options.some((o) => !o.text.trim()))
+      return alert("All options must have text");
 
-    if (!form.options.find((o) => o.key === form.correct_answer)) {
-      alert("Correct answer must match an option key");
-      return;
-    }
+    if (!form.options.find((o) => o.key === form.correct_answer))
+      return alert("Correct answer must match an option key");
 
     onSubmit({ ...form, supported_language_ids: supportedLanguageIds });
   };
@@ -381,7 +378,10 @@ export function MCQForm({
   /* ---------- UI helpers for selects ---------- */
 
   // Single function to render a SelectContent with no-items placeholder and style B highlighting
-  const renderSelectContent = (items: Array<{ id: string; label: string }>, noItemsText = "No items found") => {
+  const renderSelectContent = (
+    items: Array<{ id: string; label: string }>,
+    noItemsText = "No items found"
+  ) => {
     if (!items || items.length === 0) {
       return (
         <SelectContent side="bottom" align="start" className="max-h-64 overflow-y-auto">
@@ -439,7 +439,7 @@ export function MCQForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{initialData ? "Edit MCQ" : "Create MCQ"}</CardTitle>
+        <CardTitle>{initialData ? "Edit Short Question" : "Create Short Question"}</CardTitle>
       </CardHeader>
 
       <CardContent className="max-h-[70vh] overflow-y-auto">
@@ -535,7 +535,7 @@ export function MCQForm({
                 </div>
               )}
 
-              {/* Topic flow (Board -> Class -> Subject -> Chapter(for topic) ) */}
+              {/* Topic flow */}
               {form.entity_type === "Topic" && (
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
                   {/* Board */}
@@ -611,7 +611,7 @@ export function MCQForm({
                 </div>
               )}
 
-              {/* Subtopic flow (Board -> Class -> Subject -> Chapter -> Topic -> Subtopic) */}
+              {/* Subtopic flow */}
               {form.entity_type === "Subtopic" && (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                   {/* Board */}
@@ -708,7 +708,7 @@ export function MCQForm({
                 </div>
               )}
 
-              {/* Subject flow (Board -> Class) */}
+              {/* Subject flow */}
               {form.entity_type === "Subject" && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <Select
@@ -743,7 +743,7 @@ export function MCQForm({
                 </div>
               )}
 
-              {/* GB Category / Topic / Subtopic flows */}
+              {/* GB flows */}
               {(form.entity_type === "GB Topic" || form.entity_type === "GB Subtopic" || form.entity_type === "GB Category") && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <Select
@@ -777,7 +777,6 @@ export function MCQForm({
                       )}
                     </Select>
                   ) : (
-                    // show empty placeholder for GB Category or GB Topic flows if second column isn't needed
                     <div />
                   )}
                 </div>
@@ -837,12 +836,14 @@ export function MCQForm({
                   className="w-16"
                   placeholder="Key"
                 />
+
                 <Input
                   value={opt.text}
                   onChange={(e) => handleOptionChange(i, "text", e.target.value)}
                   className="flex-1"
                   placeholder={`Option ${opt.key}`}
                 />
+
                 {form.options.length > 2 && (
                   <Button type="button" variant="outline" size="sm" onClick={() => removeOption(i)}>
                     <X className="h-4 w-4" />
@@ -850,6 +851,7 @@ export function MCQForm({
                 )}
               </div>
             ))}
+
             <Button type="button" variant="outline" onClick={addOption}>
               Add Option
             </Button>
@@ -858,13 +860,22 @@ export function MCQForm({
           {/* Correct Answer */}
           <div className="space-y-2">
             <Label>Correct Answer</Label>
-            <Select value={form.correct_answer} onValueChange={(v) => setForm({ ...form, correct_answer: v })}>
+
+            <Select
+              value={form.correct_answer}
+              onValueChange={(v) => setForm({ ...form, correct_answer: v })}
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select correct answer" />
               </SelectTrigger>
+
               <SelectContent side="bottom" align="start" className="max-h-64 overflow-y-auto">
                 {form.options.map((opt) => (
-                  <SelectItem key={opt.key} value={opt.key} className="data-[state=checked]:bg-blue-100 data-[state=checked]:text-blue-700 hover:bg-gray-100">
+                  <SelectItem
+                    key={opt.key}
+                    value={opt.key}
+                    className="data-[state=checked]:bg-blue-100 data-[state=checked]:text-blue-700 hover:bg-gray-100"
+                  >
                     {opt.key}: {opt.text}
                   </SelectItem>
                 ))}
@@ -875,16 +886,22 @@ export function MCQForm({
           {/* Explanation */}
           <div className="space-y-2">
             <Label>Explanation</Label>
-            <Input value={form.explanation} onChange={(e) => setForm({ ...form, explanation: e.target.value })} placeholder="Explain why this answer is correct" />
+            <Input
+              value={form.explanation}
+              onChange={(e) => setForm({ ...form, explanation: e.target.value })}
+              placeholder="Explain why this answer is correct"
+            />
           </div>
 
           {/* Difficulty */}
           <div className="space-y-2">
             <Label>Difficulty</Label>
+
             <Select value={form.difficulty} onValueChange={(v) => setForm({ ...form, difficulty: v })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
+
               <SelectContent side="bottom" align="start" className="max-h-64 overflow-y-auto">
                 <SelectItem value="easy">Easy</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
@@ -896,6 +913,7 @@ export function MCQForm({
           {/* Tags */}
           <div className="space-y-2">
             <Label>Tags</Label>
+
             <div className="flex gap-2">
               <Input
                 value={newTag}
@@ -903,6 +921,7 @@ export function MCQForm({
                 placeholder="Add a tag"
                 onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
               />
+
               <Button type="button" variant="outline" onClick={addTag}>
                 Add
               </Button>
@@ -926,7 +945,7 @@ export function MCQForm({
 
           {/* Submit */}
           <Button type="submit" disabled={loading} className="w-full">
-            {loading ? "Saving..." : initialData ? "Update MCQ" : "Create MCQ"}
+            {loading ? "Saving..." : initialData ? "Update Short Question" : "Create Short Question"}
           </Button>
         </form>
       </CardContent>
@@ -934,4 +953,4 @@ export function MCQForm({
   );
 }
 
-export default MCQForm;
+export default ShortQuestionForm;

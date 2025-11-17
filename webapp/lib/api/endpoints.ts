@@ -11,4 +11,5 @@ export const API_ENDPOINTS = {
     descriptiveQuestions: '/content/descriptive-questions',
     faqs: '/content/faqs',
     upload: '/upload',
+    short_questions: "/content/short-questions",
 };

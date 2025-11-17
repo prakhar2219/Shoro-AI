@@ -15,6 +15,7 @@ import gbTopicRoutes from './gbTopic.routes';
 import gbSubtopicRoutes from './gbSubtopic.routes';
 import gbQuestionRoutes from './gbQuestion.routes';
 import { clerkProtect, clerkRestrictTo } from '../../middleware/clerkAuth';
+import shortQuestionRoutes from './shortQuestion.routes';
 
 const router = Router();
 
@@ -33,6 +34,7 @@ router.use('/chapters', chapterRoutes);
 router.use('/topics', topicRoutes);
 router.use('/subtopics', subtopicRoutes);
 router.use('/mcqs', mcqRoutes);
+router.use('/short-questions', shortQuestionRoutes);
 router.use('/descriptive-questions', descriptiveQuestionRoutes);
 router.use('/faqs', faqRoutes);
 router.use('/gb-categories', gbCategoryRoutes);

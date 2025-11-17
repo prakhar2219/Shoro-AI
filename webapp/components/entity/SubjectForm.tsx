@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { RichTextEditor } from '@/components/rich-text-editor';
 import { getLanguages } from '@/lib/api/entities/language';
 
@@ -21,6 +22,24 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
   const [classes, setClasses] = useState<IClass[]>([]);
   const [languages, setLanguages] = useState<any[]>([]);
   const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
+  const [toggle1, setToggle1] = useState(false);
+  const [toggle2, setToggle2] = useState(false);
+
+  const handleToggle1Change = (checked: boolean) => {
+    setToggle1(checked);
+    if (!checked && !toggle2) {
+      // Clear fields when both toggles are off
+      setForm(f => ({ ...f, conditionalField1: '', conditionalField2: '', conditionalField3: '' }));
+    }
+  };
+
+  const handleToggle2Change = (checked: boolean) => {
+    setToggle2(checked);
+    if (!checked && !toggle1) {
+      // Clear fields when both toggles are off
+      setForm(f => ({ ...f, conditionalField1: '', conditionalField2: '', conditionalField3: '' }));
+    }
+  };
   const [form, setForm] = useState({
     name: initialData?.name || '',
     book_name: initialData?.book_name || '',
@@ -36,6 +55,9 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
     tag: initialData?.tag?.join(', ') || '',
     source: initialData?.source || '',
     author: initialData?.author || '',
+    conditionalField1: initialData?.conditionalField1 || '',
+    conditionalField2: initialData?.conditionalField2 || '',
+    conditionalField3: initialData?.conditionalField3 || '',
   });
   
   // Check if we're adding from a parent class
@@ -145,6 +167,9 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
         tag: initialData.tag?.join(', ') || f.tag,
         source: initialData.source || f.source,
         author: initialData.author || f.author,
+        conditionalField1: initialData.conditionalField1 || f.conditionalField1,
+        conditionalField2: initialData.conditionalField2 || f.conditionalField2,
+        conditionalField3: initialData.conditionalField3 || f.conditionalField3,
       }));
       
       // Update supported language IDs
@@ -343,6 +368,63 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
               onChange={handleChange}
               placeholder="Enter source"
             />
+          </div>
+          <div className="space-y-4 border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="toggle1"
+                  checked={toggle1}
+                  onCheckedChange={handleToggle1Change}
+                />
+                <Label htmlFor="toggle1" className="cursor-pointer">Enable Additional Fields (Toggle 1)</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="toggle2"
+                  checked={toggle2}
+                  onCheckedChange={handleToggle2Change}
+                />
+                <Label htmlFor="toggle2" className="cursor-pointer">Enable Additional Fields (Toggle 2)</Label>
+              </div>
+            </div>
+            {(toggle1 || toggle2) && (
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="conditionalField1">Additional Field 1</Label>
+                  <Input
+                    id="conditionalField1"
+                    name="conditionalField1"
+                    value={form.conditionalField1}
+                    onChange={handleChange}
+                    placeholder="Enter value for field 1"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="conditionalField2">Additional Field 2</Label>
+                  <Input
+                    id="conditionalField2"
+                    name="conditionalField2"
+                    value={form.conditionalField2}
+                    onChange={handleChange}
+                    placeholder="Enter value for field 2"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="conditionalField3">Additional Field 3</Label>
+                  <Input
+                    id="conditionalField3"
+                    name="conditionalField3"
+                    value={form.conditionalField3}
+                    onChange={handleChange}
+                    placeholder="Enter value for field 3"
+                    required
+                  />
+                </div>
+              </div>
+            )}
           </div>
           <div className="space-y-2">
             <Label htmlFor="downloadNotes">Download Notes (URL)</Label>
