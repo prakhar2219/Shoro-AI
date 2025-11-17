@@ -22,8 +22,12 @@ export const SubjectForm: React.FC<SubjectFormProps> = ({ initialData, onSubmit,
   const [classes, setClasses] = useState<IClass[]>([]);
   const [languages, setLanguages] = useState<any[]>([]);
   const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
-  const [toggle1, setToggle1] = useState(false);
-  const [toggle2, setToggle2] = useState(false);
+  const [toggle1, setToggle1] = useState(
+    Boolean(initialData?.conditionalField1 || initialData?.conditionalField2)
+  );
+  const [toggle2, setToggle2] = useState(
+    Boolean(initialData?.conditionalField3)
+  );
 
   const handleToggle1Change = (checked: boolean) => {
     setToggle1(checked);
