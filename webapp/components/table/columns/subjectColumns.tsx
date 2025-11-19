@@ -1,0 +1,104 @@
+import { ColumnDef } from "@tanstack/react-table";
+import { ISubject } from "@/lib/api/entities/subjects";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Copy, Check } from "lucide-react";
+import React, { useState } from "react";
+
+export const subjectColumns: ColumnDef<ISubject>[] = [
+  { 
+    accessorKey: "_id", 
+    header: "ID",
+    cell: ({ row }) => {
+      const [copied, setCopied] = useState(false);
+      const id = row.getValue("_id") as string;
+      
+      const copyToClipboard = async () => {
+        try {
+          await navigator.clipboard.writeText(id);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+          console.error('Failed to copy: ', err);
+        }
+      };
+
+      return (
+        <div className="flex items-center gap-2">
+          <code className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+            {id?.substring(0, 8)}...
+          </code>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={copyToClipboard}
+            className="h-6 w-6 p-0"
+          >
+            {copied ? (
+              <Check className="h-3 w-3 text-green-600" />
+            ) : (
+              <Copy className="h-3 w-3" />
+            )}
+          </Button>
+        </div>
+      );
+    }
+  },
+  { accessorKey: "name", header: "Name" },
+  { accessorKey: "book_name", header: "Book Name" },
+  { accessorKey: "code", header: "Code" },
+   {
+    accessorKey: "class_id",
+    header: "Class",
+    cell: ({ row }) => {
+      const classs = row.original.class_id;
+      if (classs && typeof classs === 'object' && 'name' in classs) {
+        return <span>{classs.name}</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
+  {
+    accessorKey: "language_id",
+    header: "Language",
+    cell: ({ row }) => {
+      const language = row.original.language_id;
+      if (language && typeof language === 'object' && 'name' in language) {
+        return <span>{language.name} ({language.code})</span>;
+      }
+      return <span className="text-zinc-400 italic">Unknown</span>;
+    },
+  },
+  {
+    accessorKey: "author",
+    header: "Author",
+    cell: ({ row }) => {
+      const author = row.getValue("author") as string;
+      return author || <span className="text-zinc-400 italic">N/A</span>;
+    },
+  },
+  {
+    accessorKey: "tag",
+    header: "Tags",
+    cell: ({ row }) => {
+      const tags = row.getValue("tag") as string[];
+      if (!tags || tags.length === 0) {
+        return <span className="text-zinc-400 italic">No tags</span>;
+      }
+      return (
+        <div className="flex gap-1 flex-wrap">
+          {tags.slice(0, 2).map((tag, index) => (
+            <Badge key={index} variant="outline" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+          {tags.length > 2 && (
+            <Badge variant="outline" className="text-xs">
+              +{tags.length - 2}
+            </Badge>
+          )}
+        </div>
+      );
+    },
+  },
+]; 

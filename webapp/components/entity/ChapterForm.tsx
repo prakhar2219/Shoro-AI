@@ -1,0 +1,634 @@
+import React, { useEffect, useState } from 'react';
+import { RichTextEditor } from '@/components/rich-text-editor';
+import { getBoards } from '@/lib/api/entities/boards';
+import { getClassesByBoard } from '@/lib/api/entities/classes';
+import { getSubjects } from '@/lib/api/entities/subjects';
+import { LanguageSelector } from '@/components/shared/LanguageSelector';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { getLanguages } from '@/lib/api/entities/language';
+import { formatSlug } from '@/lib/utils';
+
+interface ChapterFormProps {
+  initialData?: any;
+  onSubmit: (data: any) => void;
+  loading?: boolean;
+}
+
+export const ChapterForm: React.FC<ChapterFormProps> = ({ initialData, onSubmit, loading }) => {
+  const [boards, setBoards] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [languages, setLanguages] = useState<any[]>([]);
+  const [supportedLanguageIds, setSupportedLanguageIds] = useState<string[]>(initialData?.supported_language_ids || []);
+  const [flashcards, setFlashcards] = useState(
+    Boolean(initialData?.flashcards)
+  );
+  const [mockTest, setMockTest] = useState(
+    Boolean(initialData?.mock_test)
+  );
+
+  const handleFlashcardsChange = (checked: boolean) => {
+    setFlashcards(checked);
+  };
+
+  const handleMockTestChange = (checked: boolean) => {
+    setMockTest(checked);
+    if (!checked) {
+      // Clear mock test fields when toggle is off
+      setForm(f => ({ ...f, total_questions: undefined, total_time: undefined, pass_questions: undefined }));
+    }
+  };
+
+  const [form, setForm] = useState({
+    board_id: typeof initialData?.board_id === 'object' ? initialData.board_id._id : initialData?.board_id || '',
+    class_id: typeof initialData?.class_id === 'object' ? initialData.class_id._id : initialData?.class_id || '',
+    subject_id: typeof initialData?.subject_id === 'object' ? initialData.subject_id._id : initialData?.subject_id || '',
+    language_id: typeof initialData?.language_id === 'object' ? initialData.language_id._id : initialData?.language_id || '',
+    title: initialData?.title || '',
+    slug: initialData?.slug || '',
+    seo_title: initialData?.seo_title || '',
+    seo_description: initialData?.seo_description || '',
+    downloadNotes: initialData?.downloadNotes || '',
+    downloadPDF: initialData?.downloadPDF || '',
+    downloadQA: initialData?.downloadQA || '',
+    content: typeof initialData?.content === 'string' ? initialData.content : '',
+    order: initialData?.order || '',
+    is_published: initialData?.is_published || false,
+    tag: initialData?.tag?.join(', ') || '',
+    source: initialData?.source || '',
+    author: initialData?.author || '',
+    flashcards: initialData?.flashcards || false,
+    mock_test: initialData?.mock_test || false,
+    total_questions: initialData?.total_questions || undefined,
+    total_time: initialData?.total_time || undefined,
+    pass_questions: initialData?.pass_questions || undefined,
+  });
+
+  // Check if we're adding from a parent subject
+  const isAddingFromParent = Boolean(initialData?.subject);
+  const parentSubject = initialData?.subject;
+  const parentClass = parentSubject?.class_id;
+  const parentBoard = parentClass?.board_id;
+
+  const isEditMode = Boolean(initialData && initialData._id);
+
+  useEffect(() => {
+    getBoards().then(setBoards);
+    getLanguages().then((langs: any) => {
+      const languagesArray = Array.isArray(langs) 
+        ? langs 
+        : Array.isArray(langs?.data) 
+        ? langs.data 
+        : [];
+      setLanguages(languagesArray);
+    }).catch(() => setLanguages([]));
+  }, []);
+
+  // Ensure language is preselected on edit if missing in the form state
+  useEffect(() => {
+    if (initialData) {
+      const current = form.language_id as any;
+      let initialLang = '' as any;
+      if (typeof initialData.language_id === 'object' && initialData.language_id) {
+        initialLang = initialData.language_id._id || '';
+      } else if (typeof initialData.language_id === 'string') {
+        initialLang = initialData.language_id;
+      }
+      if (!current && initialLang) {
+        setForm(f => ({ ...f, language_id: initialLang }));
+      }
+    }
+  }, [initialData, form.language_id]);
+
+  // Update form when initialData changes (for editing)
+  useEffect(() => {
+    if (initialData) {
+      const extractId = (field: any) => {
+        return typeof field === 'object' && field !== null && field._id ? field._id : (typeof field === 'string' ? field : '');
+      };
+
+      setForm({
+        board_id: extractId(initialData.board_id),
+        class_id: extractId(initialData.class_id),
+        subject_id: extractId(initialData.subject_id),
+        language_id: extractId(initialData.language_id),
+        title: initialData.title || '',
+        slug: initialData.slug || '',
+        seo_title: initialData.seo_title || '',
+        seo_description: initialData.seo_description || '',
+        downloadNotes: initialData.downloadNotes || '',
+        downloadPDF: initialData.downloadPDF || '',
+        downloadQA: initialData.downloadQA || '',
+        content: typeof initialData.content === 'string' ? initialData.content : '',
+        order: initialData.order || '',
+        is_published: initialData.is_published || false,
+        tag: initialData.tag?.join(', ') || '',
+        source: initialData.source || '',
+        author: initialData.author || '',
+        flashcards: initialData.flashcards ?? false,
+        mock_test: initialData.mock_test ?? false,
+        total_questions: initialData.total_questions ?? undefined,
+        total_time: initialData.total_time ?? undefined,
+        pass_questions: initialData.pass_questions ?? undefined,
+      });
+      
+      setSupportedLanguageIds(initialData.supported_language_ids || []);
+      
+      // Update toggles
+      setFlashcards(Boolean(initialData.flashcards));
+      setMockTest(Boolean(initialData.mock_test));
+    }
+  }, [initialData]);
+
+  useEffect(() => {
+    const boardId = typeof form.board_id === 'object' ? form.board_id._id : form.board_id;
+    if (boardId) {
+      getClassesByBoard(boardId).then(setClasses);
+    } else {
+      setClasses([]);
+    }
+    // Don't reset when adding from parent or in edit mode
+    if (!isAddingFromParent && !isEditMode) {
+      setForm((f) => ({ ...f, class_id: '', subject_id: '' }));
+      setSubjects([]);
+    }
+  }, [form.board_id]);
+
+  useEffect(() => {
+    const classId = typeof form.class_id === 'object' ? form.class_id._id : form.class_id;
+    if (classId) {
+      // Always fetch main subject data (no language_id)
+      getSubjects(undefined).then((allSubjects) => {
+        setSubjects(allSubjects.filter((s: any) => {
+          const sClassId = typeof s.class_id === 'object' ? s.class_id._id : s.class_id;
+          return sClassId === classId;
+        }));
+      });
+    } else {
+      setSubjects([]);
+    }
+    // Don't reset when adding from parent or in edit mode
+    if (!isAddingFromParent && !isEditMode) {
+      setForm((f) => ({ ...f, subject_id: '' }));
+    }
+  }, [form.class_id]);
+
+  useEffect(() => {
+    if (initialData) {
+      let boardId = '';
+      let classId = '';
+      let subjectId = '';
+      
+      // If adding from parent, extract full hierarchy
+      if (initialData.subject) {
+        subjectId = initialData.subject._id || '';
+        const subjectClassId = initialData.subject.class_id;
+        if (subjectClassId) {
+          classId = typeof subjectClassId === 'object' ? subjectClassId._id : subjectClassId;
+          const classBoardId = typeof subjectClassId === 'object' ? subjectClassId.board_id : '';
+          if (classBoardId) {
+            boardId = typeof classBoardId === 'object' ? classBoardId._id : classBoardId;
+          }
+        }
+      } else if (initialData.class_id && typeof initialData.class_id === 'object') {
+        classId = initialData.class_id._id || '';
+        if (initialData.class_id.board_id) {
+          boardId = typeof initialData.class_id.board_id === 'object'
+            ? initialData.class_id.board_id._id || ''
+            : initialData.class_id.board_id;
+        }
+      } else if (initialData.class_id) {
+        classId = initialData.class_id;
+      }
+      if (initialData.subject_id && typeof initialData.subject_id === 'object') {
+        subjectId = initialData.subject_id._id || '';
+      } else if (initialData.subject_id) {
+        subjectId = initialData.subject_id;
+      }
+      
+      // Only update form if we have all required IDs from parent (when adding from parent)
+      if (initialData.subject && boardId && classId && subjectId) {
+        setForm(f => ({
+          ...f,
+          board_id: boardId,
+          class_id: classId,
+          subject_id: subjectId,
+        }));
+      } else if (!initialData.subject) {
+        // For edit mode or direct creation (not from parent), set whatever we have
+        setForm(f => ({
+          ...f,
+          board_id: typeof initialData.board_id === 'object' ? initialData.board_id._id : initialData.board_id || boardId,
+          class_id: classId,
+          subject_id: subjectId,
+        }));
+      }
+    }
+    // eslint-disable-next-line
+  }, [initialData]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    // Special handling for slug field - Format properly with hyphens instead of spaces
+    if (name === 'slug') {
+      const formattedSlug = formatSlug(value);
+      setForm({ ...form, [name]: formattedSlug });
+    } else {
+      setForm({ ...form, [name]: value });
+    }
+  };
+
+  const handleBoardChange = (value: string) => {
+    setForm(f => ({ ...f, board_id: value, class_id: '', subject_id: '' }));
+  };
+
+  const handleClassChange = (value: string) => {
+    setForm(f => ({ ...f, class_id: value, subject_id: '' }));
+  };
+
+  const handleSubjectChange = (value: string) => {
+    setForm(f => ({ ...f, subject_id: value }));
+  };
+
+  const handleLanguageChange = (value: string) => {
+    setForm(f => ({ ...f, language_id: value }));
+  };
+
+  const handleContentChange = (html: string) => {
+    setForm({ ...form, content: html });
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate required fields
+    if (!form.board_id) {
+      alert('Please select a Board');
+      return;
+    }
+    if (!form.class_id) {
+      alert('Please select a Class');
+      return;
+    }
+    if (!form.subject_id) {
+      alert('Please select a Subject');
+      return;
+    }
+    if (!form.language_id) {
+      alert('Please select a Language');
+      return;
+    }
+    if (!form.title.trim()) {
+      alert('Please enter a Chapter Title');
+      return;
+    }
+    if (!form.slug.trim()) {
+      alert('Please enter a Slug');
+      return;
+    }
+    if (!form.order) {
+      alert('Please enter an Order number');
+      return;
+    }
+    
+    const payload = {
+      ...form,
+      tag: form.tag ? form.tag.split(',').map((t: string) => t.trim()) : [],
+      supported_language_ids: supportedLanguageIds,
+      flashcards: flashcards,
+      mock_test: mockTest,
+    };
+    onSubmit(payload);
+  };
+
+  const handleSupportedLanguagesChange = (value: string) => {
+    setSupportedLanguageIds((prev) => {
+      const exists = prev.includes(value);
+      return exists
+        ? prev.filter((id) => id !== value)
+        : [...prev, value];
+    });
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{initialData && initialData._id ? 'Edit Chapter' : 'Create Chapter'}</CardTitle>
+      </CardHeader>
+      <CardContent className="max-h-[80vh] overflow-y-auto pt-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {isAddingFromParent ? (
+            <>
+              <div className="space-y-2">
+                <Label>Board</Label>
+                <Input
+                  value={typeof parentBoard === 'object' ? parentBoard?.name : boards.find(b => b._id === form.board_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Class</Label>
+                <Input
+                  value={typeof parentClass === 'object' ? parentClass?.name : classes.find(c => c._id === form.class_id)?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Subject</Label>
+                <Input
+                  value={parentSubject?.name || '-'}
+                  disabled
+                  className="bg-gray-100"
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="board_id">Board</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {boards.find((b) => b._id === form.board_id)?.name || (typeof form.board_id === 'object' ? form.board_id.name : form.board_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.board_id} onValueChange={handleBoardChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Board" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {boards.map((b) => (
+                        <SelectItem key={b._id} value={b._id as string}>{b.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="class_id">Class</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {classes.find((cls) => cls._id === form.class_id)?.name || (typeof form.class_id === 'object' ? form.class_id.name : form.class_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.class_id} onValueChange={handleClassChange} disabled={!form.board_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {classes.map((cls) => (
+                        <SelectItem key={cls._id} value={cls._id as string}>{cls.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="subject_id">Subject</Label>
+                {isEditMode ? (
+                  <div className="px-3 py-2 bg-zinc-100 dark:bg-zinc-800 rounded text-sm">
+                    {subjects.find((s) => s._id === form.subject_id)?.name || (typeof form.subject_id === 'object' ? form.subject_id.name : form.subject_id) || '-'}
+                  </div>
+                ) : (
+                  <Select value={form.subject_id} onValueChange={handleSubjectChange} disabled={!form.class_id}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjects.map((s) => (
+                        <SelectItem key={s._id} value={s._id as string}>{s.name} ({s.code})</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            </>
+          )}
+          <div className="space-y-2">
+            <Label htmlFor="language_id">Language</Label>
+            <LanguageSelector
+              value={form.language_id}
+              onValueChange={handleLanguageChange}
+              placeholder="Select Language"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Supported Languages</Label>
+            <div className="flex flex-wrap gap-2">
+              {languages.map((lang) => (
+                <Button
+                  key={lang._id}
+                  type="button"
+                  variant={supportedLanguageIds.includes(lang._id) ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleSupportedLanguagesChange(lang._id)}
+                >
+                  {lang.name}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="title">Chapter Title</Label>
+            <Input
+              id="title"
+              name="title"
+              value={form.title}
+              onChange={handleChange}
+              placeholder="Enter chapter title"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="slug">Slug</Label>
+            <Input
+              id="slug"
+              name="slug"
+              value={form.slug}
+              onChange={handleChange}
+              placeholder="chapter-title-slug"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="seo_title">SEO Title</Label>
+            <Input
+              id="seo_title"
+              name="seo_title"
+              value={form.seo_title}
+              onChange={handleChange}
+              placeholder="SEO title for this chapter"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="seo_description">SEO Description</Label>
+            <Input
+              id="seo_description"
+              name="seo_description"
+              value={form.seo_description}
+              onChange={handleChange}
+              placeholder="SEO description for this chapter"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="order">Order</Label>
+            <Input
+              id="order"
+              name="order"
+              type="number"
+              value={form.order}
+              onChange={handleChange}
+              placeholder="Enter order"
+              required
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="author">Author</Label>
+            <Input
+              id="author"
+              name="author"
+              value={form.author}
+              onChange={handleChange}
+              placeholder="Enter author name"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tag">Tags (comma separated)</Label>
+            <Input
+              id="tag"
+              name="tag"
+              value={form.tag}
+              onChange={handleChange}
+              placeholder="tag1, tag2, tag3"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="source">Source</Label>
+            <Input
+              id="source"
+              name="source"
+              value={form.source}
+              onChange={handleChange}
+              placeholder="Enter source"
+            />
+          </div>
+          <div className="space-y-4 border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="flashcards"
+                  checked={flashcards}
+                  onCheckedChange={handleFlashcardsChange}
+                />
+                <Label htmlFor="flashcards" className="cursor-pointer">Flashcards</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  id="mock_test"
+                  checked={mockTest}
+                  onCheckedChange={handleMockTestChange}
+                />
+                <Label htmlFor="mock_test" className="cursor-pointer">Mock Test</Label>
+              </div>
+            </div>
+            {mockTest && (
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label htmlFor="total_questions">Total Questions</Label>
+                  <Input
+                    id="total_questions"
+                    name="total_questions"
+                    type="number"
+                    value={form.total_questions || ''}
+                    onChange={(e) => setForm({ ...form, total_questions: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Enter total questions"
+                    min="1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="total_time">Total Time (minutes)</Label>
+                  <Input
+                    id="total_time"
+                    name="total_time"
+                    type="number"
+                    value={form.total_time || ''}
+                    onChange={(e) => setForm({ ...form, total_time: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Enter total time in minutes"
+                    min="1"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="pass_questions">Pass Questions</Label>
+                  <Input
+                    id="pass_questions"
+                    name="pass_questions"
+                    type="number"
+                    value={form.pass_questions || ''}
+                    onChange={(e) => setForm({ ...form, pass_questions: e.target.value ? parseInt(e.target.value) : undefined })}
+                    placeholder="Enter minimum questions to pass"
+                    min="1"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadNotes">Download Notes (URL)</Label>
+            <Input
+              id="downloadNotes"
+              name="downloadNotes"
+              value={form.downloadNotes}
+              onChange={handleChange}
+              placeholder="https://example.com/notes.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadPDF">Download PDF (URL)</Label>
+            <Input
+              id="downloadPDF"
+              name="downloadPDF"
+              value={form.downloadPDF}
+              onChange={handleChange}
+              placeholder="https://example.com/document.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="downloadQA">Download Q&A (URL)</Label>
+            <Input
+              id="downloadQA"
+              name="downloadQA"
+              value={form.downloadQA}
+              onChange={handleChange}
+              placeholder="https://example.com/qa.pdf"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="content">Content</Label>
+            <RichTextEditor value={form.content} onChange={handleContentChange} />
+          </div>
+          <div className="flex items-center space-x-2">
+            <input
+              id="is_published"
+              name="is_published"
+              type="checkbox"
+              checked={form.is_published}
+              onChange={e => setForm({ ...form, is_published: e.target.checked })}
+            />
+            <Label htmlFor="is_published">Is Published</Label>
+          </div>
+          <Button type="submit" disabled={loading} className="w-full">
+            {loading ? 'Saving...' : isEditMode ? 'Update Chapter' : 'Add Chapter'}
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+  );
+}; 

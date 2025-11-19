@@ -1,0 +1,52 @@
+node_modules/
+api/node_modules/
+webapp/node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+logs/
+*.log
+npm-debug.log*
+.idea/
+.vscode/
+*.swp
+*.swo
+coverage/
+.DS_Store
+Thumbs.db
+
+# API-specific ignores
+api/combined.log
+api/error.log
+api/.env
+api/.env.local
+api/.env.*.local
+
+# Webapp-specific ignores
+webapp/.env
+webapp/.env.local
+webapp/.env.*.local
+# Build artifacts
+webapp/.next/
+api/dist/
+
+# Temporary files and test files
+test.txt
+*.tmp
+*.temp
+*~
+
+# PowerShell and command fragments
+*--noEmit*
+*--short*
+*Select-Object*
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

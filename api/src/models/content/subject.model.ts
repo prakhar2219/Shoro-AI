@@ -1,0 +1,36 @@
+import { ISubject } from '../../types/content/subject.types';
+import mongoose, { Schema } from 'mongoose';
+
+const SubjectSchema = new Schema<ISubject>(
+  {
+    class_id: { type: Schema.Types.ObjectId, ref: 'Class', required: true },
+    language_id: { type: Schema.Types.ObjectId, ref: 'Language', required: true },
+    supported_language_ids: [{ type: Schema.Types.ObjectId, ref: 'Language' }],
+    code: { type: String, required: true },
+    icon: { type: String },
+    name: { type: String, required: true },
+    book_name: { type: String, trim: true },
+    downloadNotes: { type: String, trim: true },
+    downloadPDF: { type: String, trim: true },
+    downloadQA: { type: String, trim: true },
+    content: { type: String, required: false },
+    tag: [{ type: String, trim: true }],
+    source: { type: String, trim: true },
+    author: { type: String, trim: true },
+    flashcards: { type: Boolean, default: false },
+    mock_test: { type: Boolean, default: false },
+    total_questions: { type: Number },
+    total_time: { type: Number },
+    pass_questions: { type: Number },
+  },
+  { timestamps: true }
+);
+
+// Virtuals for translation and translations (for FE/BE consistency)
+SubjectSchema.virtual('translation');
+SubjectSchema.virtual('translations');
+
+// Compound unique index: class_id + code + language_id must be unique
+SubjectSchema.index({ class_id: 1, code: 1, language_id: 1 }, { unique: true });
+
+export default mongoose.model<ISubject>('Subject', SubjectSchema);
