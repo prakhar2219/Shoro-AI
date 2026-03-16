@@ -1,4 +1,8 @@
-# Kridhax Education-AI Platform
+# Shoro.ai Education-AI Platform
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/prakhar2219/Shoro-AI/main/shoro.png" width="700"/>
+</p>
 
 A comprehensive multi-language educational content management system with hierarchical content structure, built as a modern full-stack application.
 
